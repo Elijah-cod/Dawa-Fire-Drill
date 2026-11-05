@@ -61,3 +61,4 @@
 - Added an illustrative stockout-period forecast when synthetic stock on hand is supplied.
 - Added a bounded per-instance Supabase JWKS cache with fail-closed expiry.
 - Added an injectable queue interface for the scenario worker.
+- Added country adapter classes for Kenya and an explicitly disabled second-country stub.

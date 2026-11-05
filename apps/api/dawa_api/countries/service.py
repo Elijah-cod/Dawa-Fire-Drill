@@ -1,33 +1,33 @@
-"""Load the allowed country adapters without accepting arbitrary paths."""
+"""Load allowed country adapters without accepting arbitrary paths."""
 
 import json
-import re
-from dataclasses import dataclass
 from importlib.resources import files
+
+from dawa_api.countries.base import CountryAdapter, CountryConfig
+from dawa_api.countries.ke.adapter import KenyaAdapter
+from dawa_api.countries.zz.adapter import PlaceholderAdapter
 
 
 class CountryNotConfigured(ValueError):
     """A country is unknown or still a placeholder."""
 
 
-@dataclass(frozen=True)
-class CountryConfig:
-    code: str
-    currency: str
-
-
-def get_country(code: str) -> CountryConfig:
+def get_adapter(code: str) -> CountryAdapter:
     normalized = code.upper()
     if normalized not in {"KE", "ZZ"}:
         raise CountryNotConfigured(f"Country {normalized} is not configured")
     resource = files(f"dawa_api.countries.{normalized.lower()}").joinpath("config.yaml")
-    config = json.loads(resource.read_text(encoding="utf-8"))
-    if not config["configured"]:
-        raise CountryNotConfigured(f"Country {normalized} is a placeholder")
-    return CountryConfig(code=config["code"], currency=config["currency"])
+    raw = json.loads(resource.read_text(encoding="utf-8"))
+    config = CountryConfig(code=raw["code"], currency=raw["currency"], configured=raw["configured"])
+    return KenyaAdapter(config) if normalized == "KE" else PlaceholderAdapter(config)
+
+
+def get_country(code: str) -> CountryConfig:
+    adapter = get_adapter(code)
+    if not adapter.configured:
+        raise CountryNotConfigured(f"Country {code.upper()} is a placeholder")
+    return adapter.config
 
 
 def is_synthetic_facility(country_code: str, facility_id: str) -> bool:
-    return bool(
-        re.fullmatch(rf"SYN-{re.escape(country_code)}-F(?:00[1-9]|0[1-3][0-9]|040)", facility_id)
-    )
+    return get_adapter(country_code).supports_synthetic_facility(facility_id)
