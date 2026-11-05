@@ -27,7 +27,7 @@
 1. Continue Phase 1 design locally on its own phase branch, respecting the design review checkpoint.
 2. Keep commits local. When the user explicitly authorizes publication for production, push phase branches, open PRs, and verify every CI job before merge.
 
-## Phase 1: Design — Checkpoint A review ready; native Figma canvas incomplete
+## Phase 1: Design — approved; native Figma canvas incomplete
 
 ### Completed locally
 
@@ -42,5 +42,5 @@
 - Local verification after the documentation batch: `git diff --check` and a design-file/state checklist passed; API `6 passed` with the known upstream warning, Ruff and mypy passed; web lint, typecheck, Vitest tooling command, and Prettier passed. Vitest has no product tests because there is no frontend product code.
 - Prototype responsive check passed 66 view/width combinations at 360, 390, 768, 1024, 1280, and 1536px, including no horizontal overflow, visible synthetic banner, one heading per view, labeled controls, and navigation mode. Two dark-theme checks passed. Overview, Results, and Capture screenshots were generated at the four required test widths and visually inspected at mobile and desktop. The Checkpoint A checklist is in `docs/design/REVIEW.md`.
 - Final local checks after the prototype: API 6 passed with the known upstream warning, Ruff and mypy passed; web ESLint, TypeScript, Vitest tooling command, and Prettier passed. `git diff --check` and internal prototype link checks passed. CI has not run because the user has withheld publication.
-- Complete native Figma frames and connections when editing capacity is available. Use the static prototype and written spec for Checkpoint A review now. Stop before frontend implementation until the exact `DESIGN APPROVED` reply is recorded.
-- Stop at Checkpoint A. Frontend implementation requires the exact reply `DESIGN APPROVED` and an entry in `docs/design/APPROVAL.md`.
+- On 2026-11-05 the user replied `DESIGN APPROVED`; the reviewed artifacts and remaining Figma limitation are recorded in `docs/design/APPROVAL.md`.
+- Continue with Phase 2 backend work on a local phase branch. Stop at Checkpoint B for backend review.
