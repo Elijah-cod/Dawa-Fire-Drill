@@ -9,7 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from dawa_api.auth.service import Principal
 from dawa_api.jobs.repository import RunConflict, RunRepository
 from dawa_api.jobs.schemas import RunComparison, RunCreate, RunPage, RunRead
-from dawa_api.scenarios.router import can_create, can_plan, current_principal, session_for_request
+from dawa_api.scenarios.router import can_create, can_plan, session_for_request
 
 router = APIRouter(tags=["runs"])
 
@@ -58,7 +58,7 @@ async def compare_runs(
 @router.get("/runs/{run_id}", response_model=RunRead)
 async def get_run(
     run_id: UUID,
-    principal: Annotated[Principal, Depends(current_principal)],
+    principal: Annotated[Principal, Depends(can_plan)],
     session: Annotated[AsyncSession, Depends(session_for_request)],
 ) -> RunRead:
     run = await RunRepository(session, country_code=principal.country_code).get(run_id)
@@ -70,7 +70,7 @@ async def get_run(
 @router.get("/scenarios/{scenario_id}/runs", response_model=RunPage)
 async def list_runs(
     scenario_id: UUID,
-    principal: Annotated[Principal, Depends(current_principal)],
+    principal: Annotated[Principal, Depends(can_plan)],
     session: Annotated[AsyncSession, Depends(session_for_request)],
     limit: Annotated[int, Query(ge=1, le=100)] = 20,
     offset: Annotated[int, Query(ge=0)] = 0,

@@ -92,7 +92,7 @@ async def create_scenario(
 
 @router.get("", response_model=ScenarioPage)
 async def list_scenarios(
-    principal: Annotated[Principal, Depends(current_principal)],
+    principal: Annotated[Principal, Depends(can_plan)],
     session: Annotated[AsyncSession, Depends(session_for_request)],
     limit: Annotated[int, Query(ge=1, le=100)] = 20,
     offset: Annotated[int, Query(ge=0)] = 0,
@@ -106,7 +106,7 @@ async def list_scenarios(
 @router.get("/{scenario_id}", response_model=ScenarioRead)
 async def get_scenario(
     scenario_id: UUID,
-    principal: Annotated[Principal, Depends(current_principal)],
+    principal: Annotated[Principal, Depends(can_plan)],
     session: Annotated[AsyncSession, Depends(session_for_request)],
 ) -> ScenarioRead:
     scenario = await ScenarioService(session, principal.country_code).get(scenario_id)
