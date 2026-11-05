@@ -44,3 +44,9 @@
 - Final local checks after the prototype: API 6 passed with the known upstream warning, Ruff and mypy passed; web ESLint, TypeScript, Vitest tooling command, and Prettier passed. `git diff --check` and internal prototype link checks passed. CI has not run because the user has withheld publication.
 - On 2026-11-05 the user replied `DESIGN APPROVED`; the reviewed artifacts and remaining Figma limitation are recorded in `docs/design/APPROVAL.md`.
 - Continue with Phase 2 backend work on a local phase branch. Stop at Checkpoint B for backend review.
+
+## Phase 2: Backend — in progress
+
+- Added initial deterministic daily stock-flow and OR-Tools budget-constrained selection primitives, with example and property tests. These are illustrative and unvalidated, and do not yet provide the required persisted scenario runs or ranked mitigation API.
+- Final local Python check for this unit: 10 tests passed with one upstream Starlette warning; Ruff and mypy passed.
+- Remaining scope includes country adapters and synthetic seed, persistence and migrations, finance trace, complete simulation and ranking, forecasting, redistribution, capture and explanation providers, jobs, authentication, operational endpoints, and integration tests. Checkpoint B has not been reached.

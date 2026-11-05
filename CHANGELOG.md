@@ -10,3 +10,4 @@
 - Began Phase 1 design documentation and a Figma review file; frontend implementation remains gated.
 - Added the responsive static design prototype, review checklist, and automated viewport checks.
 - Recorded the user's Phase 1 design approval.
+- Began illustrative backend stock-flow and OR-Tools budget selection primitives.
