@@ -8,6 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_asyn
 
 from dawa_api.countries.service import get_country
 from dawa_api.ingestion.repository import GENERATOR_VERSION, DatasetRepository
+from dawa_api.jobs.queue import RunQueue
 from dawa_api.jobs.repository import RunRepository
 from dawa_api.scenarios.schemas import ScenarioCreate
 from dawa_api.settings import Settings
@@ -15,6 +16,11 @@ from dawa_api.simulation.scenario import ScenarioResult, simulate_scenario
 from dawa_api.storage.scenarios import ScenarioRepository
 
 Simulator = Callable[..., ScenarioResult]
+QueueFactory = Callable[[AsyncSession, str], RunQueue]
+
+
+def postgres_queue(session: AsyncSession, country_code: str) -> RunQueue:
+    return RunRepository(session, country_code=country_code)
 
 
 async def process_one(
@@ -22,10 +28,11 @@ async def process_one(
     country_code: str,
     *,
     simulator: Simulator = simulate_scenario,
+    queue_factory: QueueFactory = postgres_queue,
 ) -> bool:
     country = get_country(country_code).code
     async with sessions.begin() as session:
-        run = await RunRepository(session, country_code=country).claim_next()
+        run = await queue_factory(session, country).claim_next()
         if run is None:
             return False
         run_id, lease, seed, horizon = run.id, run.lease_token, run.seed, run.horizon_days
@@ -55,10 +62,10 @@ async def process_one(
         )
     except Exception:
         async with sessions.begin() as session:
-            await RunRepository(session, country_code=country).fail(run_id, lease)
+            await queue_factory(session, country).fail(run_id, lease)
         return True
     async with sessions.begin() as session:
-        await RunRepository(session, country_code=country).complete(run_id, lease, dict(result))
+        await queue_factory(session, country).complete(run_id, lease, dict(result))
     return True
 
 
