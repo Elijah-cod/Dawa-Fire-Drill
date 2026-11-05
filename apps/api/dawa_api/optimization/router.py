@@ -4,12 +4,13 @@ import asyncio
 from typing import Annotated, Literal
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel, Field
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from dawa_api.auth.service import Principal
-from dawa_api.explain.service import explain_selection
+from dawa_api.capture.repository import PostgresExtractionStore
+from dawa_api.explain.service import explain_selection, explain_with_providers
 from dawa_api.jobs.repository import RunRepository
 from dawa_api.optimization.service import Candidate, select_actions
 from dawa_api.scenarios.router import can_create, session_for_request
@@ -27,6 +28,7 @@ class CandidateInput(BaseModel):
 class RankRequest(BaseModel):
     budget: int = Field(ge=0, le=1_000_000_000)
     candidates: list[CandidateInput] = Field(max_length=50)
+    include_llm_explanation: bool = False
 
 
 class RankResponse(BaseModel):
@@ -51,6 +53,7 @@ class RunRankRequest(BaseModel):
     synthetic_attested: Literal[True]
     budget: int = Field(ge=0, le=1_000_000_000)
     candidates: list[RunCandidate] = Field(max_length=50)
+    include_llm_explanation: bool = False
 
 
 class RunRankResponse(RankResponse):
@@ -62,6 +65,7 @@ class RunRankResponse(RankResponse):
 async def rank_run(
     run_id: UUID,
     data: RunRankRequest,
+    request: Request,
     principal: Annotated[Principal, Depends(can_create)],
     session: Annotated[AsyncSession, Depends(session_for_request)],
 ) -> RunRankResponse:
@@ -73,13 +77,21 @@ async def rank_run(
     stockouts = {(item["facility_id"], item["commodity_id"]) for item in run.result["stockouts"]}
     if any((item.facility_id, item.commodity_id) not in stockouts for item in data.candidates):
         raise HTTPException(status_code=422, detail="Candidate must target a recorded stockout")
-    result = await rank(RankRequest(budget=data.budget, candidates=data.candidates), principal)
+    result = await rank(
+        RankRequest(
+            budget=data.budget,
+            candidates=data.candidates,
+            include_llm_explanation=data.include_llm_explanation,
+        ),
+        request,
+        principal,
+    )
     return RunRankResponse(**result.model_dump(), run_id=run_id, candidates=data.candidates)
 
 
 @router.post("/rank", response_model=RankResponse)
 async def rank(
-    data: RankRequest, principal: Annotated[Principal, Depends(can_create)]
+    data: RankRequest, request: Request, principal: Annotated[Principal, Depends(can_create)]
 ) -> RankResponse:
     _ = principal
     try:
@@ -90,6 +102,17 @@ async def rank(
         )
     except ValueError as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
+    explanation = explain_selection(result, budget=data.budget)
+    if data.include_llm_explanation:
+        store = PostgresExtractionStore(
+            request.app.state.sessions, daily_cap=request.app.state.settings.llm_daily_call_cap
+        )
+        explanation = await explain_with_providers(
+            result,
+            budget=data.budget,
+            providers=request.app.state.explanation_providers,
+            store=store,
+        )
     return RankResponse(
         selected_ids=result.selected_ids,
         selected_reasons={item: "included_in_optimal_set" for item in result.selected_ids},
@@ -97,5 +120,5 @@ async def rank(
         total_cost=result.total_cost,
         remaining_budget=data.budget - result.total_cost,
         cut_line=len(result.selected_ids),
-        explanation=explain_selection(result, budget=data.budget).text,
+        explanation=explanation.text,
     )

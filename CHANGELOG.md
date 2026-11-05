@@ -35,3 +35,4 @@
 - Added a deterministic plain-language fallback that restates optimizer results.
 - Added an authenticated side-by-side comparison of two completed scenario runs.
 - Added Supabase ES256/RS256 JWKS signature verification alongside legacy HS256.
+- Added optional, constrained OpenAI/Gemini explanation phrasing with a shared daily call cap and deterministic fallback.

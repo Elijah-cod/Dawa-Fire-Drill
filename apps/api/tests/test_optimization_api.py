@@ -59,6 +59,24 @@ def test_optimizer_endpoint_respects_budget_and_roles(monkeypatch: pytest.Monkey
         assert data["synthetic"] is True
         assert "illustrative and unvalidated" in data["explanation"].lower()
         assert "cheap" in data["explanation"]
+
+        async def reserve(*args: object, **kwargs: object) -> bool:
+            return True
+
+        class FakeExplainer:
+            async def explain(self, payload: dict[str, object]) -> str:
+                assert payload["selected_ids"] == ["cheap"]
+                return '{"text":"The chosen option fits the budget."}'
+
+        monkeypatch.setattr("dawa_api.capture.repository.PostgresExtractionStore.reserve", reserve)
+        client.app.state.explanation_providers = [FakeExplainer()]
+        llm_result = client.post(
+            "/v1/optimization/rank",
+            json=body | {"include_llm_explanation": True},
+            headers=bearer("planner"),
+        )
+        assert llm_result.json()["selected_ids"] == ["cheap"]
+        assert "chosen option fits" in llm_result.json()["explanation"]
         assert (
             client.post(
                 "/v1/optimization/rank",

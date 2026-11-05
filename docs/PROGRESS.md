@@ -71,6 +71,6 @@
 - Added an atomic Postgres-backed fixed-minute rate limit shared between application instances for authenticated principals. Invalid or unauthenticated traffic still needs edge-level protection.
 - Clarified the README and API documentation to identify the facility-level mix as the only currently aggregate-guided component. Other synthetic assumptions still require public-source calibration.
 - Corrected router registration to honor `API_PREFIX` from the environment.
-- Added a deterministic fallback explanation of solver selections. LLM-generated explanations remain outstanding.
+- Added deterministic solver explanations and an opt-in OpenAI/Gemini path constrained to reviewed sentences, sharing the extraction call cap. Provider failures fall back to deterministic text; real provider accounts have not been tested.
 - Added country-scoped, side-by-side retrieval of two completed runs for planner and pharmacist roles.
 - Added asymmetric Supabase JWKS verification with mocked signature and API tests. Keys are fetched on each asymmetric request, so an issuer outage prevents asymmetric authentication; no live Supabase account was used.

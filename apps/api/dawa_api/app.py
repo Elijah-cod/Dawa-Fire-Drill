@@ -13,6 +13,7 @@ from sqlalchemy.ext.asyncio import AsyncEngine, async_sessionmaker, create_async
 from dawa_api.capture.limits import CaptureBodyLimit
 from dawa_api.capture.providers import configured_providers
 from dawa_api.capture.router import router as capture_router
+from dawa_api.explain.providers import configured_explainers
 from dawa_api.finance_flow.router import router as funding_router
 from dawa_api.forecasting.router import router as forecast_router
 from dawa_api.jobs.router import router as jobs_router
@@ -37,6 +38,7 @@ def create_app(settings: Settings | None = None, engine: AsyncEngine | None = No
             async with httpx.AsyncClient(timeout=20.0, follow_redirects=False) as client:
                 app.state.http_client = client
                 app.state.capture_providers = configured_providers(client, resolved)
+                app.state.explanation_providers = configured_explainers(client, resolved)
                 yield
         finally:
             if engine is None:
