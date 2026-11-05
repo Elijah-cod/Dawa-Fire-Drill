@@ -45,6 +45,35 @@ def test_rejects_duplicate_or_self_matching():
         )
 
 
+def test_rejects_bad_lanes_and_excludes_out_of_range_routes():
+    source = [Supply("source", 5, 30)]
+    target = [Demand("target", 5)]
+    with pytest.raises(ValueError):
+        match_transfers(
+            sources=source,
+            targets=target,
+            lanes=[Lane("unknown", "target", 1)],
+            max_distance_km=10,
+            minimum_shelf_life_days=1,
+        )
+    with pytest.raises(ValueError):
+        match_transfers(
+            sources=source,
+            targets=target,
+            lanes=[Lane("source", "target", float("nan"))],
+            max_distance_km=10,
+            minimum_shelf_life_days=1,
+        )
+    result = match_transfers(
+        sources=source,
+        targets=target,
+        lanes=[Lane("source", "target", 11)],
+        max_distance_km=10,
+        minimum_shelf_life_days=1,
+    )
+    assert result.transfers == () and result.total_quantity == 0
+
+
 @given(
     available_a=st.integers(min_value=0, max_value=100),
     available_b=st.integers(min_value=0, max_value=100),

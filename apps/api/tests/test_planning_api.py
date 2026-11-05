@@ -105,6 +105,12 @@ def test_synthetic_planning_endpoints_validate_inputs_and_roles(
         match = client.post("/v1/redistribution/match", json=matching, headers=bearer())
         assert match.status_code == 200
         assert match.json()["synthetic"] is True and match.json()["total_quantity"] == 7
+        assert (
+            client.post(
+                "/v1/redistribution/match", json=matching, headers=bearer("facility")
+            ).status_code
+            == 403
+        )
         invalid = matching | {
             "sources": [{"facility_id": "real-facility", "available": 10, "shelf_life_days": 30}]
         }
@@ -133,3 +139,18 @@ def test_synthetic_planning_endpoints_validate_inputs_and_roles(
         response = client.post("/v1/funding/trace", json=funding, headers=bearer())
         assert response.status_code == 200
         assert [item["age_days"] for item in response.json()["bottlenecks"]] == [10, 7, 4]
+        assert (
+            client.post(
+                "/v1/redistribution/match",
+                json=matching | {"synthetic_attested": 1},
+                headers=bearer(),
+            ).status_code
+            == 422
+        )
+
+        def unavailable(*args: object, **kwargs: object) -> None:
+            raise RuntimeError("internal solver detail")
+
+        monkeypatch.setattr("dawa_api.redistribution.router.match_synthetic", unavailable)
+        failed = client.post("/v1/redistribution/match", json=matching, headers=bearer())
+        assert failed.status_code == 503 and "internal solver detail" not in failed.text
