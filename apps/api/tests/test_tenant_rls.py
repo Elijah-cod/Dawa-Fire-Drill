@@ -37,9 +37,14 @@ def test_database_policy_denies_other_country() -> None:
 
                 await conn.run_sync(migrate)
                 await conn.execute(text(f'GRANT USAGE ON SCHEMA "{schema}" TO "{role}"'))
-                await conn.execute(text(f'GRANT SELECT, INSERT ON scenarios TO "{role}"'))
+                await conn.execute(
+                    text(f'GRANT SELECT, INSERT, UPDATE, DELETE ON scenarios TO "{role}"')
+                )
                 await conn.execute(text(f'GRANT SELECT, INSERT ON scenario_runs TO "{role}"'))
                 await conn.execute(text(f'GRANT SELECT ON extraction_cache TO "{role}"'))
+                await conn.execute(
+                    text(f'GRANT SELECT, UPDATE, DELETE ON synthetic_datasets TO "{role}"')
+                )
                 await conn.execute(
                     text(
                         "INSERT INTO scenarios (id, country_code, idempotency_key, "
@@ -62,6 +67,13 @@ def test_database_policy_denies_other_country() -> None:
                         "fields_json) VALUES ('KE', 'a', 1, '{}'), ('ZZ', 'b', 1, '{}')"
                     )
                 )
+                await conn.execute(
+                    text(
+                        "INSERT INTO synthetic_datasets (country_code, seed, generator_version, "
+                        "data, created_at) "
+                        "VALUES ('KE', 1, 1, '{}', now()), ('ZZ', 1, 1, '{}', now())"
+                    )
+                )
                 await conn.execute(text(f'SET LOCAL ROLE "{role}"'))
                 assert (
                     await conn.execute(text("SELECT count(*) FROM scenarios"))
@@ -72,11 +84,20 @@ def test_database_policy_denies_other_country() -> None:
                 assert (
                     await conn.execute(text("SELECT count(*) FROM extraction_cache"))
                 ).scalar_one() == 0
+                assert (
+                    await conn.execute(text("SELECT count(*) FROM synthetic_datasets"))
+                ).scalar_one() == 0
                 await conn.execute(text("SELECT set_config('app.country_code', 'KE', true)"))
                 rows = (
                     (await conn.execute(text("SELECT country_code FROM scenarios"))).scalars().all()
                 )
                 assert rows == ["KE"]
+                edited = await conn.execute(
+                    text("UPDATE scenarios SET payload = '{}' RETURNING id")
+                )
+                assert edited.scalars().all() == []
+                deleted = await conn.execute(text("DELETE FROM scenarios RETURNING id"))
+                assert deleted.scalars().all() == []
                 runs = (
                     (await conn.execute(text("SELECT country_code FROM scenario_runs")))
                     .scalars()
@@ -89,6 +110,18 @@ def test_database_policy_denies_other_country() -> None:
                     .all()
                 )
                 assert cache == ["KE"]
+                datasets = (
+                    (await conn.execute(text("SELECT country_code FROM synthetic_datasets")))
+                    .scalars()
+                    .all()
+                )
+                assert datasets == ["KE"]
+                changed = await conn.execute(
+                    text("UPDATE synthetic_datasets SET data = '{}' RETURNING seed")
+                )
+                assert changed.scalars().all() == []
+                removed = await conn.execute(text("DELETE FROM synthetic_datasets RETURNING seed"))
+                assert removed.scalars().all() == []
                 with pytest.raises(DBAPIError):
                     async with conn.begin_nested():
                         await conn.execute(

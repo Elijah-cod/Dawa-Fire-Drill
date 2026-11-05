@@ -1,6 +1,6 @@
 """Run reproducible illustrative shocks over synthetic demo stock flows."""
 
-from typing import TypedDict
+from typing import Any, TypedDict
 
 from dawa_api.ingestion.synthetic import generate_dataset
 from dawa_api.scenarios.schemas import ScenarioCreate
@@ -21,10 +21,18 @@ class ScenarioResult(TypedDict):
     stockouts: list[Stockout]
 
 
-def simulate_scenario(scenario: ScenarioCreate, *, seed: int, horizon_days: int) -> ScenarioResult:
+def simulate_scenario(
+    scenario: ScenarioCreate, *, seed: int, horizon_days: int, dataset: dict[str, Any] | None = None
+) -> ScenarioResult:
     if not 1 <= horizon_days <= 365:
         raise ValueError("horizon_days must be between 1 and 365")
-    data = generate_dataset(seed=seed)
+    data = dataset if dataset is not None else generate_dataset(seed=seed)
+    if (
+        data.get("synthetic") is not True
+        or data.get("country_code") != "KE"
+        or data.get("seed") != seed
+    ):
+        raise ValueError("Scenario requires a matching synthetic Kenya snapshot")
     stockouts: list[Stockout] = []
     for item in data["consumption"]:
         if item["month_index"] != 23:

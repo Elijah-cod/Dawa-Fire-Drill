@@ -7,6 +7,7 @@ from collections.abc import Callable
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
 from dawa_api.countries.service import get_country
+from dawa_api.ingestion.repository import GENERATOR_VERSION, DatasetRepository
 from dawa_api.jobs.repository import RunRepository
 from dawa_api.scenarios.schemas import ScenarioCreate
 from dawa_api.settings import Settings
@@ -28,13 +29,24 @@ async def process_one(
         if run is None:
             return False
         run_id, lease, seed, horizon = run.id, run.lease_token, run.seed, run.horizon_days
+        version = run.generator_version
         scenario = await ScenarioRepository(session, country_code=country).get(run.scenario_id)
         payload = scenario.payload if scenario is not None else None
     if lease is None:
         raise RuntimeError("Claimed run has no lease")
     try:
+        async with sessions.begin() as session:
+            datasets = DatasetRepository(session, country_code=country)
+            snapshot = await datasets.get(seed=seed, version=version)
+            if snapshot is None and version == GENERATOR_VERSION:
+                snapshot, _ = await datasets.ensure(seed=seed)
+            data = snapshot.data if snapshot is not None else None
         scenario_input = ScenarioCreate.model_validate(payload)
-        result = await asyncio.to_thread(simulator, scenario_input, seed=seed, horizon_days=horizon)
+        if data is None:
+            raise ValueError("Synthetic dataset version is unavailable")
+        result = await asyncio.to_thread(
+            simulator, scenario_input, seed=seed, horizon_days=horizon, dataset=data
+        )
     except Exception:
         async with sessions.begin() as session:
             await RunRepository(session, country_code=country).fail(run_id, lease)

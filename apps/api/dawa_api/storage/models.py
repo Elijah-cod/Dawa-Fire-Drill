@@ -56,6 +56,7 @@ class Run(Base):
     scenario_id: Mapped[UUID] = mapped_column(nullable=False)
     idempotency_key: Mapped[str] = mapped_column(String(128), nullable=False)
     seed: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    generator_version: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
     horizon_days: Mapped[int] = mapped_column(Integer, nullable=False)
     status: Mapped[str] = mapped_column(String(16), nullable=False, default="queued")
     result: Mapped[dict[str, Any] | None] = mapped_column(JSON, nullable=True)
@@ -72,6 +73,17 @@ class DailyProviderUsage(Base):
     __tablename__ = "provider_daily_usage"
     day: Mapped[date] = mapped_column(Date, primary_key=True)
     calls: Mapped[int] = mapped_column(Integer, nullable=False)
+
+
+class SyntheticDataset(Base):
+    __tablename__ = "synthetic_datasets"
+    country_code: Mapped[str] = mapped_column(String(2), primary_key=True)
+    seed: Mapped[int] = mapped_column(BigInteger, primary_key=True)
+    generator_version: Mapped[int] = mapped_column(Integer, primary_key=True)
+    data: Mapped[dict[str, Any]] = mapped_column(JSON, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=lambda: datetime.now(UTC)
+    )
 
 
 class ExtractionCache(Base):

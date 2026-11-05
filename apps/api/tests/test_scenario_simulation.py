@@ -1,5 +1,8 @@
+from unittest.mock import patch
+
 import pytest
 
+from dawa_api.ingestion.synthetic import generate_dataset
 from dawa_api.scenarios.schemas import ScenarioCreate
 from dawa_api.simulation.scenario import simulate_scenario
 
@@ -22,3 +25,13 @@ def test_delay_causes_stockout_and_rejects_unbounded_horizon() -> None:
     assert simulate_scenario(scenario, seed=1, horizon_days=90)["stockouts"]
     with pytest.raises(ValueError):
         simulate_scenario(scenario, seed=1, horizon_days=0)
+
+
+def test_run_uses_supplied_snapshot_without_regeneration() -> None:
+    scenario = ScenarioCreate(name="Synthetic delay", shock_type="cash_delay", magnitude=45)
+    snapshot = generate_dataset(seed=42)
+    with patch(
+        "dawa_api.simulation.scenario.generate_dataset", side_effect=AssertionError("regenerated")
+    ):
+        result = simulate_scenario(scenario, seed=42, horizon_days=90, dataset=snapshot)
+    assert result["synthetic"] is True and result["stockouts"]
