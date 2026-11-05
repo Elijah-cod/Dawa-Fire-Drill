@@ -8,6 +8,10 @@ from ortools.sat.python import cp_model
 SOLVER_TIME_LIMIT_SECONDS = 2.0
 
 
+class DuplicateCandidateID(ValueError):
+    """Candidates cannot share an identifier within one request."""
+
+
 @dataclass(frozen=True)
 class Candidate:
     id: str
@@ -30,7 +34,7 @@ def select_actions(candidates: Sequence[Candidate], *, budget: int) -> Optimizat
     if any(not 0 <= c.cost <= 1_000_000_000 or not 0 <= c.benefit <= 1_000_000 for c in candidates):
         raise ValueError("Costs or benefits are outside supported bounds")
     if len({c.id for c in candidates}) != len(candidates):
-        raise ValueError("Candidate IDs must be unique")
+        raise DuplicateCandidateID("Candidate IDs must be unique")
     model = cp_model.CpModel()
     choices = [model.new_bool_var(f"choice_{index}") for index in range(len(candidates))]
     total_cost = sum(c.cost * choice for c, choice in zip(candidates, choices, strict=True))

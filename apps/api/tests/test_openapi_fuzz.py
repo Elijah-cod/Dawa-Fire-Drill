@@ -19,7 +19,9 @@ app = create_app(
         supabase_jwt_secret=TEST_KEY,
     )
 )
-schema = schemathesis.openapi.from_asgi("/openapi.json", app).include(path="/v1/forecast")
+schema = schemathesis.openapi.from_asgi("/openapi.json", app).include(
+    path_regex=r"^/v1/(forecast|optimization/rank)$"
+)
 
 
 @schema.auth()
@@ -50,6 +52,6 @@ async def allow_request(*args, **kwargs):
 
 @schema.parametrize()
 @settings(max_examples=30, deadline=None)
-def test_forecast_openapi_contract(case):
+def test_planning_openapi_contract(case):
     with patch("dawa_api.scenarios.router.reserve_request", allow_request):
         case.call_and_validate()

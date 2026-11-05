@@ -94,6 +94,27 @@ def test_optimizer_endpoint_respects_budget_and_roles(monkeypatch: pytest.Monkey
             ).status_code
             == 422
         )
+        assert (
+            client.post(
+                "/v1/optimization/rank", json=body | {"budget": True}, headers=bearer("planner")
+            ).status_code
+            == 422
+        )
+        assert (
+            client.post(
+                "/v1/optimization/rank",
+                json=body | {"include_llm_explanation": 0},
+                headers=bearer("planner"),
+            ).status_code
+            == 422
+        )
+        duplicate = body | {"candidates": [body["candidates"][0], body["candidates"][0]]}
+        assert (
+            client.post(
+                "/v1/optimization/rank", json=duplicate, headers=bearer("planner")
+            ).status_code
+            == 409
+        )
 
         def unavailable(*args: object, **kwargs: object) -> None:
             raise RuntimeError("internal solver detail")

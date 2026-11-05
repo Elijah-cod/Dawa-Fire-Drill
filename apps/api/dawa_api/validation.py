@@ -12,3 +12,12 @@ def require_true(value: Any) -> Any:
 
 
 ExplicitTrue = Annotated[Literal[True], BeforeValidator(require_true)]
+
+
+def require_json_number(value: Any) -> Any:
+    if type(value) not in (int, float):
+        raise ValueError("Value must be a JSON number")
+    return value
+
+
+JsonInteger = Annotated[int, BeforeValidator(require_json_number)]

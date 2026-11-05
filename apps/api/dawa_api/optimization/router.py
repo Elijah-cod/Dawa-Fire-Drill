@@ -5,16 +5,16 @@ from typing import Annotated, Literal
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Request
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, StrictBool
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from dawa_api.auth.service import Principal
 from dawa_api.capture.repository import PostgresExtractionStore
 from dawa_api.explain.service import explain_selection, explain_with_providers
 from dawa_api.jobs.repository import RunRepository
-from dawa_api.optimization.service import Candidate, select_actions
+from dawa_api.optimization.service import Candidate, DuplicateCandidateID, select_actions
 from dawa_api.scenarios.router import can_create, session_for_request
-from dawa_api.validation import ExplicitTrue
+from dawa_api.validation import ExplicitTrue, JsonInteger
 
 router = APIRouter(prefix="/optimization", tags=["optimization"])
 run_router = APIRouter(tags=["optimization"])
@@ -22,15 +22,15 @@ run_router = APIRouter(tags=["optimization"])
 
 class CandidateInput(BaseModel):
     id: str = Field(min_length=1, max_length=120)
-    cost: int = Field(ge=0, le=1_000_000_000)
-    benefit: int = Field(ge=0, le=1_000_000)
+    cost: JsonInteger = Field(ge=0, le=1_000_000_000)
+    benefit: JsonInteger = Field(ge=0, le=1_000_000)
 
 
 class RankRequest(BaseModel):
     synthetic_attested: ExplicitTrue
-    budget: int = Field(ge=0, le=1_000_000_000)
+    budget: JsonInteger = Field(ge=0, le=1_000_000_000)
     candidates: list[CandidateInput] = Field(max_length=50)
-    include_llm_explanation: bool = False
+    include_llm_explanation: StrictBool = False
 
 
 class RankResponse(BaseModel):
@@ -53,9 +53,9 @@ class RunCandidate(CandidateInput):
 
 class RunRankRequest(BaseModel):
     synthetic_attested: ExplicitTrue
-    budget: int = Field(ge=0, le=1_000_000_000)
+    budget: JsonInteger = Field(ge=0, le=1_000_000_000)
     candidates: list[RunCandidate] = Field(max_length=50)
-    include_llm_explanation: bool = False
+    include_llm_explanation: StrictBool = False
 
 
 class RunRankResponse(RankResponse):
@@ -99,7 +99,10 @@ async def rank_run(
 @router.post(
     "/rank",
     response_model=RankResponse,
-    responses={503: {"description": "Optimizer could not prove an optimal result"}},
+    responses={
+        409: {"description": "Candidate identifiers conflict"},
+        503: {"description": "Optimizer could not prove an optimal result"},
+    },
 )
 async def rank(
     data: RankRequest, request: Request, principal: Annotated[Principal, Depends(can_create)]
@@ -121,6 +124,8 @@ async def rank(
             ],
             budget=data.budget,
         )
+    except DuplicateCandidateID as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
     except ValueError as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
     except RuntimeError as exc:
