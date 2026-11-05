@@ -4,7 +4,7 @@ import asyncio
 import os
 from datetime import UTC, date, datetime, timedelta
 from pathlib import Path
-from uuid import uuid4
+from uuid import UUID, uuid4
 
 import jwt
 from alembic.config import Config
@@ -215,6 +215,23 @@ def test_scenario_api_auth_roles_idempotency_and_pagination() -> None:
                     ).status_code
                     == 404
                 )
+                legacy = client.post(
+                    f"/v1/scenarios/{created.json()['id']}/runs",
+                    json={"seed": 42, "horizon_days": 90},
+                    headers=bearer("planner") | {"Idempotency-Key": "legacy-job"},
+                )
+                legacy_id = legacy.json()["id"]
+                async with engine.begin() as connection:
+                    await connection.execute(
+                        text("UPDATE scenario_runs SET simulation_version = 1 WHERE id = :id"),
+                        {"id": UUID(legacy_id)},
+                    )
+                assert await process_one(async_sessionmaker(engine, expire_on_commit=False), "KE")
+                legacy_result = client.get(
+                    f"/v1/runs/{legacy_id}", headers=bearer("planner")
+                ).json()
+                assert legacy_result["simulation_version"] == 1
+                assert "district_stockouts" not in legacy_result["result"]
                 failed = client.post(
                     f"/v1/scenarios/{created.json()['id']}/runs",
                     json={"seed": 42, "horizon_days": 90},

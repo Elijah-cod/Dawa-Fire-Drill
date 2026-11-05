@@ -49,3 +49,13 @@ def test_run_uses_supplied_snapshot_without_regeneration() -> None:
     ):
         result = simulate_scenario(scenario, seed=42, horizon_days=90, dataset=snapshot)
     assert result["synthetic"] is True and result["stockouts"]
+
+
+def test_legacy_simulation_version_remains_available() -> None:
+    scenario = ScenarioCreate(name="Synthetic delay", shock_type="cash_delay", magnitude=45)
+    result = simulate_scenario(scenario, seed=42, horizon_days=90, simulation_version=1)
+    assert "simulation_version" not in result
+    assert "district_stockouts" not in result
+    assert all("district_id" not in item for item in result["stockouts"])
+    with pytest.raises(ValueError):
+        simulate_scenario(scenario, seed=42, horizon_days=90, simulation_version=999)

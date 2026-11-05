@@ -47,3 +47,4 @@
 - Added an explicit unconfigured adapter boundary for public calibration aggregates.
 - Extended non-superuser country isolation tests to funding records and request-limit counters.
 - Prevented scenario mitigation alternatives for the same stockout from being double-counted.
+- Pinned generator and simulation versions when runs are queued, retaining the earlier simulation output format.

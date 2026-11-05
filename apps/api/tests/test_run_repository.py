@@ -49,6 +49,7 @@ def test_run_queue_idempotency_claims_and_country_isolation() -> None:
                 )
                 run_id = submitted.id
                 assert created
+                assert submitted.simulation_version == 2
                 replay, created = await repo.create(
                     scenario_id, "run-key", seed=42, horizon_days=90
                 )

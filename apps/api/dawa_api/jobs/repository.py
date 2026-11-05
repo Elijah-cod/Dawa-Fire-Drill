@@ -8,6 +8,8 @@ from sqlalchemy import and_, func, or_, select, update
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from dawa_api.ingestion.repository import GENERATOR_VERSION
+from dawa_api.simulation.scenario import SIMULATION_VERSION
 from dawa_api.storage.models import Run
 from dawa_api.storage.scenarios import ScenarioRepository
 
@@ -47,6 +49,8 @@ class RunRepository:
                 scenario_id=scenario_id,
                 idempotency_key=key,
                 seed=seed,
+                generator_version=GENERATOR_VERSION,
+                simulation_version=SIMULATION_VERSION,
                 horizon_days=horizon_days,
                 status="queued",
                 attempts=0,

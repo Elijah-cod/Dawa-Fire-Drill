@@ -1,15 +1,17 @@
 """Run reproducible illustrative shocks over synthetic demo stock flows."""
 
-from typing import Any, TypedDict
+from typing import Any, NotRequired, TypedDict
 
 from dawa_api.ingestion.synthetic import generate_dataset
 from dawa_api.scenarios.schemas import ScenarioCreate
 from dawa_api.simulation.service import simulate_stock
 
+SIMULATION_VERSION = 2
+
 
 class Stockout(TypedDict):
     facility_id: str
-    district_id: str
+    district_id: NotRequired[str]
     commodity_id: str
     day: int
 
@@ -24,15 +26,22 @@ class ScenarioResult(TypedDict):
     synthetic: bool
     notice: str
     seed: int
-    simulation_version: int
+    simulation_version: NotRequired[int]
     horizon_days: int
     stockouts: list[Stockout]
-    district_stockouts: list[DistrictStockout]
+    district_stockouts: NotRequired[list[DistrictStockout]]
 
 
 def simulate_scenario(
-    scenario: ScenarioCreate, *, seed: int, horizon_days: int, dataset: dict[str, Any] | None = None
+    scenario: ScenarioCreate,
+    *,
+    seed: int,
+    horizon_days: int,
+    dataset: dict[str, Any] | None = None,
+    simulation_version: int = SIMULATION_VERSION,
 ) -> ScenarioResult:
+    if simulation_version not in (1, SIMULATION_VERSION):
+        raise ValueError("Unsupported simulation version")
     if not 1 <= horizon_days <= 365:
         raise ValueError("horizon_days must be between 1 and 365")
     data = dataset if dataset is not None else generate_dataset(seed=seed)
@@ -86,12 +95,18 @@ def simulate_scenario(
     district_stockouts.sort(
         key=lambda item: (item["day"], item["district_id"], item["commodity_id"])
     )
-    return {
+    output: ScenarioResult = {
         "synthetic": True,
         "notice": "Illustrative and unvalidated; non-facility quantities are assumptions",
         "seed": seed,
-        "simulation_version": 2,
+        "simulation_version": simulation_version,
         "horizon_days": horizon_days,
         "stockouts": stockouts,
         "district_stockouts": district_stockouts,
     }
+    if simulation_version == 1:
+        output.pop("simulation_version")
+        output.pop("district_stockouts")
+        for stockout in output["stockouts"]:
+            stockout.pop("district_id")
+    return output

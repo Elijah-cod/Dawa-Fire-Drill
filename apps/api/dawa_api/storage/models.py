@@ -57,6 +57,7 @@ class Run(Base):
     idempotency_key: Mapped[str] = mapped_column(String(128), nullable=False)
     seed: Mapped[int] = mapped_column(BigInteger, nullable=False)
     generator_version: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
+    simulation_version: Mapped[int] = mapped_column(Integer, nullable=False, default=2)
     horizon_days: Mapped[int] = mapped_column(Integer, nullable=False)
     status: Mapped[str] = mapped_column(String(16), nullable=False, default="queued")
     result: Mapped[dict[str, Any] | None] = mapped_column(JSON, nullable=True)

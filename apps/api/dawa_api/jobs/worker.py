@@ -30,6 +30,7 @@ async def process_one(
             return False
         run_id, lease, seed, horizon = run.id, run.lease_token, run.seed, run.horizon_days
         version = run.generator_version
+        simulation_version = run.simulation_version
         scenario = await ScenarioRepository(session, country_code=country).get(run.scenario_id)
         payload = scenario.payload if scenario is not None else None
     if lease is None:
@@ -45,7 +46,12 @@ async def process_one(
         if data is None:
             raise ValueError("Synthetic dataset version is unavailable")
         result = await asyncio.to_thread(
-            simulator, scenario_input, seed=seed, horizon_days=horizon, dataset=data
+            simulator,
+            scenario_input,
+            seed=seed,
+            horizon_days=horizon,
+            dataset=data,
+            simulation_version=simulation_version,
         )
     except Exception:
         async with sessions.begin() as session:

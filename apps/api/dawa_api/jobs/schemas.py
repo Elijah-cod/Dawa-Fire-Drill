@@ -19,6 +19,7 @@ class RunRead(BaseModel):
     country_code: str
     seed: int
     generator_version: int
+    simulation_version: int
     horizon_days: int
     status: Literal["queued", "running", "succeeded", "failed"]
     result: dict[str, Any] | None
