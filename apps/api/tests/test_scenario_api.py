@@ -32,7 +32,7 @@ def bearer(role: str) -> dict[str, str]:
             "exp": now + timedelta(minutes=5),
             "iss": f"{BASE_URL}/auth/v1",
             "aud": "authenticated",
-            "app_metadata": {"role": role, "country_code": "KE"},
+            "app_metadata": {"role": role, "country_code": "KE", "facility_id": "SYN-KE-F001"},
         },
         SIGNING_MATERIAL,
         algorithm="HS256",

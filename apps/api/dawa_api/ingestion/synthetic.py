@@ -26,7 +26,8 @@ class BudgetLine(TypedDict):
 
 
 def generate_dataset(*, seed: int) -> dict[str, Any]:
-    rng = random.Random(seed)
+    # Deterministic synthetic fixtures require reproducibility, not cryptographic randomness.
+    rng = random.Random(seed)  # nosec B311
     levels = list(FACILITY_LEVELS)
     rng.shuffle(levels)
     facilities: list[Facility] = [

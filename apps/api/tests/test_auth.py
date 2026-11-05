@@ -39,6 +39,21 @@ def test_valid_signed_token_uses_server_controlled_metadata() -> None:
     )
 
 
+def test_facility_role_requires_server_controlled_facility_scope() -> None:
+    with pytest.raises(AuthenticationError):
+        authenticate_token(
+            token(metadata={"role": "facility", "country_code": "KE"}),
+            signing_secret=TEST_SIGNING_MATERIAL,
+            issuer=ISSUER,
+        )
+    principal = authenticate_token(
+        token(metadata={"role": "facility", "country_code": "KE", "facility_id": "SYN-KE-F001"}),
+        signing_secret=TEST_SIGNING_MATERIAL,
+        issuer=ISSUER,
+    )
+    assert principal.facility_id == "SYN-KE-F001"
+
+
 @pytest.mark.parametrize(
     "encoded",
     [

@@ -21,3 +21,4 @@
 - Added country-scoped persistent run records and a lease-fenced Postgres queue.
 - Connected scenario run endpoints and a worker, and added migration/worker services to local Compose.
 - Added an authenticated optimizer endpoint for illustrative synthetic candidates.
+- Added synthetic bin-card capture with image validation, provider limits/cache, and human confirmation.

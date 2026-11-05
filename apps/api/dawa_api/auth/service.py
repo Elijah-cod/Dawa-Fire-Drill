@@ -1,5 +1,6 @@
 """Validate legacy Supabase HS256 JWTs and trusted application metadata."""
 
+import re
 from dataclasses import dataclass
 from typing import Literal, cast
 
@@ -20,6 +21,7 @@ class Principal:
     subject: str
     role: Role
     country_code: str
+    facility_id: str | None = None
 
 
 def authenticate_token(token: str, *, signing_secret: str, issuer: str) -> Principal:
@@ -41,7 +43,7 @@ def authenticate_token(token: str, *, signing_secret: str, issuer: str) -> Princ
         subject = claims.get("sub")
         if (
             not isinstance(subject, str)
-            or not subject
+            or not 1 <= len(subject) <= 200
             or not isinstance(role, str)
             or role not in ROLES
         ):
@@ -49,6 +51,15 @@ def authenticate_token(token: str, *, signing_secret: str, issuer: str) -> Princ
         if not isinstance(country, str):
             raise AuthenticationError("Missing country")
         country_code = get_country(country).code
-        return Principal(subject=subject, role=cast(Role, role), country_code=country_code)
+        facility = metadata.get("facility_id")
+        if facility is not None and (
+            not isinstance(facility, str) or not re.fullmatch(r"[A-Za-z0-9_-]{1,64}", facility)
+        ):
+            raise AuthenticationError("Invalid facility scope")
+        if role == "facility" and facility is None:
+            raise AuthenticationError("Facility scope is required")
+        return Principal(
+            subject=subject, role=cast(Role, role), country_code=country_code, facility_id=facility
+        )
     except (jwt.InvalidTokenError, CountryNotConfigured) as exc:
         raise AuthenticationError("Invalid credentials") from exc

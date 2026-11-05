@@ -39,6 +39,7 @@ def test_database_policy_denies_other_country() -> None:
                 await conn.execute(text(f'GRANT USAGE ON SCHEMA "{schema}" TO "{role}"'))
                 await conn.execute(text(f'GRANT SELECT, INSERT ON scenarios TO "{role}"'))
                 await conn.execute(text(f'GRANT SELECT, INSERT ON scenario_runs TO "{role}"'))
+                await conn.execute(text(f'GRANT SELECT ON extraction_cache TO "{role}"'))
                 await conn.execute(
                     text(
                         "INSERT INTO scenarios (id, country_code, idempotency_key, "
@@ -55,12 +56,21 @@ def test_database_policy_denies_other_country() -> None:
                         "42, 90, 'queued', 0, now() FROM scenarios"
                     )
                 )
+                await conn.execute(
+                    text(
+                        "INSERT INTO extraction_cache (country_code, image_hash, schema_version, "
+                        "fields_json) VALUES ('KE', 'a', 1, '{}'), ('ZZ', 'b', 1, '{}')"
+                    )
+                )
                 await conn.execute(text(f'SET LOCAL ROLE "{role}"'))
                 assert (
                     await conn.execute(text("SELECT count(*) FROM scenarios"))
                 ).scalar_one() == 0
                 assert (
                     await conn.execute(text("SELECT count(*) FROM scenario_runs"))
+                ).scalar_one() == 0
+                assert (
+                    await conn.execute(text("SELECT count(*) FROM extraction_cache"))
                 ).scalar_one() == 0
                 await conn.execute(text("SELECT set_config('app.country_code', 'KE', true)"))
                 rows = (
@@ -73,6 +83,12 @@ def test_database_policy_denies_other_country() -> None:
                     .all()
                 )
                 assert runs == ["KE"]
+                cache = (
+                    (await conn.execute(text("SELECT country_code FROM extraction_cache")))
+                    .scalars()
+                    .all()
+                )
+                assert cache == ["KE"]
                 with pytest.raises(DBAPIError):
                     async with conn.begin_nested():
                         await conn.execute(
