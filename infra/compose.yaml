@@ -12,6 +12,28 @@ services:
         condition: service_healthy
       neo4j:
         condition: service_started
+      migrate:
+        condition: service_completed_successfully
+  migrate:
+    build:
+      context: ../apps/api
+    command: ["alembic", "upgrade", "head"]
+    environment:
+      DATABASE_URL: postgresql+asyncpg://postgres:postgres@postgres:5432/dawa
+    depends_on:
+      postgres:
+        condition: service_healthy
+  worker:
+    build:
+      context: ../apps/api
+    command: ["python", "-m", "dawa_api.jobs.worker", "--country", "KE"]
+    environment:
+      DATABASE_URL: postgresql+asyncpg://postgres:postgres@postgres:5432/dawa
+    depends_on:
+      postgres:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
   postgres:
     image: postgres:16
     environment:

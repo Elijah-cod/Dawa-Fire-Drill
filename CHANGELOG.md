@@ -19,3 +19,5 @@
 - Added optimizer tie handling, solver-based ordering and exclusion reasons, and corrected zero-demand stockout handling.
 - Added an illustrative multi-facility scenario calculation over synthetic records.
 - Added country-scoped persistent run records and a lease-fenced Postgres queue.
+- Connected scenario run endpoints and a worker, and added migration/worker services to local Compose.
+- Added an authenticated optimizer endpoint for illustrative synthetic candidates.

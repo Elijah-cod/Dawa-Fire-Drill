@@ -6,6 +6,8 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from sqlalchemy.ext.asyncio import AsyncEngine, async_sessionmaker, create_async_engine
 
+from dawa_api.jobs.router import router as jobs_router
+from dawa_api.optimization.router import router as optimization_router
 from dawa_api.scenarios.router import router as scenario_router
 from dawa_api.settings import Settings
 
@@ -35,6 +37,8 @@ def create_app(settings: Settings | None = None, engine: AsyncEngine | None = No
         lifespan=lifespan,
     )
     app.include_router(scenario_router, prefix=settings.api_prefix if settings else "/v1")
+    app.include_router(jobs_router, prefix=settings.api_prefix if settings else "/v1")
+    app.include_router(optimization_router, prefix=settings.api_prefix if settings else "/v1")
 
     @app.get("/health")
     def health() -> dict[str, str]:

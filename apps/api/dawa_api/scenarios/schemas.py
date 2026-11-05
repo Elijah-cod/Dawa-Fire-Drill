@@ -25,6 +25,7 @@ class ScenarioRead(BaseModel):
     country_code: str
     payload: dict[str, object]
     created_at: datetime
+    synthetic: bool = True
 
 
 class ScenarioPage(BaseModel):

@@ -74,6 +74,19 @@ class RunRepository:
             )
         ).scalar_one_or_none()
 
+    async def list_page(self, *, scenario_id: UUID, limit: int, offset: int) -> list[Run]:
+        if not 1 <= limit <= 100 or offset < 0:
+            raise ValueError("Invalid pagination")
+        await self._set_country()
+        result = await self.session.execute(
+            select(Run)
+            .where(Run.country_code == self.country_code, Run.scenario_id == scenario_id)
+            .order_by(Run.created_at, Run.id)
+            .limit(limit)
+            .offset(offset)
+        )
+        return list(result.scalars())
+
     async def claim_next(self) -> Run | None:
         await self._set_country()
         now = datetime.now(UTC)
