@@ -24,6 +24,6 @@
 
 ### Next
 
-1. Run the final staged checks and commit this foundation unit.
-2. Push the phase branch and open a PR once GitHub access is available; verify CI before merge.
+1. Push `phase/0-agent-rules` and open a PR once GitHub access is available; verify every CI job before merge.
+2. Review the Phase 0 PR and the remaining foundation requirements before declaring the phase complete.
 3. Begin Phase 1 design only after the Phase 0 PR and CI gate are reviewed.
