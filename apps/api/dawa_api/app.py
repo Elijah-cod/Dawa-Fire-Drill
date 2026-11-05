@@ -5,6 +5,8 @@ from contextlib import asynccontextmanager
 
 import httpx
 from fastapi import FastAPI
+from fastapi.responses import JSONResponse
+from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncEngine, async_sessionmaker, create_async_engine
 
 from dawa_api.capture.limits import CaptureBodyLimit
@@ -60,6 +62,17 @@ def create_app(settings: Settings | None = None, engine: AsyncEngine | None = No
             "status": "ok",
             "data_policy": "synthetic data; model outputs illustrative and unvalidated",
         }
+
+    @app.get("/ready")
+    async def ready() -> JSONResponse:
+        try:
+            async with app.state.sessions() as session:
+                await session.execute(text("SELECT 1"))
+        except Exception:
+            return JSONResponse(
+                status_code=503, content={"status": "unavailable", "database": "unavailable"}
+            )
+        return JSONResponse(content={"status": "ready", "database": "ready"})
 
     return app
 

@@ -28,3 +28,42 @@ def test_app_fails_fast_without_database_url(monkeypatch: pytest.MonkeyPatch) ->
     monkeypatch.delenv("DATABASE_URL", raising=False)
     with pytest.raises(ValidationError, match="DATABASE_URL"), TestClient(create_app()):
         pass
+
+
+def test_readiness_reports_database_failure_without_details(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("DATABASE_URL", "postgresql+asyncpg://localhost/dawa")
+    with TestClient(create_app()) as client:
+
+        class FailedSession:
+            async def __aenter__(self):
+                raise RuntimeError("sensitive database detail")
+
+            async def __aexit__(self, *args):
+                return False
+
+        client.app.state.sessions = lambda: FailedSession()
+        response = client.get("/ready")
+    assert response.status_code == 503
+    assert response.json() == {"status": "unavailable", "database": "unavailable"}
+
+
+def test_readiness_checks_database(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("DATABASE_URL", "postgresql+asyncpg://localhost/dawa")
+    with TestClient(create_app()) as client:
+
+        class ReadySession:
+            async def __aenter__(self):
+                return self
+
+            async def __aexit__(self, *args):
+                return False
+
+            async def execute(self, statement):
+                assert str(statement) == "SELECT 1"
+
+        client.app.state.sessions = lambda: ReadySession()
+        response = client.get("/ready")
+    assert response.status_code == 200
+    assert response.json() == {"status": "ready", "database": "ready"}
