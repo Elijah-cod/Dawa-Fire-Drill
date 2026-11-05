@@ -44,3 +44,4 @@
 - Added OpenAPI fuzz coverage for forecasts and aligned request validation and documented auth responses.
 - Required explicit synthetic-data attestations and human-review confirmation across applicable endpoints.
 - Added a multipage funding-graph rebuild regression test.
+- Added an explicit unconfigured adapter boundary for public calibration aggregates.
