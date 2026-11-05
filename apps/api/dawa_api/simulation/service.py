@@ -22,6 +22,6 @@ def simulate_stock(
     stockout_day = None
     for day in range(1, days + 1):
         stock = max(0, stock + deliveries.get(day, 0) - daily_demand)
-        if stock == 0 and stockout_day is None:
+        if daily_demand > 0 and stock == 0 and stockout_day is None:
             stockout_day = day
     return SimulationResult(closing_stock=stock, stockout_day=stockout_day)

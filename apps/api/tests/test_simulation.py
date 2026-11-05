@@ -10,6 +10,12 @@ def test_simulation_reports_first_stockout_day() -> None:
     assert result.closing_stock == 0
 
 
+def test_zero_demand_is_not_a_stockout() -> None:
+    assert (
+        simulate_stock(opening_stock=0, daily_demand=0, days=3, deliveries={}).stockout_day is None
+    )
+
+
 @given(
     opening=st.integers(min_value=0, max_value=1000),
     demand=st.integers(min_value=0, max_value=100),
