@@ -50,6 +50,16 @@ def test_synthetic_planning_endpoints_validate_inputs_and_roles(
         response = client.post("/v1/forecast", json=forecast, headers=bearer())
         assert response.status_code == 200 and response.json()["reorder_point"] == 60
         assert response.json()["synthetic"] is True
+        projection = client.post(
+            "/v1/forecast", json=forecast | {"stock_on_hand": 45}, headers=bearer()
+        )
+        assert projection.status_code == 200 and projection.json()["stockout_period"] == 3
+        assert (
+            client.post(
+                "/v1/forecast", json=forecast | {"stock_on_hand": True}, headers=bearer()
+            ).status_code
+            == 422
+        )
         assert (
             client.post(
                 "/v1/forecast", json=forecast | {"synthetic_attested": 1}, headers=bearer()

@@ -8,6 +8,7 @@ from dataclasses import dataclass
 class Forecast:
     average_demand: float
     reorder_point: float
+    stockout_period: int | None
 
 
 @dataclass(frozen=True)
@@ -27,10 +28,23 @@ def backtest(history: Sequence[int], *, window: int) -> list[BacktestStep]:
     ]
 
 
-def forecast(history: Sequence[int], *, lead_time_periods: int, safety_periods: int) -> Forecast:
+def forecast(
+    history: Sequence[int],
+    *,
+    lead_time_periods: int,
+    safety_periods: int,
+    stock_on_hand: int | None = None,
+) -> Forecast:
     if not history or any(value < 0 for value in history):
         raise ValueError("History must contain nonnegative observations")
     if lead_time_periods < 0 or safety_periods < 0:
         raise ValueError("Periods must be nonnegative")
+    if stock_on_hand is not None and stock_on_hand < 0:
+        raise ValueError("Stock on hand must be nonnegative")
     average = sum(history) / len(history)
-    return Forecast(average, average * (lead_time_periods + safety_periods))
+    stockout_period = None
+    if stock_on_hand == 0:
+        stockout_period = 0
+    elif stock_on_hand is not None and sum(history) > 0:
+        stockout_period = (stock_on_hand * len(history) + sum(history) - 1) // sum(history)
+    return Forecast(average, average * (lead_time_periods + safety_periods), stockout_period)
