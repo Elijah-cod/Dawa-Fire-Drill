@@ -15,6 +15,7 @@ from dawa_api.capture.router import router as capture_router
 from dawa_api.finance_flow.router import router as funding_router
 from dawa_api.forecasting.router import router as forecast_router
 from dawa_api.jobs.router import router as jobs_router
+from dawa_api.observability import RequestLogging
 from dawa_api.optimization.router import router as optimization_router
 from dawa_api.optimization.router import run_router as mitigation_router
 from dawa_api.redistribution.router import router as redistribution_router
@@ -57,6 +58,7 @@ def create_app(settings: Settings | None = None, engine: AsyncEngine | None = No
     app.include_router(forecast_router, prefix=settings.api_prefix if settings else "/v1")
     app.include_router(redistribution_router, prefix=settings.api_prefix if settings else "/v1")
     app.add_middleware(CaptureBodyLimit)
+    app.add_middleware(RequestLogging)
 
     @app.get("/health")
     def health() -> dict[str, str]:

@@ -67,3 +67,30 @@ def test_readiness_checks_database(monkeypatch: pytest.MonkeyPatch) -> None:
         response = client.get("/ready")
     assert response.status_code == 200
     assert response.json() == {"status": "ready", "database": "ready"}
+
+
+def test_request_id_and_structured_log_omit_query_and_token(
+    monkeypatch: pytest.MonkeyPatch, caplog
+) -> None:
+    import json
+    import logging
+    from uuid import UUID
+
+    monkeypatch.setenv("DATABASE_URL", "postgresql+asyncpg://localhost/dawa")
+    with (
+        caplog.at_level(logging.INFO, logger="dawa_api.requests"),
+        TestClient(create_app()) as client,
+    ):
+        response = client.get(
+            "/health?secret=do-not-log", headers={"Authorization": "Bearer do-not-log"}
+        )
+    request_id = response.headers["x-request-id"]
+    assert str(UUID(request_id)) == request_id
+    records = [
+        json.loads(record.message)
+        for record in caplog.records
+        if record.name == "dawa_api.requests"
+    ]
+    assert records[-1]["request_id"] == request_id
+    assert records[-1]["path"] == "/health" and records[-1]["status"] == 200
+    assert "do-not-log" not in str(records)

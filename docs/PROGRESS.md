@@ -66,3 +66,4 @@
 - Added a command for scheduled funding diagnostics and a rebuildable optional Neo4j projection; external scheduling and production graph configuration remain deployment work. Neo4j downtime is reported without undoing Postgres diagnostics.
 - Added database readiness checks. The rebuilt local Compose stack applied migrations and the funding command connected to the empty Neo4j graph; projection of a populated graph still needs integration verification.
 - Added run-linked mitigation ranking with stockout target validation. Costs, benefits, and feasibility remain caller-supplied assumptions; automatic candidate generation and effect modelling are still open.
+- Added request IDs and JSON request events with headers and query strings excluded. Deployment logging must enable the `dawa_api.requests` INFO logger.
