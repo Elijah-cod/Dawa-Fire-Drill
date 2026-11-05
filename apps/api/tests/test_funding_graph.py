@@ -115,3 +115,63 @@ def test_graph_rebuild_creates_composite_uniqueness_constraints():
     assert len(session.queries) == 2
     assert all("IF NOT EXISTS" in query and "IS UNIQUE" in query for query in session.queries)
     assert any("flow_id" in query and "name" in query for query in session.queries)
+
+
+def test_rebuild_projects_all_pages_and_closes_driver(monkeypatch):
+    from dawa_api.finance_flow import graph
+
+    records = [SimpleNamespace(id=uuid4()) for _ in range(101)]
+    projected = []
+
+    class Context:
+        async def __aenter__(self):
+            return self
+
+        async def __aexit__(self, *args):
+            return False
+
+    class Sessions:
+        def begin(self):
+            return Context()
+
+    class Repo:
+        def __init__(self, session, *, country_code):
+            assert country_code == "KE"
+
+        async def list_page(self, *, limit, offset):
+            return records[offset : offset + limit]
+
+    class Driver:
+        closed = False
+
+        async def verify_connectivity(self):
+            pass
+
+        def session(self):
+            return Context()
+
+        async def close(self):
+            self.closed = True
+
+    driver = Driver()
+
+    async def constraints(session):
+        pass
+
+    async def project(session, flow):
+        projected.append(flow.id)
+
+    monkeypatch.setattr(graph.AsyncGraphDatabase, "driver", lambda *args, **kwargs: driver)
+    monkeypatch.setattr(graph, "FundingRepository", Repo)
+    monkeypatch.setattr(graph, "ensure_constraints", constraints)
+    monkeypatch.setattr(graph, "project_flow", project)
+    assert (
+        asyncio.run(
+            graph.rebuild_country(
+                Sessions(), country_code="KE", uri="bolt://invalid", user="", password=""
+            )
+        )
+        is True
+    )
+    assert projected == [record.id for record in records]
+    assert driver.closed
