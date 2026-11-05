@@ -29,3 +29,4 @@
 - Added scenario-linked ranking of caller-supplied synthetic mitigation candidates.
 - Added request IDs and minimal structured request events without headers or query strings.
 - Added a rolling moving-average backtest exercised on synthetic consumption.
+- Enforced a shared Postgres-backed request limit for authenticated principals.

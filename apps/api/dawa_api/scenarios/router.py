@@ -8,6 +8,7 @@ from fastapi import APIRouter, Depends, Header, HTTPException, Query, Request, R
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
+from dawa_api.auth.limits import reserve_request
 from dawa_api.auth.service import AuthenticationError, Principal, authenticate_token
 from dawa_api.scenarios.schemas import ScenarioCreate, ScenarioPage, ScenarioRead
 from dawa_api.scenarios.service import ScenarioService
@@ -18,7 +19,7 @@ router = APIRouter(prefix="/scenarios", tags=["scenarios"])
 bearer = HTTPBearer(auto_error=False)
 
 
-def current_principal(
+async def current_principal(
     request: Request, credentials: Annotated[HTTPAuthorizationCredentials | None, Depends(bearer)]
 ) -> Principal:
     settings: Settings = request.app.state.settings
@@ -29,7 +30,7 @@ def current_principal(
             headers={"WWW-Authenticate": "Bearer"},
         )
     try:
-        return authenticate_token(
+        principal = authenticate_token(
             credentials.credentials,
             signing_secret=settings.supabase_jwt_secret,
             issuer=f"{settings.supabase_url.rstrip('/')}/auth/v1" if settings.supabase_url else "",
@@ -38,6 +39,13 @@ def current_principal(
         raise HTTPException(
             status_code=401, detail="Invalid credentials", headers={"WWW-Authenticate": "Bearer"}
         ) from exc
+    if not await reserve_request(
+        request.app.state.sessions, principal, limit=settings.rate_limit_per_minute
+    ):
+        raise HTTPException(
+            status_code=429, detail="Rate limit exceeded", headers={"Retry-After": "60"}
+        )
+    return principal
 
 
 def can_create(principal: Annotated[Principal, Depends(current_principal)]) -> Principal:

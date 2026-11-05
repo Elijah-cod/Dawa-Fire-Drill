@@ -1,6 +1,7 @@
 from datetime import UTC, datetime, timedelta
 
 import jwt
+import pytest
 from fastapi.testclient import TestClient
 
 from dawa_api.app import create_app
@@ -27,7 +28,13 @@ def bearer(role: str = "planner") -> dict[str, str]:
     return {"Authorization": f"Bearer {value}"}
 
 
-def test_synthetic_planning_endpoints_validate_inputs_and_roles() -> None:
+def test_synthetic_planning_endpoints_validate_inputs_and_roles(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    async def allow_request(*args: object, **kwargs: object) -> bool:
+        return True
+
+    monkeypatch.setattr("dawa_api.scenarios.router.reserve_request", allow_request)
     settings = Settings(
         DATABASE_URL="postgresql+asyncpg://localhost/dawa",
         supabase_url=BASE_URL,

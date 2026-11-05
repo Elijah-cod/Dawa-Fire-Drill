@@ -65,6 +65,17 @@ def test_scenario_api_auth_roles_idempotency_and_pagination() -> None:
             settings = Settings(
                 DATABASE_URL=url, supabase_url=BASE_URL, supabase_jwt_secret=SIGNING_MATERIAL
             )
+            limited_settings = Settings(
+                DATABASE_URL=url,
+                supabase_url=BASE_URL,
+                supabase_jwt_secret=SIGNING_MATERIAL,
+                rate_limit_per_minute=1,
+            )
+            with TestClient(create_app(settings=limited_settings, engine=engine)) as limited:
+                assert limited.get("/v1/scenarios", headers=bearer("planner")).status_code == 200
+                assert limited.get("/v1/scenarios", headers=bearer("planner")).status_code == 429
+            with TestClient(create_app(settings=limited_settings, engine=engine)) as another:
+                assert another.get("/v1/scenarios", headers=bearer("planner")).status_code == 429
             with TestClient(create_app(settings=settings, engine=engine)) as client:
                 assert client.get("/v1/scenarios").status_code == 401
                 body = {
