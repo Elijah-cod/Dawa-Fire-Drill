@@ -93,6 +93,25 @@ def test_synthetic_planning_endpoints_validate_inputs_and_roles(
         }
         response = client.post("/v1/redistribution/suggest", json=transfer, headers=bearer())
         assert response.status_code == 200 and response.json()["quantity"] == 7
+        matching = {
+            "synthetic_attested": True,
+            "commodity_id": "SYN-C01",
+            "sources": [{"facility_id": "SYN-KE-F001", "available": 10, "shelf_life_days": 30}],
+            "targets": [{"facility_id": "SYN-KE-F002", "needed": 7}],
+            "lanes": [{"source_id": "SYN-KE-F001", "target_id": "SYN-KE-F002", "distance_km": 5}],
+            "max_distance_km": 20,
+            "minimum_shelf_life_days": 14,
+        }
+        match = client.post("/v1/redistribution/match", json=matching, headers=bearer())
+        assert match.status_code == 200
+        assert match.json()["synthetic"] is True and match.json()["total_quantity"] == 7
+        invalid = matching | {
+            "sources": [{"facility_id": "real-facility", "available": 10, "shelf_life_days": 30}]
+        }
+        assert (
+            client.post("/v1/redistribution/match", json=invalid, headers=bearer()).status_code
+            == 422
+        )
         assert (
             client.post(
                 "/v1/redistribution/suggest", json=transfer, headers=bearer("facility")

@@ -52,3 +52,4 @@
 - Extended OpenAPI fuzz checks to optimization and aligned numeric and conflict responses with its contract.
 - Added a repeatable synthetic simulation timing benchmark.
 - Added a local Locust smoke workload for health, forecast, and optimization endpoints.
+- Added OR-Tools multi-facility redistribution matching with stock, distance, and shelf-life constraints.

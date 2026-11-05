@@ -21,3 +21,4 @@ def require_json_number(value: Any) -> Any:
 
 
 JsonInteger = Annotated[int, BeforeValidator(require_json_number)]
+JsonNumber = Annotated[float, BeforeValidator(require_json_number)]

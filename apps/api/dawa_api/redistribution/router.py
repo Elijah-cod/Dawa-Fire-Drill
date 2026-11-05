@@ -1,5 +1,6 @@
 """Authenticated synthetic redistribution feasibility endpoint."""
 
+import asyncio
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -7,6 +8,8 @@ from pydantic import BaseModel, Field
 
 from dawa_api.auth.service import Principal
 from dawa_api.countries.service import is_synthetic_facility
+from dawa_api.redistribution.application import match_synthetic
+from dawa_api.redistribution.matching_schemas import MatchRequest, MatchResponse, TransferRead
 from dawa_api.redistribution.service import FacilityStock, suggest_transfer
 from dawa_api.scenarios.router import can_plan
 from dawa_api.validation import ExplicitTrue
@@ -54,3 +57,26 @@ async def suggest(
     except ValueError as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
     return TransferResponse(quantity=result.quantity, reasons=result.reasons)
+
+
+@router.post(
+    "/match",
+    response_model=MatchResponse,
+    responses={503: {"description": "Redistribution solver could not prove an optimal result"}},
+)
+async def match(
+    data: MatchRequest, principal: Annotated[Principal, Depends(can_plan)]
+) -> MatchResponse:
+    try:
+        result = await asyncio.to_thread(match_synthetic, data, country_code=principal.country_code)
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+    except RuntimeError as exc:
+        raise HTTPException(
+            status_code=503, detail="Redistribution solver could not prove an optimal result"
+        ) from exc
+    return MatchResponse(
+        commodity_id=data.commodity_id,
+        transfers=[TransferRead.model_validate(item) for item in result.transfers],
+        total_quantity=result.total_quantity,
+    )
