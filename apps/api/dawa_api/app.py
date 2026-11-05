@@ -52,6 +52,12 @@ def create_app(settings: Settings | None = None, engine: AsyncEngine | None = No
             "Model outputs are illustrative and unvalidated."
         ),
         version="0.1.0",
+        responses={
+            400: {"description": "Malformed request"},
+            401: {"description": "Authentication required or invalid"},
+            403: {"description": "Insufficient role or scope"},
+            429: {"description": "Authenticated request limit exceeded"},
+        },
         lifespan=lifespan,
     )
     prefix = settings.api_prefix if settings else os.environ.get("API_PREFIX", "/v1")

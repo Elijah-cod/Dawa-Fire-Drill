@@ -52,6 +52,30 @@ def test_synthetic_planning_endpoints_validate_inputs_and_roles(
         assert response.json()["synthetic"] is True
         assert (
             client.post(
+                "/v1/forecast", json=forecast | {"synthetic_attested": 1}, headers=bearer()
+            ).status_code
+            == 422
+        )
+        assert (
+            client.post(
+                "/v1/forecast", json=forecast | {"safety_periods": False}, headers=bearer()
+            ).status_code
+            == 422
+        )
+        assert (
+            client.post(
+                "/v1/forecast", json=forecast | {"history": ["10"]}, headers=bearer()
+            ).status_code
+            == 422
+        )
+        assert (
+            client.post(
+                "/v1/forecast", json=forecast | {"lead_time_periods": 2.0}, headers=bearer()
+            ).status_code
+            == 200
+        )
+        assert (
+            client.post(
                 "/v1/forecast", json=forecast | {"synthetic_attested": False}, headers=bearer()
             ).status_code
             == 422

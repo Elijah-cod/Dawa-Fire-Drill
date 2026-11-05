@@ -79,3 +79,4 @@
 - Restricted country-wide scenario and run reads to planning roles. Facility-role users retain facility-scoped capture but do not yet have a facility-filtered scenario view.
 - Added synthetic district/commodity earliest-stockout summaries and a simulation version marker. Districts are invented groupings of facilities, not real administrative boundaries.
 - Added and locally exercised Neo4j uniqueness constraints for synthetic funding flow and stage nodes; concurrent graph rebuilds remain untested.
+- Added Schemathesis coverage for the forecast API. It exposed undocumented authentication and malformed-request responses and schema-inconsistent numeric coercion; these were corrected. The full suite passed 74 tests with one existing Starlette warning; Ruff, mypy, and Bandit passed. Other endpoints still need fuzz coverage. Next: strengthen finance-flow coverage and strict attestation validation.
