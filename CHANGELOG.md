@@ -23,3 +23,4 @@
 - Added an authenticated optimizer endpoint for illustrative synthetic candidates.
 - Added synthetic bin-card capture with image validation, provider limits/cache, and human confirmation.
 - Persisted versioned synthetic snapshots and prevented application-role edits to stored scenario inputs.
+- Added country-scoped funding records and stage-specific diagnostics, plus synthetic forecasting and redistribution endpoints.

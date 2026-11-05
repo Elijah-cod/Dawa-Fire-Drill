@@ -86,6 +86,34 @@ class SyntheticDataset(Base):
     )
 
 
+class FundingFlow(Base):
+    __tablename__ = "funding_flows"
+    __table_args__ = (
+        UniqueConstraint("country_code", "idempotency_key"),
+        UniqueConstraint("id", "country_code", name="uq_funding_id_country"),
+    )
+    id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid4)
+    country_code: Mapped[str] = mapped_column(String(2), nullable=False, index=True)
+    idempotency_key: Mapped[str] = mapped_column(String(128), nullable=False)
+    payload: Mapped[dict[str, Any]] = mapped_column(JSON, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=lambda: datetime.now(UTC)
+    )
+
+
+class FundingDiagnostic(Base):
+    __tablename__ = "funding_diagnostics"
+    __table_args__ = (
+        ForeignKeyConstraint(
+            ["flow_id", "country_code"], ["funding_flows.id", "funding_flows.country_code"]
+        ),
+    )
+    country_code: Mapped[str] = mapped_column(String(2), primary_key=True)
+    flow_id: Mapped[UUID] = mapped_column(primary_key=True)
+    as_of: Mapped[date] = mapped_column(Date, primary_key=True)
+    findings: Mapped[list[dict[str, Any]]] = mapped_column(JSON, nullable=False)
+
+
 class ExtractionCache(Base):
     __tablename__ = "extraction_cache"
     country_code: Mapped[str] = mapped_column(String(2), primary_key=True)

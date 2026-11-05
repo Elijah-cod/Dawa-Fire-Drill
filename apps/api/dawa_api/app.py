@@ -10,8 +10,11 @@ from sqlalchemy.ext.asyncio import AsyncEngine, async_sessionmaker, create_async
 from dawa_api.capture.limits import CaptureBodyLimit
 from dawa_api.capture.providers import configured_providers
 from dawa_api.capture.router import router as capture_router
+from dawa_api.finance_flow.router import router as funding_router
+from dawa_api.forecasting.router import router as forecast_router
 from dawa_api.jobs.router import router as jobs_router
 from dawa_api.optimization.router import router as optimization_router
+from dawa_api.redistribution.router import router as redistribution_router
 from dawa_api.scenarios.router import router as scenario_router
 from dawa_api.settings import Settings
 
@@ -46,6 +49,9 @@ def create_app(settings: Settings | None = None, engine: AsyncEngine | None = No
     app.include_router(jobs_router, prefix=settings.api_prefix if settings else "/v1")
     app.include_router(optimization_router, prefix=settings.api_prefix if settings else "/v1")
     app.include_router(capture_router, prefix=settings.api_prefix if settings else "/v1")
+    app.include_router(funding_router, prefix=settings.api_prefix if settings else "/v1")
+    app.include_router(forecast_router, prefix=settings.api_prefix if settings else "/v1")
+    app.include_router(redistribution_router, prefix=settings.api_prefix if settings else "/v1")
     app.add_middleware(CaptureBodyLimit)
 
     @app.get("/health")

@@ -2,7 +2,7 @@
 
 import asyncio
 import os
-from datetime import UTC, datetime, timedelta
+from datetime import UTC, date, datetime, timedelta
 from pathlib import Path
 from uuid import uuid4
 
@@ -16,6 +16,7 @@ from sqlalchemy.pool import NullPool
 
 from alembic import command
 from dawa_api.app import create_app
+from dawa_api.finance_flow.repository import refresh_diagnostics
 from dawa_api.jobs.worker import process_one
 from dawa_api.settings import Settings
 
@@ -138,6 +139,42 @@ def test_scenario_api_auth_roles_idempotency_and_pagination() -> None:
                 failure = client.get(f"/v1/runs/{failed.json()['id']}", headers=bearer("planner"))
                 assert failure.json()["status"] == "failed"
                 assert failure.json()["error"] == "Scenario run failed"
+                funding = {
+                    "synthetic_attested": True,
+                    "approved": 100,
+                    "released": 80,
+                    "procured": 50,
+                    "delivered": 40,
+                    "approved_on": "2026-01-01",
+                    "released_on": "2026-01-04",
+                    "procured_on": "2026-01-07",
+                    "delivered_on": "2026-01-09",
+                    "as_of": "2026-01-11",
+                }
+                funding_headers = bearer("planner") | {"Idempotency-Key": "synthetic-funding"}
+                flow = client.post("/v1/funding/flows", json=funding, headers=funding_headers)
+                assert flow.status_code == 201
+                assert (
+                    client.post(
+                        "/v1/funding/flows", json=funding, headers=funding_headers
+                    ).status_code
+                    == 200
+                )
+                trace = client.get(
+                    f"/v1/funding/flows/{flow.json()['id']}/trace?as_of=2026-01-11",
+                    headers=bearer("pharmacist"),
+                )
+                assert trace.status_code == 200 and trace.json()["bottlenecks"][0]["age_days"] == 10
+                flows = client.get("/v1/funding/flows?limit=1", headers=bearer("planner"))
+                assert flows.status_code == 200 and len(flows.json()["items"]) == 1
+                assert (
+                    await refresh_diagnostics(
+                        async_sessionmaker(engine, expire_on_commit=False),
+                        country_code="KE",
+                        as_of=date(2026, 1, 11),
+                    )
+                    == 1
+                )
         finally:
             await engine.dispose()
             async with admin.begin() as conn:

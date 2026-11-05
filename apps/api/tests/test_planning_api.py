@@ -1,0 +1,85 @@
+from datetime import UTC, datetime, timedelta
+
+import jwt
+from fastapi.testclient import TestClient
+
+from dawa_api.app import create_app
+from dawa_api.settings import Settings
+
+SIGNING_MATERIAL = "synthetic-planning-test-" * 3
+BASE_URL = "https://example.invalid"
+
+
+def bearer(role: str = "planner") -> dict[str, str]:
+    now = datetime.now(UTC)
+    value = jwt.encode(
+        {
+            "sub": "synthetic-user",
+            "iat": now,
+            "exp": now + timedelta(minutes=5),
+            "iss": f"{BASE_URL}/auth/v1",
+            "aud": "authenticated",
+            "app_metadata": {"role": role, "country_code": "KE", "facility_id": "SYN-KE-F001"},
+        },
+        SIGNING_MATERIAL,
+        algorithm="HS256",
+    )
+    return {"Authorization": f"Bearer {value}"}
+
+
+def test_synthetic_planning_endpoints_validate_inputs_and_roles() -> None:
+    settings = Settings(
+        DATABASE_URL="postgresql+asyncpg://localhost/dawa",
+        supabase_url=BASE_URL,
+        supabase_jwt_secret=SIGNING_MATERIAL,
+    )
+    with TestClient(create_app(settings=settings)) as client:
+        forecast = {
+            "synthetic_attested": True,
+            "history": [10, 20, 30],
+            "lead_time_periods": 2,
+            "safety_periods": 1,
+        }
+        response = client.post("/v1/forecast", json=forecast, headers=bearer())
+        assert response.status_code == 200 and response.json()["reorder_point"] == 60
+        assert response.json()["synthetic"] is True
+        assert (
+            client.post(
+                "/v1/forecast", json=forecast | {"synthetic_attested": False}, headers=bearer()
+            ).status_code
+            == 422
+        )
+        transfer = {
+            "synthetic_attested": True,
+            "source_id": "SYN-KE-F001",
+            "target_id": "SYN-KE-F002",
+            "available": 10,
+            "needed": 7,
+            "shelf_life_days": 30,
+            "minimum_shelf_life_days": 14,
+            "distance_km": 10,
+            "max_distance_km": 20,
+        }
+        response = client.post("/v1/redistribution/suggest", json=transfer, headers=bearer())
+        assert response.status_code == 200 and response.json()["quantity"] == 7
+        assert (
+            client.post(
+                "/v1/redistribution/suggest", json=transfer, headers=bearer("facility")
+            ).status_code
+            == 403
+        )
+        funding = {
+            "synthetic_attested": True,
+            "approved": 100,
+            "released": 80,
+            "procured": 50,
+            "delivered": 40,
+            "approved_on": "2026-01-01",
+            "released_on": "2026-01-04",
+            "procured_on": "2026-01-07",
+            "delivered_on": "2026-01-09",
+            "as_of": "2026-01-11",
+        }
+        response = client.post("/v1/funding/trace", json=funding, headers=bearer())
+        assert response.status_code == 200
+        assert [item["age_days"] for item in response.json()["bottlenecks"]] == [10, 7, 4]

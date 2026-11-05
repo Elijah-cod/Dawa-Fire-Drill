@@ -1,6 +1,7 @@
 """Load the allowed country adapters without accepting arbitrary paths."""
 
 import json
+import re
 from dataclasses import dataclass
 from importlib.resources import files
 
@@ -24,3 +25,9 @@ def get_country(code: str) -> CountryConfig:
     if not config["configured"]:
         raise CountryNotConfigured(f"Country {normalized} is a placeholder")
     return CountryConfig(code=config["code"], currency=config["currency"])
+
+
+def is_synthetic_facility(country_code: str, facility_id: str) -> bool:
+    return bool(
+        re.fullmatch(rf"SYN-{re.escape(country_code)}-F(?:00[1-9]|0[1-3][0-9]|040)", facility_id)
+    )

@@ -1,6 +1,5 @@
 """Synthetic-only capture with explicit human confirmation."""
 
-import re
 from hashlib import sha256
 from typing import Annotated
 from uuid import UUID
@@ -31,6 +30,7 @@ from dawa_api.capture.extraction import (
 from dawa_api.capture.images import ImageValidationError, validate_image
 from dawa_api.capture.repository import CaptureConflict, CaptureRepository, PostgresExtractionStore
 from dawa_api.capture.schemas import CaptureConfirmation, CapturePage, CaptureRead, StockEntryRead
+from dawa_api.countries.service import is_synthetic_facility
 from dawa_api.scenarios.router import current_principal, session_for_request
 from dawa_api.settings import Settings
 
@@ -39,12 +39,6 @@ router = APIRouter(prefix="/captures", tags=["capture"])
 
 def _can_access(principal: Principal, facility_id: str) -> bool:
     return principal.role != "facility" or principal.facility_id == facility_id
-
-
-def _is_demo_facility(country: str, facility_id: str) -> bool:
-    return bool(
-        re.fullmatch(rf"SYN-{re.escape(country)}-F(?:00[1-9]|0[1-3][0-9]|040)", facility_id)
-    )
 
 
 @router.post("", response_model=CaptureRead, status_code=status.HTTP_201_CREATED)
@@ -57,7 +51,7 @@ async def create_capture(
     file: Annotated[UploadFile, File()],
     key: Annotated[str, Header(alias="Idempotency-Key", min_length=1, max_length=128)],
 ) -> CaptureRead:
-    if not synthetic_attested or not _is_demo_facility(principal.country_code, facility_id):
+    if not synthetic_attested or not is_synthetic_facility(principal.country_code, facility_id):
         raise HTTPException(
             status_code=422, detail="Only attested synthetic demo images and facilities are allowed"
         )
@@ -123,7 +117,7 @@ async def list_captures(
     limit: Annotated[int, Query(ge=1, le=100)] = 20,
     offset: Annotated[int, Query(ge=0)] = 0,
 ) -> CapturePage:
-    if not _is_demo_facility(principal.country_code, facility_id) or not _can_access(
+    if not is_synthetic_facility(principal.country_code, facility_id) or not _can_access(
         principal, facility_id
     ):
         raise HTTPException(status_code=404, detail="Facility not found")

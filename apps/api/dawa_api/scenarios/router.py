@@ -46,6 +46,12 @@ def can_create(principal: Annotated[Principal, Depends(current_principal)]) -> P
     return principal
 
 
+def can_plan(principal: Annotated[Principal, Depends(current_principal)]) -> Principal:
+    if principal.role not in {"planner", "pharmacist", "admin"}:
+        raise HTTPException(status_code=403, detail="Insufficient role")
+    return principal
+
+
 async def session_for_request(request: Request) -> AsyncIterator[AsyncSession]:
     factory: async_sessionmaker[AsyncSession] = request.app.state.sessions
     async with factory() as session, session.begin():
