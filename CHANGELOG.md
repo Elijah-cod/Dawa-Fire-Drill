@@ -13,3 +13,4 @@
 - Began illustrative backend stock-flow and OR-Tools budget selection primitives.
 - Added initial funding diagnostics, forecasting baseline, and redistribution constraints.
 - Added Kenya configuration and a second-country adapter stub, with synthetic-data calibration TODOs.
+- Added scenario persistence, country-scoped repository operations, and an initial reversible migration.
