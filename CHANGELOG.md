@@ -50,3 +50,4 @@
 - Pinned generator and simulation versions when runs are queued, retaining the earlier simulation output format.
 - Bounded each optimizer solve and return a sanitized error when optimality cannot be proven.
 - Extended OpenAPI fuzz checks to optimization and aligned numeric and conflict responses with its contract.
+- Added a repeatable synthetic simulation timing benchmark.
