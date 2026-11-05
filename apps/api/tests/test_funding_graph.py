@@ -93,3 +93,25 @@ def test_job_runs_diagnostics_even_if_graph_is_unavailable(monkeypatch):
         )
     )
     assert result == {"diagnostics_created": 2, "graph_available": False, "synthetic": True}
+
+
+def test_graph_rebuild_creates_composite_uniqueness_constraints():
+    from dawa_api.finance_flow.graph import ensure_constraints
+
+    class Result:
+        async def consume(self):
+            return None
+
+    class Session:
+        def __init__(self):
+            self.queries = []
+
+        async def run(self, query):
+            self.queries.append(query)
+            return Result()
+
+    session = Session()
+    asyncio.run(ensure_constraints(session))
+    assert len(session.queries) == 2
+    assert all("IF NOT EXISTS" in query and "IS UNIQUE" in query for query in session.queries)
+    assert any("flow_id" in query and "name" in query for query in session.queries)

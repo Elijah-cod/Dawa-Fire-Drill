@@ -40,3 +40,4 @@
 - Added a synthetic seed, scenario, and mitigation curl demo script.
 - Restricted country-wide scenario and run retrieval to planning roles; facility users retain scoped capture access.
 - Added synthetic district/commodity stockout summaries and a simulation version marker.
+- Added Neo4j uniqueness constraints for funding flow and stage projection keys.

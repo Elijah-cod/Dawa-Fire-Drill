@@ -78,3 +78,4 @@
 - Added a curl demo for synthetic seeding, scenario execution, and ranking; a mocked command-flow test passes. Also exercised the full script against local services using an ephemeral synthetic signing key and token, without real credentials.
 - Restricted country-wide scenario and run reads to planning roles. Facility-role users retain facility-scoped capture but do not yet have a facility-filtered scenario view.
 - Added synthetic district/commodity earliest-stockout summaries and a simulation version marker. Districts are invented groupings of facilities, not real administrative boundaries.
+- Added and locally exercised Neo4j uniqueness constraints for synthetic funding flow and stage nodes; concurrent graph rebuilds remain untested.

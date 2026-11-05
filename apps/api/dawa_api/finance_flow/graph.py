@@ -40,6 +40,18 @@ async def project_flow(session: GraphSession, flow: FundingFlow) -> None:
     await session.run(_QUERY, country=flow.country_code, flow_id=str(flow.id), stages=stages)
 
 
+async def ensure_constraints(session: GraphSession) -> None:
+    for query in (
+        "CREATE CONSTRAINT dawa_funding_flow_key IF NOT EXISTS "
+        "FOR (flow:FundingFlow) REQUIRE (flow.country_code, flow.flow_id) IS UNIQUE",
+        "CREATE CONSTRAINT dawa_funding_stage_key IF NOT EXISTS "
+        "FOR (stage:FundingStage) "
+        "REQUIRE (stage.country_code, stage.flow_id, stage.name) IS UNIQUE",
+    ):
+        result = await session.run(query)
+        await result.consume()
+
+
 async def rebuild_country(
     sessions: async_sessionmaker[AsyncSession],
     *,
@@ -55,6 +67,7 @@ async def rebuild_country(
         await driver.verify_connectivity()
         offset = 0
         async with driver.session() as graph:
+            await ensure_constraints(graph)
             while True:
                 async with sessions.begin() as session:
                     flows = await FundingRepository(session, country_code=country_code).list_page(
