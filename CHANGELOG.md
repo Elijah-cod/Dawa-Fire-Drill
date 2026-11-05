@@ -31,3 +31,4 @@
 - Added a rolling moving-average backtest exercised on synthetic consumption.
 - Enforced a shared Postgres-backed request limit for authenticated principals.
 - Clarified the current partial calibration of synthetic data in the README and API documentation.
+- Fixed API prefix configuration when settings are loaded from the environment.

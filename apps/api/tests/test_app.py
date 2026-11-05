@@ -94,3 +94,12 @@ def test_request_id_and_structured_log_omit_query_and_token(
     assert records[-1]["request_id"] == request_id
     assert records[-1]["path"] == "/health" and records[-1]["status"] == 200
     assert "do-not-log" not in str(records)
+
+
+def test_environment_api_prefix_applies_to_openapi(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("DATABASE_URL", "postgresql+asyncpg://localhost/dawa")
+    monkeypatch.setenv("API_PREFIX", "/demo")
+    with TestClient(create_app()) as client:
+        paths = client.get("/openapi.json").json()["paths"]
+    assert "/demo/scenarios" in paths
+    assert "/v1/scenarios" not in paths

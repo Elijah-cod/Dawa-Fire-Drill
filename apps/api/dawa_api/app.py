@@ -1,5 +1,6 @@
 """ASGI entry point for the foundation API."""
 
+import os
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 
@@ -50,14 +51,15 @@ def create_app(settings: Settings | None = None, engine: AsyncEngine | None = No
         version="0.1.0",
         lifespan=lifespan,
     )
-    app.include_router(scenario_router, prefix=settings.api_prefix if settings else "/v1")
-    app.include_router(jobs_router, prefix=settings.api_prefix if settings else "/v1")
-    app.include_router(optimization_router, prefix=settings.api_prefix if settings else "/v1")
-    app.include_router(mitigation_router, prefix=settings.api_prefix if settings else "/v1")
-    app.include_router(capture_router, prefix=settings.api_prefix if settings else "/v1")
-    app.include_router(funding_router, prefix=settings.api_prefix if settings else "/v1")
-    app.include_router(forecast_router, prefix=settings.api_prefix if settings else "/v1")
-    app.include_router(redistribution_router, prefix=settings.api_prefix if settings else "/v1")
+    prefix = settings.api_prefix if settings else os.environ.get("API_PREFIX", "/v1")
+    app.include_router(scenario_router, prefix=prefix)
+    app.include_router(jobs_router, prefix=prefix)
+    app.include_router(optimization_router, prefix=prefix)
+    app.include_router(mitigation_router, prefix=prefix)
+    app.include_router(capture_router, prefix=prefix)
+    app.include_router(funding_router, prefix=prefix)
+    app.include_router(forecast_router, prefix=prefix)
+    app.include_router(redistribution_router, prefix=prefix)
     app.add_middleware(CaptureBodyLimit)
     app.add_middleware(RequestLogging)
 
