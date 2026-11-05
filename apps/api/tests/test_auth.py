@@ -1,0 +1,53 @@
+from datetime import UTC, datetime, timedelta
+
+import jwt
+import pytest
+
+from dawa_api.auth.service import AuthenticationError, authenticate_token
+
+TEST_SIGNING_MATERIAL = "synthetic-test-material-" * 3
+ISSUER = "https://example.invalid/auth/v1"
+
+
+def token(*, metadata: dict[str, str], expired: bool = False) -> str:
+    now = datetime.now(UTC)
+    return jwt.encode(
+        {
+            "sub": "synthetic-user",
+            "iat": now,
+            "exp": now + timedelta(seconds=-1 if expired else 60),
+            "iss": ISSUER,
+            "aud": "authenticated",
+            "app_metadata": metadata,
+            "user_metadata": {"role": "admin", "country_code": "ZZ"},
+        },
+        TEST_SIGNING_MATERIAL,
+        algorithm="HS256",
+    )
+
+
+def test_valid_signed_token_uses_server_controlled_metadata() -> None:
+    principal = authenticate_token(
+        token(metadata={"role": "planner", "country_code": "KE"}),
+        signing_secret=TEST_SIGNING_MATERIAL,
+        issuer=ISSUER,
+    )
+    assert (principal.subject, principal.role, principal.country_code) == (
+        "synthetic-user",
+        "planner",
+        "KE",
+    )
+
+
+@pytest.mark.parametrize(
+    "encoded",
+    [
+        token(metadata={"role": "planner", "country_code": "KE"}, expired=True),
+        token(metadata={"role": "owner", "country_code": "KE"}),
+        token(metadata={"role": "planner", "country_code": "ZZ"}),
+        "invalid",
+    ],
+)
+def test_invalid_expired_or_unauthorized_claims_are_rejected(encoded: str) -> None:
+    with pytest.raises(AuthenticationError):
+        authenticate_token(encoded, signing_secret=TEST_SIGNING_MATERIAL, issuer=ISSUER)

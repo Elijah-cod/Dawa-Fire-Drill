@@ -14,3 +14,4 @@
 - Added initial funding diagnostics, forecasting baseline, and redistribution constraints.
 - Added Kenya configuration and a second-country adapter stub, with synthetic-data calibration TODOs.
 - Added scenario persistence, country-scoped repository operations, and an initial reversible migration.
+- Added scenario row-level security and authenticated, role-checked scenario endpoints.

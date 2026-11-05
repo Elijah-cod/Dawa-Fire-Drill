@@ -3,7 +3,7 @@
 from typing import Any
 from uuid import UUID, uuid4
 
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -24,6 +24,7 @@ class ScenarioRepository:
     async def create(self, key: str, payload: dict[str, Any]) -> tuple[Scenario, bool]:
         if not key or len(key) > 128:
             raise ValueError("idempotency key must contain 1 to 128 characters")
+        await self._set_country()
         statement = (
             insert(Scenario)
             .values(
@@ -45,6 +46,7 @@ class ScenarioRepository:
         return scenario, inserted_id is not None
 
     async def get(self, scenario_id: UUID) -> Scenario | None:
+        await self._set_country()
         return (
             await self.session.execute(
                 select(Scenario).where(
@@ -56,6 +58,7 @@ class ScenarioRepository:
     async def list_page(self, *, limit: int, offset: int) -> list[Scenario]:
         if not 1 <= limit <= 100 or offset < 0:
             raise ValueError("limit must be 1 to 100 and offset must be nonnegative")
+        await self._set_country()
         result = await self.session.execute(
             select(Scenario)
             .where(Scenario.country_code == self.country_code)
@@ -64,3 +67,8 @@ class ScenarioRepository:
             .offset(offset)
         )
         return list(result.scalars())
+
+    async def _set_country(self) -> None:
+        await self.session.execute(
+            select(func.set_config("app.country_code", self.country_code, True))
+        )
