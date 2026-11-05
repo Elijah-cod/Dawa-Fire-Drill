@@ -1,6 +1,6 @@
 """Authenticated synthetic redistribution feasibility endpoint."""
 
-from typing import Annotated, Literal
+from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
@@ -9,12 +9,13 @@ from dawa_api.auth.service import Principal
 from dawa_api.countries.service import is_synthetic_facility
 from dawa_api.redistribution.service import FacilityStock, suggest_transfer
 from dawa_api.scenarios.router import can_plan
+from dawa_api.validation import ExplicitTrue
 
 router = APIRouter(prefix="/redistribution", tags=["redistribution"])
 
 
 class TransferRequest(BaseModel):
-    synthetic_attested: Literal[True]
+    synthetic_attested: ExplicitTrue
     source_id: str = Field(min_length=1, max_length=64)
     target_id: str = Field(min_length=1, max_length=64)
     available: int = Field(ge=0, le=1_000_000_000)

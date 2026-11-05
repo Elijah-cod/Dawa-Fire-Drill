@@ -103,6 +103,15 @@ def test_capture_requires_synthetic_attestation_and_human_confirmation() -> None
                 assert (
                     client.post(
                         "/v1/captures",
+                        data=body | {"synthetic_attested": "1"},
+                        files=file,
+                        headers=headers,
+                    ).status_code
+                    == 422
+                )
+                assert (
+                    client.post(
+                        "/v1/captures",
                         data=body | {"facility_id": "SYN-KE-F002"},
                         files=file,
                         headers=headers,

@@ -40,6 +40,7 @@ def test_optimizer_endpoint_respects_budget_and_roles(monkeypatch: pytest.Monkey
     )
     with TestClient(create_app(settings=settings)) as client:
         body = {
+            "synthetic_attested": True,
             "budget": 5,
             "candidates": [
                 {"id": "expensive", "cost": 5, "benefit": 7},
@@ -80,8 +81,24 @@ def test_optimizer_endpoint_respects_budget_and_roles(monkeypatch: pytest.Monkey
         assert (
             client.post(
                 "/v1/optimization/rank",
-                json={"budget": 0, "candidates": []},
+                json={"synthetic_attested": True, "budget": 0, "candidates": []},
                 headers=bearer("planner"),
             ).status_code
             == 200
+        )
+        assert (
+            client.post(
+                "/v1/optimization/rank",
+                json=body | {"synthetic_attested": 1},
+                headers=bearer("planner"),
+            ).status_code
+            == 422
+        )
+        assert (
+            client.post(
+                "/v1/optimization/rank",
+                json={"budget": 0, "candidates": []},
+                headers=bearer("planner"),
+            ).status_code
+            == 422
         )

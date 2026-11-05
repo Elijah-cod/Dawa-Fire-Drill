@@ -7,6 +7,7 @@ from uuid import UUID
 from pydantic import BaseModel, ConfigDict
 
 from dawa_api.capture.extraction import BinCardFields
+from dawa_api.validation import ExplicitTrue
 
 
 class CaptureRead(BaseModel):
@@ -24,7 +25,7 @@ class CaptureRead(BaseModel):
 
 class CaptureConfirmation(BaseModel):
     model_config = ConfigDict(strict=True, extra="forbid")
-    reviewed: Literal[True]
+    reviewed: ExplicitTrue
     fields: BinCardFields
 
 

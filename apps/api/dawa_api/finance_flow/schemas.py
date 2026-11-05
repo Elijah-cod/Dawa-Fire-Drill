@@ -1,14 +1,16 @@
 """Synthetic funding trace request and response contracts."""
 
 from datetime import date, datetime
-from typing import Any, Literal
+from typing import Any
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from dawa_api.validation import ExplicitTrue
+
 
 class FundingTraceRequest(BaseModel):
-    synthetic_attested: Literal[True]
+    synthetic_attested: ExplicitTrue
     approved: int = Field(ge=0, le=1_000_000_000)
     released: int = Field(ge=0, le=1_000_000_000)
     procured: int = Field(ge=0, le=1_000_000_000)

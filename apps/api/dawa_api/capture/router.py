@@ -47,11 +47,13 @@ async def create_capture(
     response: Response,
     principal: Annotated[Principal, Depends(current_principal)],
     facility_id: Annotated[str, Form(min_length=1, max_length=64)],
-    synthetic_attested: Annotated[bool, Form()],
+    synthetic_attested: Annotated[str, Form()],
     file: Annotated[UploadFile, File()],
     key: Annotated[str, Header(alias="Idempotency-Key", min_length=1, max_length=128)],
 ) -> CaptureRead:
-    if not synthetic_attested or not is_synthetic_facility(principal.country_code, facility_id):
+    if synthetic_attested != "true" or not is_synthetic_facility(
+        principal.country_code, facility_id
+    ):
         raise HTTPException(
             status_code=422, detail="Only attested synthetic demo images and facilities are allowed"
         )

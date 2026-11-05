@@ -42,3 +42,4 @@
 - Added synthetic district/commodity stockout summaries and a simulation version marker.
 - Added Neo4j uniqueness constraints for funding flow and stage projection keys.
 - Added OpenAPI fuzz coverage for forecasts and aligned request validation and documented auth responses.
+- Required explicit synthetic-data attestations and human-review confirmation across applicable endpoints.

@@ -14,6 +14,7 @@ from dawa_api.explain.service import explain_selection, explain_with_providers
 from dawa_api.jobs.repository import RunRepository
 from dawa_api.optimization.service import Candidate, select_actions
 from dawa_api.scenarios.router import can_create, session_for_request
+from dawa_api.validation import ExplicitTrue
 
 router = APIRouter(prefix="/optimization", tags=["optimization"])
 run_router = APIRouter(tags=["optimization"])
@@ -26,6 +27,7 @@ class CandidateInput(BaseModel):
 
 
 class RankRequest(BaseModel):
+    synthetic_attested: ExplicitTrue
     budget: int = Field(ge=0, le=1_000_000_000)
     candidates: list[CandidateInput] = Field(max_length=50)
     include_llm_explanation: bool = False
@@ -50,7 +52,7 @@ class RunCandidate(CandidateInput):
 
 
 class RunRankRequest(BaseModel):
-    synthetic_attested: Literal[True]
+    synthetic_attested: ExplicitTrue
     budget: int = Field(ge=0, le=1_000_000_000)
     candidates: list[RunCandidate] = Field(max_length=50)
     include_llm_explanation: bool = False
@@ -79,6 +81,7 @@ async def rank_run(
         raise HTTPException(status_code=422, detail="Candidate must target a recorded stockout")
     result = await rank(
         RankRequest(
+            synthetic_attested=True,
             budget=data.budget,
             candidates=data.candidates,
             include_llm_explanation=data.include_llm_explanation,

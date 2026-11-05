@@ -1,6 +1,6 @@
 """Authenticated synthetic baseline forecast endpoint."""
 
-from typing import Annotated, Any, Literal
+from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends
 from pydantic import BaseModel, ConfigDict, Field, field_validator
@@ -8,25 +8,19 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator
 from dawa_api.auth.service import Principal
 from dawa_api.forecasting.service import forecast
 from dawa_api.scenarios.router import can_plan
+from dawa_api.validation import ExplicitTrue
 
 router = APIRouter(tags=["forecasting"])
 
 
 class ForecastRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
-    synthetic_attested: Literal[True]
+    synthetic_attested: ExplicitTrue
     history: list[Annotated[int, Field(ge=0, le=1_000_000_000)]] = Field(
         min_length=1, max_length=120
     )
     lead_time_periods: int = Field(ge=0, le=120)
     safety_periods: int = Field(ge=0, le=120)
-
-    @field_validator("synthetic_attested", mode="before")
-    @classmethod
-    def explicit_attestation(cls, value: Any) -> Any:
-        if value is not True:
-            raise ValueError("Synthetic attestation must be true")
-        return value
 
     @field_validator("lead_time_periods", "safety_periods", mode="before")
     @classmethod
