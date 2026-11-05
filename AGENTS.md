@@ -23,9 +23,9 @@ Build a supply-chain stress-test simulator for essential medicines in Kenya, wit
 
 ## Git and progress
 
-- Use one `phase/<n>-<name>` branch and one PR to `main` per phase. Merge only after the test gate passes.
-- Commit each logical unit and at least after each passing test group, using Conventional Commits (`feat`, `fix`, `test`, `docs`, `chore`, `refactor`, `ci`, `perf`). Push after each commit. If a push fails, report it and do not retry repeatedly.
-- Update `CHANGELOG.md`, relevant docs, and `docs/PROGRESS.md` in the same PR. After every step, record what changed, tests run and results, and what comes next in `docs/PROGRESS.md`.
+- Use one `phase/<n>-<name>` local branch per phase. Do not push, open PRs, or merge until the user explicitly says the project is ready for production and authorizes those actions.
+- Commit each logical unit and at least after each passing test group, using Conventional Commits (`feat`, `fix`, `test`, `docs`, `chore`, `refactor`, `ci`, `perf`). Keep commits local until that authorization.
+- Update `CHANGELOG.md`, relevant docs, and `docs/PROGRESS.md` with code changes. After every step, record what changed, tests run and results, and what comes next in `docs/PROGRESS.md`.
 - End each phase with passing checks and short demo notes in `docs/phases/<n>.md`.
 
 ## Stack
@@ -36,7 +36,7 @@ Build a supply-chain stress-test simulator for essential medicines in Kenya, wit
 
 ## Test gate for every step
 
-A step is complete only if new code has tests in the same step, the full suite passes locally and in CI, lint and type checks pass, docs are updated, and `docs/PROGRESS.md` records results. Never skip, delete, or weaken a failing test to advance.
+A local step is complete only if new code has tests in the same step, the full local suite passes, lint and type checks pass, docs are updated, and `docs/PROGRESS.md` records results. Run the CI gate before any PR or merge once publishing is authorized. Never skip, delete, or weaken a failing test to advance.
 
 - Backend as relevant: unit tests; at least 85% coverage targets for simulation, optimization, forecasting, and finance flow; Hypothesis invariants; Alembic up/down; real Postgres repository tests; API integration and Schemathesis; auth and role permissions; upload validation; idempotency and pagination.
 - LLM: mocked providers and recorded fixtures only in CI; schema, retry, call-cap, cache, and failure-fallback tests.

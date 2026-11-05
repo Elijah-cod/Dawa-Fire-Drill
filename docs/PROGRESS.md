@@ -18,12 +18,11 @@
 - Docker Desktop started. `docker compose -f infra/compose.yaml up -d --build` completed, Postgres became healthy, and `curl --fail http://localhost:8000/health` returned the documented synthetic-data notice. The test containers were stopped with `docker compose down`.
 - Web tooling: after adding active TypeScript ESLint rules and a patched `minimatch` override, `npm run lint`, `npm run typecheck`, `npm test`, and `npm run format:check` exited 0. Vitest found no tests because frontend implementation is gated. `npm audit --audit-level=low` found zero vulnerabilities.
 - Python security: Bandit passed. `pip-audit` found a vulnerable pytest 8.4.2, so the lockfile was updated to pytest 9.2.0. A fresh `pip-audit` found no known vulnerabilities; it skipped the local `dawa-api` package because it is not published to PyPI.
-- A local pre-commit run passed both Ruff and mypy hooks. GitHub Actions CI has not run because the branch could not be pushed.
-- GitHub host resolution failed on `git remote show origin` and the post-commit push. A prior escalated push request was rejected. Per the working agreement, the push has not been retried repeatedly. No PR or CI result is available.
-- Phase 0 test gate has **not** passed. Do not merge or call this phase complete.
+- A local pre-commit run passed both Ruff and mypy hooks. GitHub Actions CI has not run.
+- The user has directed that nothing be pushed until they are ready for production. Do not push, open a PR, or merge without explicit authorization. Earlier GitHub host resolution failures no longer block local work.
+- The local Phase 0 checks passed. The publication gate (PR and CI) remains pending by user choice.
 
 ### Next
 
-1. Push `phase/0-agent-rules` and open a PR once GitHub access is available; verify every CI job before merge.
-2. Review the Phase 0 PR and the remaining foundation requirements before declaring the phase complete.
-3. Begin Phase 1 design only after the Phase 0 PR and CI gate are reviewed.
+1. Continue Phase 1 design locally on its own phase branch, respecting the design review checkpoint.
+2. Keep commits local. When the user explicitly authorizes publication for production, push phase branches, open PRs, and verify every CI job before merge.
