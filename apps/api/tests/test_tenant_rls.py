@@ -38,6 +38,7 @@ def test_database_policy_denies_other_country() -> None:
                 await conn.run_sync(migrate)
                 await conn.execute(text(f'GRANT USAGE ON SCHEMA "{schema}" TO "{role}"'))
                 await conn.execute(text(f'GRANT SELECT, INSERT ON scenarios TO "{role}"'))
+                await conn.execute(text(f'GRANT SELECT, INSERT ON scenario_runs TO "{role}"'))
                 await conn.execute(
                     text(
                         "INSERT INTO scenarios (id, country_code, idempotency_key, "
@@ -46,15 +47,32 @@ def test_database_policy_denies_other_country() -> None:
                         "(gen_random_uuid(), 'ZZ', 'b', '{}', now())"
                     )
                 )
+                await conn.execute(
+                    text(
+                        "INSERT INTO scenario_runs (id, country_code, scenario_id, "
+                        "idempotency_key, seed, horizon_days, status, attempts, created_at) "
+                        "SELECT gen_random_uuid(), country_code, id, country_code, "
+                        "42, 90, 'queued', 0, now() FROM scenarios"
+                    )
+                )
                 await conn.execute(text(f'SET LOCAL ROLE "{role}"'))
                 assert (
                     await conn.execute(text("SELECT count(*) FROM scenarios"))
+                ).scalar_one() == 0
+                assert (
+                    await conn.execute(text("SELECT count(*) FROM scenario_runs"))
                 ).scalar_one() == 0
                 await conn.execute(text("SELECT set_config('app.country_code', 'KE', true)"))
                 rows = (
                     (await conn.execute(text("SELECT country_code FROM scenarios"))).scalars().all()
                 )
                 assert rows == ["KE"]
+                runs = (
+                    (await conn.execute(text("SELECT country_code FROM scenario_runs")))
+                    .scalars()
+                    .all()
+                )
+                assert runs == ["KE"]
                 with pytest.raises(DBAPIError):
                     async with conn.begin_nested():
                         await conn.execute(

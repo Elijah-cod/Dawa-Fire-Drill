@@ -18,3 +18,4 @@
 - Added a reproducible synthetic demo generator with documented calibration limits.
 - Added optimizer tie handling, solver-based ordering and exclusion reasons, and corrected zero-demand stockout handling.
 - Added an illustrative multi-facility scenario calculation over synthetic records.
+- Added country-scoped persistent run records and a lease-fenced Postgres queue.
