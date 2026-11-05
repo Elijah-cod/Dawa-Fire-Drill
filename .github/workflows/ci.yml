@@ -1,0 +1,60 @@
+name: CI
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  secrets:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: gitleaks/gitleaks-action@v2
+  api:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+      - run: uv sync --frozen --extra dev
+        working-directory: apps/api
+      - run: uv run --frozen ruff check .
+        working-directory: apps/api
+      - run: uv run --frozen mypy dawa_api
+        working-directory: apps/api
+      - run: uv run --frozen pytest -q
+        working-directory: apps/api
+      - run: uv run --frozen bandit -r dawa_api -q
+        working-directory: apps/api
+      - run: uv run --frozen pip-audit
+        working-directory: apps/api
+  web-tooling:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: apps/web/package-lock.json
+      - run: npm ci
+        working-directory: apps/web
+      - run: npm run lint
+        working-directory: apps/web
+      - run: npm run typecheck
+        working-directory: apps/web
+      - run: npm run format:check
+        working-directory: apps/web
+      - run: npm test
+        working-directory: apps/web
+      - run: npm audit --audit-level=low
+        working-directory: apps/web
+  docs-quickstart:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: docker compose -f infra/compose.yaml up -d --build
+      - run: curl --fail --retry 20 --retry-delay 3 --retry-connrefused http://localhost:8000/health
+      - if: always()
+        run: docker compose -f infra/compose.yaml down -v

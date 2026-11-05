@@ -1,0 +1,15 @@
+repos:
+  - repo: local
+    hooks:
+      - id: ruff
+        name: ruff
+        entry: apps/api/.venv/bin/ruff check apps/api
+        language: system
+        pass_filenames: false
+        files: ^apps/api/.*\.py$
+      - id: mypy
+        name: mypy
+        entry: apps/api/.venv/bin/mypy --config-file apps/api/pyproject.toml apps/api/dawa_api
+        language: system
+        pass_filenames: false
+        files: ^apps/api/.*\.py$
