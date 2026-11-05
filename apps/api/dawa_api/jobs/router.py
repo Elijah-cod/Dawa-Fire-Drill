@@ -8,8 +8,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from dawa_api.auth.service import Principal
 from dawa_api.jobs.repository import RunConflict, RunRepository
-from dawa_api.jobs.schemas import RunCreate, RunPage, RunRead
-from dawa_api.scenarios.router import can_create, current_principal, session_for_request
+from dawa_api.jobs.schemas import RunComparison, RunCreate, RunPage, RunRead
+from dawa_api.scenarios.router import can_create, can_plan, current_principal, session_for_request
 
 router = APIRouter(tags=["runs"])
 
@@ -35,6 +35,24 @@ async def submit_run(
         raise HTTPException(status_code=409, detail=str(exc)) from exc
     response.status_code = 202 if created else 200
     return RunRead.model_validate(run)
+
+
+@router.get("/runs/compare", response_model=RunComparison)
+async def compare_runs(
+    left: UUID,
+    right: UUID,
+    principal: Annotated[Principal, Depends(can_plan)],
+    session: Annotated[AsyncSession, Depends(session_for_request)],
+) -> RunComparison:
+    if left == right:
+        raise HTTPException(status_code=422, detail="Choose two different runs")
+    repository = RunRepository(session, country_code=principal.country_code)
+    first, second = await repository.get(left), await repository.get(right)
+    if first is None or second is None:
+        raise HTTPException(status_code=404, detail="Run not found")
+    if first.status != "succeeded" or second.status != "succeeded":
+        raise HTTPException(status_code=409, detail="Both runs must have succeeded")
+    return RunComparison(left=RunRead.model_validate(first), right=RunRead.model_validate(second))
 
 
 @router.get("/runs/{run_id}", response_model=RunRead)

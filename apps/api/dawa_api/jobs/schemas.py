@@ -32,3 +32,10 @@ class RunPage(BaseModel):
     items: list[RunRead]
     limit: int
     offset: int
+
+
+class RunComparison(BaseModel):
+    synthetic: bool = True
+    notice: str = "Illustrative and unvalidated; compare runs only under their stated assumptions"
+    left: RunRead
+    right: RunRead

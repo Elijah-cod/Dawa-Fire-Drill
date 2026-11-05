@@ -72,3 +72,4 @@
 - Clarified the README and API documentation to identify the facility-level mix as the only currently aggregate-guided component. Other synthetic assumptions still require public-source calibration.
 - Corrected router registration to honor `API_PREFIX` from the environment.
 - Added a deterministic fallback explanation of solver selections. LLM-generated explanations remain outstanding.
+- Added country-scoped, side-by-side retrieval of two completed runs for planner and pharmacist roles.

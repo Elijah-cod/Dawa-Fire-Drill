@@ -163,6 +163,30 @@ def test_scenario_api_auth_roles_idempotency_and_pagination() -> None:
                     headers=bearer("planner"),
                 )
                 assert runs.status_code == 200 and len(runs.json()["items"]) == 1
+                comparison_run = client.post(
+                    f"/v1/scenarios/{created.json()['id']}/runs",
+                    json={"seed": 7, "horizon_days": 90},
+                    headers=bearer("planner") | {"Idempotency-Key": "comparison-job"},
+                )
+                comparison_id = comparison_run.json()["id"]
+                assert client.get(
+                    f"/v1/runs/compare?left={run_id}&right={comparison_id}",
+                    headers=bearer("planner"),
+                ).status_code == 409
+                assert await process_one(async_sessionmaker(engine, expire_on_commit=False), "KE")
+                comparison = client.get(
+                    f"/v1/runs/compare?left={run_id}&right={comparison_id}",
+                    headers=bearer("planner"),
+                )
+                assert comparison.status_code == 200
+                assert comparison.json()["left"]["id"] == run_id
+                assert comparison.json()["right"]["id"] == comparison_id
+                assert client.get(
+                    f"/v1/runs/compare?left={run_id}&right={run_id}", headers=bearer("planner")
+                ).status_code == 422
+                assert client.get(
+                    f"/v1/runs/compare?left={run_id}&right={uuid4()}", headers=bearer("planner")
+                ).status_code == 404
                 failed = client.post(
                     f"/v1/scenarios/{created.json()['id']}/runs",
                     json={"seed": 42, "horizon_days": 90},
