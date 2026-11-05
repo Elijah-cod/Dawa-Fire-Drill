@@ -45,3 +45,4 @@
 - Required explicit synthetic-data attestations and human-review confirmation across applicable endpoints.
 - Added a multipage funding-graph rebuild regression test.
 - Added an explicit unconfigured adapter boundary for public calibration aggregates.
+- Extended non-superuser country isolation tests to funding records and request-limit counters.

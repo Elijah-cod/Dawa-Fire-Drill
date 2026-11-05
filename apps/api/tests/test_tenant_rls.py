@@ -45,6 +45,10 @@ def test_database_policy_denies_other_country() -> None:
                 await conn.execute(
                     text(f'GRANT SELECT, UPDATE, DELETE ON synthetic_datasets TO "{role}"')
                 )
+                for table in ("funding_flows", "funding_diagnostics", "request_limits"):
+                    await conn.execute(
+                        text(f'GRANT SELECT, INSERT, UPDATE, DELETE ON {table} TO "{role}"')
+                    )
                 await conn.execute(
                     text(
                         "INSERT INTO scenarios (id, country_code, idempotency_key, "
@@ -74,6 +78,27 @@ def test_database_policy_denies_other_country() -> None:
                         "VALUES ('KE', 1, 1, '{}', now()), ('ZZ', 1, 1, '{}', now())"
                     )
                 )
+                await conn.execute(
+                    text(
+                        "INSERT INTO funding_flows (id, country_code, idempotency_key, "
+                        "payload, created_at) "
+                        "VALUES (gen_random_uuid(), 'KE', 'a', '{}', now()), "
+                        "(gen_random_uuid(), 'ZZ', 'b', '{}', now())"
+                    )
+                )
+                await conn.execute(
+                    text(
+                        "INSERT INTO funding_diagnostics (country_code, flow_id, as_of, findings) "
+                        "SELECT country_code, id, '2025-01-01', '[]' FROM funding_flows"
+                    )
+                )
+                await conn.execute(
+                    text(
+                        "INSERT INTO request_limits (country_code, subject_hash, "
+                        "window_start, calls) "
+                        "VALUES ('KE', 'a', now(), 1), ('ZZ', 'b', now(), 1)"
+                    )
+                )
                 await conn.execute(text(f'SET LOCAL ROLE "{role}"'))
                 assert (
                     await conn.execute(text("SELECT count(*) FROM scenarios"))
@@ -87,6 +112,10 @@ def test_database_policy_denies_other_country() -> None:
                 assert (
                     await conn.execute(text("SELECT count(*) FROM synthetic_datasets"))
                 ).scalar_one() == 0
+                for table in ("funding_flows", "funding_diagnostics", "request_limits"):
+                    assert (
+                        await conn.execute(text(f"SELECT count(*) FROM {table}"))
+                    ).scalar_one() == 0
                 await conn.execute(text("SELECT set_config('app.country_code', 'KE', true)"))
                 rows = (
                     (await conn.execute(text("SELECT country_code FROM scenarios"))).scalars().all()
@@ -116,6 +145,28 @@ def test_database_policy_denies_other_country() -> None:
                     .all()
                 )
                 assert datasets == ["KE"]
+                for table in ("funding_flows", "funding_diagnostics", "request_limits"):
+                    countries = (
+                        (await conn.execute(text(f"SELECT country_code FROM {table}")))
+                        .scalars()
+                        .all()
+                    )
+                    assert countries == ["KE"]
+                changed_funding = await conn.execute(
+                    text("UPDATE funding_flows SET payload = '{}' RETURNING id")
+                )
+                assert changed_funding.scalars().all() == []
+                deleted_funding = await conn.execute(text("DELETE FROM funding_flows RETURNING id"))
+                assert deleted_funding.scalars().all() == []
+                with pytest.raises(DBAPIError):
+                    async with conn.begin_nested():
+                        await conn.execute(
+                            text(
+                                "INSERT INTO request_limits (country_code, subject_hash, "
+                                "window_start, calls) "
+                                "VALUES ('ZZ', 'forbidden', now(), 1)"
+                            )
+                        )
                 changed = await conn.execute(
                     text("UPDATE synthetic_datasets SET data = '{}' RETURNING seed")
                 )
