@@ -67,3 +67,4 @@
 - Added database readiness checks. The rebuilt local Compose stack applied migrations and the funding command connected to the empty Neo4j graph; projection of a populated graph still needs integration verification.
 - Added run-linked mitigation ranking with stockout target validation. Costs, benefits, and feasibility remain caller-supplied assumptions; automatic candidate generation and effect modelling are still open.
 - Added request IDs and JSON request events with headers and query strings excluded. Deployment logging must enable the `dawa_api.requests` INFO logger.
+- Added a rolling moving-average backtest and a test using generated synthetic consumption; this does not establish model validity.
