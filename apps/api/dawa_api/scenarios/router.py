@@ -41,7 +41,10 @@ async def current_principal(
             )
         else:
             principal = await authenticate_jwks(
-                token, issuer=issuer, client=request.app.state.http_client
+                token,
+                issuer=issuer,
+                client=request.app.state.http_client,
+                cache=request.app.state.jwks_cache,
             )
     except (AuthenticationError, jwt.PyJWTError) as exc:
         raise HTTPException(

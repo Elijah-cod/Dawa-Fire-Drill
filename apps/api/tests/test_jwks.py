@@ -93,3 +93,70 @@ def test_api_accepts_asymmetric_token(monkeypatch):
             },
         )
         assert response.status_code == 200
+
+
+def test_jwks_cache_limits_fetches_and_expires_revoked_keys():
+    from dawa_api.auth.jwks import JwksCache
+
+    async def check():
+        key = ec.generate_private_key(ec.SECP256R1())
+        public = json.loads(jwt.algorithms.ECAlgorithm.to_jwk(key.public_key()))
+        public.update({"kid": "cached-key", "alg": "ES256", "use": "sig"})
+        now = datetime.now(UTC)
+        claims = {
+            "sub": "synthetic-user",
+            "iat": now,
+            "exp": now + timedelta(minutes=5),
+            "iss": "https://example.invalid/auth/v1",
+            "aud": "authenticated",
+            "app_metadata": {"role": "planner", "country_code": "KE"},
+        }
+        token = jwt.encode(claims, key, algorithm="ES256", headers={"kid": "cached-key"})
+        clock = [0.0]
+        calls = []
+
+        async def handle(request):
+            calls.append(request)
+            return httpx.Response(200, json={"keys": [public] if len(calls) == 1 else []})
+
+        cache = JwksCache(ttl_seconds=60, clock=lambda: clock[0])
+        async with httpx.AsyncClient(transport=httpx.MockTransport(handle)) as client:
+            await asyncio.gather(
+                *[
+                    authenticate_jwks(token, issuer=claims["iss"], client=client, cache=cache)
+                    for _ in range(3)
+                ]
+            )
+            assert len(calls) == 1
+            clock[0] = 61.0
+            with pytest.raises(AuthenticationError):
+                await authenticate_jwks(token, issuer=claims["iss"], client=client, cache=cache)
+            assert len(calls) == 2
+
+    asyncio.run(check())
+
+
+def test_expired_jwks_cache_does_not_serve_keys_during_outage():
+    from dawa_api.auth.jwks import JwksCache
+
+    async def check():
+        clock = [0.0]
+        calls = []
+
+        async def handle(request):
+            calls.append(request)
+            if len(calls) == 1:
+                return httpx.Response(200, json={"keys": [{"kid": "synthetic"}]})
+            raise httpx.ConnectError("offline", request=request)
+
+        cache = JwksCache(ttl_seconds=60, clock=lambda: clock[0])
+        async with httpx.AsyncClient(transport=httpx.MockTransport(handle)) as client:
+            assert await cache.get("https://example.invalid/auth/v1", client)
+            clock[0] = 59.0
+            assert await cache.get("https://example.invalid/auth/v1", client)
+            assert len(calls) == 1
+            clock[0] = 60.0
+            with pytest.raises(httpx.ConnectError):
+                await cache.get("https://example.invalid/auth/v1", client)
+
+    asyncio.run(check())

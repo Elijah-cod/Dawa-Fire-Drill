@@ -59,3 +59,4 @@
 - Added paginated, country-scoped synthetic facility and commodity catalog endpoints.
 - Updated the local quickstart and CI smoke checks for readiness and synthetic seeding.
 - Added an illustrative stockout-period forecast when synthetic stock on hand is supplied.
+- Added a bounded per-instance Supabase JWKS cache with fail-closed expiry.

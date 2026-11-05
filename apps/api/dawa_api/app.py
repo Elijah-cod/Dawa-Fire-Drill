@@ -10,6 +10,7 @@ from fastapi.responses import JSONResponse
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncEngine, async_sessionmaker, create_async_engine
 
+from dawa_api.auth.jwks import JwksCache
 from dawa_api.capture.limits import CaptureBodyLimit
 from dawa_api.capture.providers import configured_providers
 from dawa_api.capture.router import router as capture_router
@@ -34,6 +35,7 @@ def create_app(settings: Settings | None = None, engine: AsyncEngine | None = No
         resolved = settings or Settings()
         database = engine or create_async_engine(resolved.database_url)
         app.state.settings = resolved
+        app.state.jwks_cache = JwksCache()
         app.state.sessions = async_sessionmaker(database, expire_on_commit=False)
         try:
             async with httpx.AsyncClient(timeout=20.0, follow_redirects=False) as client:
