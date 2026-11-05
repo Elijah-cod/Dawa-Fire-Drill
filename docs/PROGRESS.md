@@ -71,3 +71,4 @@
 - Added an atomic Postgres-backed fixed-minute rate limit shared between application instances for authenticated principals. Invalid or unauthenticated traffic still needs edge-level protection.
 - Clarified the README and API documentation to identify the facility-level mix as the only currently aggregate-guided component. Other synthetic assumptions still require public-source calibration.
 - Corrected router registration to honor `API_PREFIX` from the environment.
+- Added a deterministic fallback explanation of solver selections. LLM-generated explanations remain outstanding.

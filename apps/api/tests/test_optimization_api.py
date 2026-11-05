@@ -57,6 +57,8 @@ def test_optimizer_endpoint_respects_budget_and_roles(monkeypatch: pytest.Monkey
         assert data["selected_ids"] == ["cheap"] and data["total_cost"] == 3
         assert data["excluded_reasons"]["expensive"] == "not_selected_by_optimal_set"
         assert data["synthetic"] is True
+        assert "illustrative and unvalidated" in data["explanation"].lower()
+        assert "cheap" in data["explanation"]
         assert (
             client.post(
                 "/v1/optimization/rank",

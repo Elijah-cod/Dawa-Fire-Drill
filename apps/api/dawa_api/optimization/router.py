@@ -9,6 +9,7 @@ from pydantic import BaseModel, Field
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from dawa_api.auth.service import Principal
+from dawa_api.explain.service import explain_selection
 from dawa_api.jobs.repository import RunRepository
 from dawa_api.optimization.service import Candidate, select_actions
 from dawa_api.scenarios.router import can_create, session_for_request
@@ -37,6 +38,7 @@ class RankResponse(BaseModel):
     total_cost: int
     remaining_budget: int
     cut_line: int
+    explanation: str
 
 
 class RunCandidate(CandidateInput):
@@ -95,4 +97,5 @@ async def rank(
         total_cost=result.total_cost,
         remaining_budget=data.budget - result.total_cost,
         cut_line=len(result.selected_ids),
+        explanation=explain_selection(result, budget=data.budget).text,
     )
