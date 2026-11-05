@@ -1,0 +1,1 @@
+"""Country-specific configuration adapters."""

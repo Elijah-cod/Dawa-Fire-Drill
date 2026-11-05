@@ -1,0 +1,26 @@
+"""Load the allowed country adapters without accepting arbitrary paths."""
+
+import json
+from dataclasses import dataclass
+from importlib.resources import files
+
+
+class CountryNotConfigured(ValueError):
+    """A country is unknown or still a placeholder."""
+
+
+@dataclass(frozen=True)
+class CountryConfig:
+    code: str
+    currency: str
+
+
+def get_country(code: str) -> CountryConfig:
+    normalized = code.upper()
+    if normalized not in {"KE", "ZZ"}:
+        raise CountryNotConfigured(f"Country {normalized} is not configured")
+    resource = files(f"dawa_api.countries.{normalized.lower()}").joinpath("config.yaml")
+    config = json.loads(resource.read_text(encoding="utf-8"))
+    if not config["configured"]:
+        raise CountryNotConfigured(f"Country {normalized} is a placeholder")
+    return CountryConfig(code=config["code"], currency=config["currency"])
