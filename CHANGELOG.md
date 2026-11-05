@@ -57,3 +57,4 @@
 - Reconciled Phase 2 review notes with implemented backend capabilities and remaining gaps.
 - Added redistribution matching tests for invalid lanes, role checks, and solver failure handling.
 - Added paginated, country-scoped synthetic facility and commodity catalog endpoints.
+- Updated the local quickstart and CI smoke checks for readiness and synthetic seeding.
