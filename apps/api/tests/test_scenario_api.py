@@ -135,6 +135,32 @@ def test_scenario_api_auth_roles_idempotency_and_pagination() -> None:
                 assert result.status_code == 200
                 assert result.json()["status"] == "succeeded"
                 assert result.json()["result"]["synthetic"] is True
+                facilities = client.get(
+                    "/v1/catalog/facilities?seed=42&limit=3&offset=0", headers=bearer("planner")
+                )
+                assert facilities.status_code == 200
+                assert facilities.json()["synthetic"] is True
+                assert len(facilities.json()["items"]) == 3
+                final_page = client.get(
+                    "/v1/catalog/facilities?seed=42&limit=10&offset=39", headers=bearer("planner")
+                )
+                assert final_page.json()["total"] == 40 and len(final_page.json()["items"]) == 1
+                commodities = client.get(
+                    "/v1/catalog/commodities?seed=42", headers=bearer("pharmacist")
+                )
+                assert commodities.status_code == 200 and len(commodities.json()["items"]) == 10
+                assert (
+                    client.get(
+                        "/v1/catalog/facilities?seed=999", headers=bearer("planner")
+                    ).status_code
+                    == 404
+                )
+                assert (
+                    client.get(
+                        "/v1/catalog/facilities?seed=42", headers=bearer("facility")
+                    ).status_code
+                    == 403
+                )
                 stockout = result.json()["result"]["stockouts"][0]
                 mitigation = {
                     "synthetic_attested": True,
