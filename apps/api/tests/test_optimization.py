@@ -28,6 +28,20 @@ def test_selected_actions_are_ranked_by_solver() -> None:
     assert result.selected_ids == ("higher", "lower")
 
 
+def test_same_stockout_alternatives_are_not_double_counted() -> None:
+    result = select_actions(
+        [
+            Candidate("emergency", 5, 8, group=("facility", "commodity")),
+            Candidate("redistribution", 3, 8, group=("facility", "commodity")),
+            Candidate("other", 2, 3, group=("other-facility", "commodity")),
+        ],
+        budget=10,
+    )
+    assert result.selected_ids == ("redistribution", "other")
+    assert result.total_cost == 5
+    assert result.excluded_reasons["emergency"] == "alternative_selected"
+
+
 @given(budget=st.integers(min_value=0, max_value=100))
 def test_optimizer_never_exceeds_ceiling(budget: int) -> None:
     result = select_actions([Candidate("a", 8, 10), Candidate("b", 3, 4)], budget=budget)

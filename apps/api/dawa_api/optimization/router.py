@@ -100,7 +100,17 @@ async def rank(
     try:
         result = await asyncio.to_thread(
             select_actions,
-            [Candidate(item.id, item.cost, item.benefit) for item in data.candidates],
+            [
+                Candidate(
+                    item.id,
+                    item.cost,
+                    item.benefit,
+                    group=(item.facility_id, item.commodity_id)
+                    if isinstance(item, RunCandidate)
+                    else None,
+                )
+                for item in data.candidates
+            ],
             budget=data.budget,
         )
     except ValueError as exc:

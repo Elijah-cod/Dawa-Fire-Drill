@@ -11,6 +11,7 @@ class Candidate:
     id: str
     cost: int
     benefit: int
+    group: tuple[str, str] | None = None
 
 
 @dataclass(frozen=True)
@@ -33,6 +34,16 @@ def select_actions(candidates: Sequence[Candidate], *, budget: int) -> Optimizat
     total_cost = sum(c.cost * choice for c, choice in zip(candidates, choices, strict=True))
     total_benefit = sum(c.benefit * choice for c, choice in zip(candidates, choices, strict=True))
     model.add(total_cost <= budget)
+    groups = {candidate.group for candidate in candidates if candidate.group is not None}
+    for group in sorted(groups):
+        model.add(
+            sum(
+                choice
+                for candidate, choice in zip(candidates, choices, strict=True)
+                if candidate.group == group
+            )
+            <= 1
+        )
     model.maximize(total_benefit)
     solver = cp_model.CpSolver()
     solver.parameters.num_search_workers = 1
@@ -49,8 +60,15 @@ def select_actions(candidates: Sequence[Candidate], *, budget: int) -> Optimizat
     selected = [c for c, choice in zip(candidates, choices, strict=True) if solver.value(choice)]
     ranked = _rank_selected(selected)
     selected_ids = {c.id for c in selected}
+    selected_groups = {c.group for c in selected if c.group is not None}
     reasons = {
-        c.id: "cost_exceeds_ceiling" if c.cost > budget else "not_selected_by_optimal_set"
+        c.id: (
+            "cost_exceeds_ceiling"
+            if c.cost > budget
+            else "alternative_selected"
+            if c.group is not None and c.group in selected_groups
+            else "not_selected_by_optimal_set"
+        )
         for c in candidates
         if c.id not in selected_ids
     }

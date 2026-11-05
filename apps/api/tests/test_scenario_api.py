@@ -145,16 +145,25 @@ def test_scenario_api_auth_roles_idempotency_and_pagination() -> None:
                             "kind": "emergency_procurement",
                             "facility_id": stockout["facility_id"],
                             "commodity_id": stockout["commodity_id"],
-                            "cost": 90,
+                            "cost": 40,
                             "benefit": 10,
-                        }
+                        },
+                        {
+                            "id": "reorder-1",
+                            "kind": "reorder_timing",
+                            "facility_id": stockout["facility_id"],
+                            "commodity_id": stockout["commodity_id"],
+                            "cost": 30,
+                            "benefit": 10,
+                        },
                     ],
                 }
                 ranking = client.post(
                     f"/v1/runs/{run_id}/mitigations", json=mitigation, headers=bearer("planner")
                 )
                 assert ranking.status_code == 200
-                assert ranking.json()["selected_ids"] == ["emergency-1"]
+                assert ranking.json()["selected_ids"] == ["reorder-1"]
+                assert ranking.json()["excluded_reasons"]["emergency-1"] == "alternative_selected"
                 assert ranking.json()["run_id"] == run_id
                 unknown = mitigation | {
                     "candidates": [mitigation["candidates"][0] | {"facility_id": "unknown"}]
