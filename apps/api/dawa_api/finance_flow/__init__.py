@@ -1,0 +1,1 @@
+"""Synthetic funding-flow diagnostics."""

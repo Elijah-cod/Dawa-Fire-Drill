@@ -11,3 +11,4 @@
 - Added the responsive static design prototype, review checklist, and automated viewport checks.
 - Recorded the user's Phase 1 design approval.
 - Began illustrative backend stock-flow and OR-Tools budget selection primitives.
+- Added initial funding diagnostics, forecasting baseline, and redistribution constraints.
