@@ -35,6 +35,7 @@ def create_app(settings: Settings | None = None, engine: AsyncEngine | None = No
         app.state.sessions = async_sessionmaker(database, expire_on_commit=False)
         try:
             async with httpx.AsyncClient(timeout=20.0, follow_redirects=False) as client:
+                app.state.http_client = client
                 app.state.capture_providers = configured_providers(client, resolved)
                 yield
         finally:

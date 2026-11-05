@@ -4,10 +4,12 @@ from collections.abc import AsyncIterator
 from typing import Annotated
 from uuid import UUID
 
+import jwt
 from fastapi import APIRouter, Depends, Header, HTTPException, Query, Request, Response, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
+from dawa_api.auth.jwks import authenticate_jwks
 from dawa_api.auth.limits import reserve_request
 from dawa_api.auth.service import AuthenticationError, Principal, authenticate_token
 from dawa_api.scenarios.schemas import ScenarioCreate, ScenarioPage, ScenarioRead
@@ -30,12 +32,18 @@ async def current_principal(
             headers={"WWW-Authenticate": "Bearer"},
         )
     try:
-        principal = authenticate_token(
-            credentials.credentials,
-            signing_secret=settings.supabase_jwt_secret,
-            issuer=f"{settings.supabase_url.rstrip('/')}/auth/v1" if settings.supabase_url else "",
-        )
-    except AuthenticationError as exc:
+        token = credentials.credentials
+        issuer = f"{settings.supabase_url.rstrip('/')}/auth/v1" if settings.supabase_url else ""
+        algorithm = jwt.get_unverified_header(token).get("alg")
+        if algorithm == "HS256":
+            principal = authenticate_token(
+                token, signing_secret=settings.supabase_jwt_secret, issuer=issuer
+            )
+        else:
+            principal = await authenticate_jwks(
+                token, issuer=issuer, client=request.app.state.http_client
+            )
+    except (AuthenticationError, jwt.PyJWTError) as exc:
         raise HTTPException(
             status_code=401, detail="Invalid credentials", headers={"WWW-Authenticate": "Bearer"}
         ) from exc

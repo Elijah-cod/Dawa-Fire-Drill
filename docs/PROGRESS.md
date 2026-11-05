@@ -73,3 +73,4 @@
 - Corrected router registration to honor `API_PREFIX` from the environment.
 - Added a deterministic fallback explanation of solver selections. LLM-generated explanations remain outstanding.
 - Added country-scoped, side-by-side retrieval of two completed runs for planner and pharmacist roles.
+- Added asymmetric Supabase JWKS verification with mocked signature and API tests. Keys are fetched on each asymmetric request, so an issuer outage prevents asymmetric authentication; no live Supabase account was used.
