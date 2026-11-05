@@ -75,6 +75,6 @@
 - Added country-scoped, side-by-side retrieval of two completed runs for planner and pharmacist roles.
 - Added asymmetric Supabase JWKS verification with mocked signature and API tests. Keys are fetched on each asymmetric request, so an issuer outage prevents asymmetric authentication; no live Supabase account was used.
 - Switched the stock calculation to advance between delivery and depletion events, with property tests against a daily reference. The model's other simplifications remain unchanged.
-- Added a curl demo for synthetic seeding, scenario execution, and ranking; a mocked command-flow test passes. Live credential-backed execution remains to be verified.
+- Added a curl demo for synthetic seeding, scenario execution, and ranking; a mocked command-flow test passes. Also exercised the full script against local services using an ephemeral synthetic signing key and token, without real credentials.
 - Restricted country-wide scenario and run reads to planning roles. Facility-role users retain facility-scoped capture but do not yet have a facility-filtered scenario view.
 - Added synthetic district/commodity earliest-stockout summaries and a simulation version marker. Districts are invented groupings of facilities, not real administrative boundaries.
