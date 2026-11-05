@@ -2,7 +2,7 @@
 
 A planned supply chain stress-test simulator for essential medicines in Kenya, designed to support more countries. Planners will explore shock scenarios, stockout sequences, and mitigations within a budget ceiling.
 
-**Data policy:** All project data is synthetic and calibrated to public aggregates. Model outputs are illustrative and have not been validated. Do not use them for operational decisions.
+**Data policy:** All project data is synthetic. The target is calibration to public aggregates; currently only the synthetic facility-level mix is guided by a public aggregate, while other quantities are illustrative assumptions. Model outputs are illustrative and have not been validated. Do not use them for operational decisions. See [data assumptions](docs/data-assumptions.md).
 
 ## Planned architecture
 

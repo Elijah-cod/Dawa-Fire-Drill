@@ -69,3 +69,4 @@
 - Added request IDs and JSON request events with headers and query strings excluded. Deployment logging must enable the `dawa_api.requests` INFO logger.
 - Added a rolling moving-average backtest and a test using generated synthetic consumption; this does not establish model validity.
 - Added an atomic Postgres-backed fixed-minute rate limit shared between application instances for authenticated principals. Invalid or unauthenticated traffic still needs edge-level protection.
+- Clarified the README and API documentation to identify the facility-level mix as the only currently aggregate-guided component. Other synthetic assumptions still require public-source calibration.

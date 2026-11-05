@@ -1,6 +1,6 @@
 # API documentation
 
-All data must be **synthetic, calibrated to public aggregates**, and model outputs are **illustrative and unvalidated**. No calibrated seed dataset exists yet. Do not publish accuracy claims.
+All data must be **synthetic**, with calibration to public aggregates as the target. Currently only the synthetic facility-level mix is guided by a public aggregate; other quantities are illustrative assumptions. Model outputs are **illustrative and unvalidated**. See [data assumptions](../data-assumptions.md). Do not publish accuracy claims.
 
 `/health` is public. `/v1/scenarios` supports paginated GET and authenticated POST, and `/v1/scenarios/{id}` supports authenticated GET. POST requires an `Idempotency-Key` header; the same key and payload returns the original record, while a different payload returns 409. Only planner and admin roles can create scenarios. A signed token's trusted `app_metadata` supplies `role` and `country_code`; requests cannot choose a tenant in a header or payload.
 
