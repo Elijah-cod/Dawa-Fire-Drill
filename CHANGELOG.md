@@ -53,3 +53,4 @@
 - Added a repeatable synthetic simulation timing benchmark.
 - Added a local Locust smoke workload for health, forecast, and optimization endpoints.
 - Added OR-Tools multi-facility redistribution matching with stock, distance, and shelf-life constraints.
+- Restricted mitigation identifiers to safe alphanumeric, underscore, and hyphen characters.

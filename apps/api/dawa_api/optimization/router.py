@@ -21,7 +21,7 @@ run_router = APIRouter(tags=["optimization"])
 
 
 class CandidateInput(BaseModel):
-    id: str = Field(min_length=1, max_length=120)
+    id: str = Field(min_length=1, max_length=120, pattern=r"^[A-Za-z0-9][A-Za-z0-9_-]*$")
     cost: JsonInteger = Field(ge=0, le=1_000_000_000)
     benefit: JsonInteger = Field(ge=0, le=1_000_000)
 

@@ -115,6 +115,15 @@ def test_optimizer_endpoint_respects_budget_and_roles(monkeypatch: pytest.Monkey
             ).status_code
             == 409
         )
+        invalid_id = body | {
+            "candidates": [{"id": "<script>unsafe</script>", "cost": 1, "benefit": 1}]
+        }
+        assert (
+            client.post(
+                "/v1/optimization/rank", json=invalid_id, headers=bearer("planner")
+            ).status_code
+            == 422
+        )
 
         def unavailable(*args: object, **kwargs: object) -> None:
             raise RuntimeError("internal solver detail")
