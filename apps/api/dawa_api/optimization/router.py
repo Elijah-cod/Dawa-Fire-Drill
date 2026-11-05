@@ -1,16 +1,20 @@
 """Authenticated optimizer endpoint for synthetic candidate inputs."""
 
 import asyncio
-from typing import Annotated
+from typing import Annotated, Literal
+from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from dawa_api.auth.service import Principal
+from dawa_api.jobs.repository import RunRepository
 from dawa_api.optimization.service import Candidate, select_actions
-from dawa_api.scenarios.router import can_create
+from dawa_api.scenarios.router import can_create, session_for_request
 
 router = APIRouter(prefix="/optimization", tags=["optimization"])
+run_router = APIRouter(tags=["optimization"])
 
 
 class CandidateInput(BaseModel):
@@ -33,6 +37,42 @@ class RankResponse(BaseModel):
     total_cost: int
     remaining_budget: int
     cut_line: int
+
+
+class RunCandidate(CandidateInput):
+    kind: Literal["emergency_procurement", "redistribution", "reorder_timing"]
+    facility_id: str = Field(min_length=1, max_length=120)
+    commodity_id: str = Field(min_length=1, max_length=120)
+
+
+class RunRankRequest(BaseModel):
+    synthetic_attested: Literal[True]
+    budget: int = Field(ge=0, le=1_000_000_000)
+    candidates: list[RunCandidate] = Field(max_length=50)
+
+
+class RunRankResponse(RankResponse):
+    run_id: UUID
+    candidates: list[RunCandidate]
+
+
+@run_router.post("/runs/{run_id}/mitigations", response_model=RunRankResponse)
+async def rank_run(
+    run_id: UUID,
+    data: RunRankRequest,
+    principal: Annotated[Principal, Depends(can_create)],
+    session: Annotated[AsyncSession, Depends(session_for_request)],
+) -> RunRankResponse:
+    run = await RunRepository(session, country_code=principal.country_code).get(run_id)
+    if run is None:
+        raise HTTPException(status_code=404, detail="Run not found")
+    if run.status != "succeeded" or run.result is None:
+        raise HTTPException(status_code=409, detail="Run has not succeeded")
+    stockouts = {(item["facility_id"], item["commodity_id"]) for item in run.result["stockouts"]}
+    if any((item.facility_id, item.commodity_id) not in stockouts for item in data.candidates):
+        raise HTTPException(status_code=422, detail="Candidate must target a recorded stockout")
+    result = await rank(RankRequest(budget=data.budget, candidates=data.candidates), principal)
+    return RunRankResponse(**result.model_dump(), run_id=run_id, candidates=data.candidates)
 
 
 @router.post("/rank", response_model=RankResponse)

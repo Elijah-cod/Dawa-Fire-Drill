@@ -26,3 +26,4 @@
 - Added country-scoped funding records and stage-specific diagnostics, plus synthetic forecasting and redistribution endpoints.
 - Added a repeatable funding diagnostics command and optional Neo4j projection of immutable synthetic flows.
 - Added a database-backed readiness endpoint that omits connection error details.
+- Added scenario-linked ranking of caller-supplied synthetic mitigation candidates.

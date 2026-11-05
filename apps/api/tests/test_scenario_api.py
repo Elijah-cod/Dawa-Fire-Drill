@@ -114,6 +114,36 @@ def test_scenario_api_auth_roles_idempotency_and_pagination() -> None:
                 assert result.status_code == 200
                 assert result.json()["status"] == "succeeded"
                 assert result.json()["result"]["synthetic"] is True
+                stockout = result.json()["result"]["stockouts"][0]
+                mitigation = {
+                    "synthetic_attested": True,
+                    "budget": 100,
+                    "candidates": [
+                        {
+                            "id": "emergency-1",
+                            "kind": "emergency_procurement",
+                            "facility_id": stockout["facility_id"],
+                            "commodity_id": stockout["commodity_id"],
+                            "cost": 90,
+                            "benefit": 10,
+                        }
+                    ],
+                }
+                ranking = client.post(
+                    f"/v1/runs/{run_id}/mitigations", json=mitigation, headers=bearer("planner")
+                )
+                assert ranking.status_code == 200
+                assert ranking.json()["selected_ids"] == ["emergency-1"]
+                assert ranking.json()["run_id"] == run_id
+                unknown = mitigation | {
+                    "candidates": [mitigation["candidates"][0] | {"facility_id": "unknown"}]
+                }
+                assert (
+                    client.post(
+                        f"/v1/runs/{run_id}/mitigations", json=unknown, headers=bearer("planner")
+                    ).status_code
+                    == 422
+                )
                 assert not await process_one(
                     async_sessionmaker(engine, expire_on_commit=False), "KE"
                 )
