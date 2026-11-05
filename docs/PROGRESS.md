@@ -75,3 +75,4 @@
 - Added country-scoped, side-by-side retrieval of two completed runs for planner and pharmacist roles.
 - Added asymmetric Supabase JWKS verification with mocked signature and API tests. Keys are fetched on each asymmetric request, so an issuer outage prevents asymmetric authentication; no live Supabase account was used.
 - Switched the stock calculation to advance between delivery and depletion events, with property tests against a daily reference. The model's other simplifications remain unchanged.
+- Added a curl demo for synthetic seeding, scenario execution, and ranking; a mocked command-flow test passes. Live credential-backed execution remains to be verified.
