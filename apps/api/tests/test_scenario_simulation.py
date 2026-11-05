@@ -14,7 +14,21 @@ def test_scenario_run_is_reproducible_and_ordered() -> None:
     result = simulate_scenario(scenario, seed=42, horizon_days=90)
     assert result == simulate_scenario(scenario, seed=42, horizon_days=90)
     assert result["synthetic"] is True
+    assert result["simulation_version"] == 2
     assert result["stockouts"]
+    assert all(item["district_id"].startswith("SYN-KE-D") for item in result["stockouts"])
+    assert result["district_stockouts"]
+    assert [item["day"] for item in result["district_stockouts"]] == sorted(
+        item["day"] for item in result["district_stockouts"]
+    )
+    for district in result["district_stockouts"]:
+        matching = [
+            item["day"]
+            for item in result["stockouts"]
+            if item["district_id"] == district["district_id"]
+            and item["commodity_id"] == district["commodity_id"]
+        ]
+        assert district["day"] == min(matching)
     assert [item["day"] for item in result["stockouts"]] == sorted(
         item["day"] for item in result["stockouts"]
     )

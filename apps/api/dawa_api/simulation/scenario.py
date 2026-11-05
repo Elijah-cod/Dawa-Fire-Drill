@@ -9,6 +9,13 @@ from dawa_api.simulation.service import simulate_stock
 
 class Stockout(TypedDict):
     facility_id: str
+    district_id: str
+    commodity_id: str
+    day: int
+
+
+class DistrictStockout(TypedDict):
+    district_id: str
     commodity_id: str
     day: int
 
@@ -17,8 +24,10 @@ class ScenarioResult(TypedDict):
     synthetic: bool
     notice: str
     seed: int
+    simulation_version: int
     horizon_days: int
     stockouts: list[Stockout]
+    district_stockouts: list[DistrictStockout]
 
 
 def simulate_scenario(
@@ -34,6 +43,10 @@ def simulate_scenario(
     ):
         raise ValueError("Scenario requires a matching synthetic Kenya snapshot")
     stockouts: list[Stockout] = []
+    district_by_facility = {
+        facility["id"]: f"SYN-KE-D{index // 8 + 1:02d}"
+        for index, facility in enumerate(data["facilities"])
+    }
     for item in data["consumption"]:
         if item["month_index"] != 23:
             continue
@@ -56,15 +69,29 @@ def simulate_scenario(
             stockouts.append(
                 {
                     "facility_id": item["facility_id"],
+                    "district_id": district_by_facility[item["facility_id"]],
                     "commodity_id": item["commodity_id"],
                     "day": result.stockout_day,
                 }
             )
     stockouts.sort(key=lambda item: (item["day"], item["facility_id"], item["commodity_id"]))
+    first_by_district: dict[tuple[str, str], int] = {}
+    for item in stockouts:
+        key = (item["district_id"], item["commodity_id"])
+        first_by_district.setdefault(key, item["day"])
+    district_stockouts: list[DistrictStockout] = [
+        {"district_id": district, "commodity_id": commodity, "day": day}
+        for (district, commodity), day in first_by_district.items()
+    ]
+    district_stockouts.sort(
+        key=lambda item: (item["day"], item["district_id"], item["commodity_id"])
+    )
     return {
         "synthetic": True,
         "notice": "Illustrative and unvalidated; non-facility quantities are assumptions",
         "seed": seed,
+        "simulation_version": 2,
         "horizon_days": horizon_days,
         "stockouts": stockouts,
+        "district_stockouts": district_stockouts,
     }
