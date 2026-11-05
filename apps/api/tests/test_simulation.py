@@ -28,3 +28,25 @@ def test_stock_never_negative_and_run_is_deterministic(
     second = simulate_stock(opening_stock=opening, daily_demand=demand, days=days, deliveries={})
     assert first == second
     assert first.closing_stock >= 0
+
+
+@given(
+    opening=st.integers(min_value=0, max_value=100),
+    demand=st.integers(min_value=0, max_value=20),
+    days=st.integers(min_value=1, max_value=30),
+    deliveries=st.dictionaries(
+        st.integers(min_value=1, max_value=30), st.integers(min_value=0, max_value=100), max_size=10
+    ),
+)
+def test_event_driven_matches_daily_reference(opening, demand, days, deliveries):
+    deliveries = {day: quantity for day, quantity in deliveries.items() if day <= days}
+    stock = opening
+    stockout = None
+    for day in range(1, days + 1):
+        stock = max(0, stock + deliveries.get(day, 0) - demand)
+        if demand and stock == 0 and stockout is None:
+            stockout = day
+    result = simulate_stock(
+        opening_stock=opening, daily_demand=demand, days=days, deliveries=deliveries
+    )
+    assert (result.closing_stock, result.stockout_day) == (stock, stockout)

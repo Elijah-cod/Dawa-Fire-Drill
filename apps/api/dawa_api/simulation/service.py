@@ -20,8 +20,14 @@ def simulate_stock(
         raise ValueError("Deliveries require nonnegative quantities on days within the run")
     stock = opening_stock
     stockout_day = None
-    for day in range(1, days + 1):
-        stock = max(0, stock + deliveries.get(day, 0) - daily_demand)
-        if daily_demand > 0 and stock == 0 and stockout_day is None:
-            stockout_day = day
+    cursor = 1
+    for day, quantity in [*sorted(deliveries.items()), (days + 1, 0)]:
+        span = day - cursor
+        if span and daily_demand:
+            days_to_empty = max(1, (stock + daily_demand - 1) // daily_demand)
+            if stockout_day is None and days_to_empty <= span:
+                stockout_day = cursor + days_to_empty - 1
+            stock = max(0, stock - daily_demand * span)
+        stock += quantity
+        cursor = day
     return SimulationResult(closing_stock=stock, stockout_day=stockout_day)

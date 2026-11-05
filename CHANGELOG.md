@@ -36,3 +36,4 @@
 - Added an authenticated side-by-side comparison of two completed scenario runs.
 - Added Supabase ES256/RS256 JWKS signature verification alongside legacy HS256.
 - Added optional, constrained OpenAI/Gemini explanation phrasing with a shared daily call cap and deterministic fallback.
+- Changed stock simulation to advance between delivery and depletion events with property checks against daily replay.
