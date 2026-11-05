@@ -48,6 +48,10 @@ jobs:
         working-directory: apps/web
       - run: npm test
         working-directory: apps/web
+      - run: npx playwright install --with-deps chromium
+        working-directory: apps/web
+      - run: npm run test:design-prototype
+        working-directory: apps/web
       - run: npm audit --audit-level=low
         working-directory: apps/web
   docs-quickstart:

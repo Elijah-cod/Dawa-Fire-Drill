@@ -2,6 +2,8 @@
 
 Target file: **Dawa Fire Drill — Phase 1 Design**. Create pages **Foundations**, **Components**, **Screens**, and **Prototype**. The file is a review artifact; `DESIGN APPROVED` remains the implementation gate.
 
+**Current status:** The four pages exist. Figma's team reached its daily AI credit limit while generating screens. The generated frames included unsourced quantities and costs, so they were removed. The Figma canvas is a page structure only. The complete responsive review artifact is the local [static prototype](prototype/README.md). Completing native Figma components, all screen frames, and clickable connections remains open; no plan or billing change was made.
+
 ## Foundations
 
 - [ ] Light and dark palettes with named semantic tokens from `tokens.md`

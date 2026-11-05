@@ -27,17 +27,20 @@
 1. Continue Phase 1 design locally on its own phase branch, respecting the design review checkpoint.
 2. Keep commits local. When the user explicitly authorizes publication for production, push phase branches, open PRs, and verify every CI job before merge.
 
-## Phase 1: Design — in progress
+## Phase 1: Design — Checkpoint A review ready; native Figma canvas incomplete
 
 ### Completed locally
 
 - Created local branch `phase/1-design` from the Phase 0 foundation.
 - Wrote roles/jobs, information architecture and flows, exact screen copy with empty/loading/error/offline/partial states, design tokens, components, responsive behavior, string plan, and Figma checklist in `docs/design/`.
 - Checked proposed light and dark text/color pairs against WCAG contrast calculations; all listed primary text pairs exceed 4.5:1.
-- Created the Figma file and its Foundations, Components, Screens, and Prototype pages. Three editable Overview frames at 390×844, 768×1024, and 1280×800 were generated and visually inspected on the Prototype page. The generated examples contain placeholder quantities that need removal or explicit calibration before approval. Scenario, Results, and Actions frames are generating on the Screens page.
+- Created the Figma file and its Foundations, Components, Screens, and Prototype pages. Figma AI reached the team's daily credit limit. Its generated frames contained unsourced quantities and costs; those frames were removed rather than presented as calibrated data. Native Figma frames and prototype connections remain missing. No billing or plan setting was changed.
+- Built a static HTML/CSS review prototype for all ten key screens and the mobile map sheet in `docs/design/prototype/`, with placeholders instead of invented domain figures. It is design material only; no frontend product code exists.
 
 ### Verification and next
 
 - Local verification after the documentation batch: `git diff --check` and a design-file/state checklist passed; API `6 passed` with the known upstream warning, Ruff and mypy passed; web lint, typecheck, Vitest tooling command, and Prettier passed. Vitest has no product tests because there is no frontend product code.
-- Inspect generated Figma frames, correct ungrounded example quantities and risk labels, fill missing design pages and prototype interactions, then run the design review checklist.
+- Prototype responsive check passed 66 view/width combinations at 360, 390, 768, 1024, 1280, and 1536px, including no horizontal overflow, visible synthetic banner, one heading per view, labeled controls, and navigation mode. Two dark-theme checks passed. Overview, Results, and Capture screenshots were generated at the four required test widths and visually inspected at mobile and desktop. The Checkpoint A checklist is in `docs/design/REVIEW.md`.
+- Final local checks after the prototype: API 6 passed with the known upstream warning, Ruff and mypy passed; web ESLint, TypeScript, Vitest tooling command, and Prettier passed. `git diff --check` and internal prototype link checks passed. CI has not run because the user has withheld publication.
+- Complete native Figma frames and connections when editing capacity is available. Use the static prototype and written spec for Checkpoint A review now. Stop before frontend implementation until the exact `DESIGN APPROVED` reply is recorded.
 - Stop at Checkpoint A. Frontend implementation requires the exact reply `DESIGN APPROVED` and an entry in `docs/design/APPROVAL.md`.

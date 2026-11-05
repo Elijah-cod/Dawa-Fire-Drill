@@ -22,3 +22,5 @@ Design mockups may use the two shock magnitudes supplied by the user (40% logist
 - [Components and responsive rules](components-and-responsive.md)
 - [String plan](strings.md)
 - [Figma build checklist](figma-checklist.md)
+- [Static responsive prototype](prototype/README.md)
+- [Checkpoint A review checklist](REVIEW.md)

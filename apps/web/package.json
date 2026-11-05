@@ -8,6 +8,7 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run --passWithNoTests",
     "test:e2e": "playwright test --pass-with-no-tests",
+    "test:design-prototype": "node scripts/verify-design-prototype.mjs",
     "format:check": "prettier --check ."
   },
   "devDependencies": {

@@ -8,3 +8,4 @@
 - Added the foundation health endpoint, local service definitions, web tooling, and initial PR CI.
 - Updated the workflow to keep all phase commits local until explicit production publication approval.
 - Began Phase 1 design documentation and a Figma review file; frontend implementation remains gated.
+- Added the responsive static design prototype, review checklist, and automated viewport checks.
