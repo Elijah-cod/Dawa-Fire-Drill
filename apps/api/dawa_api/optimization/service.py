@@ -5,6 +5,8 @@ from dataclasses import dataclass
 
 from ortools.sat.python import cp_model
 
+SOLVER_TIME_LIMIT_SECONDS = 2.0
+
 
 @dataclass(frozen=True)
 class Candidate:
@@ -47,6 +49,7 @@ def select_actions(candidates: Sequence[Candidate], *, budget: int) -> Optimizat
     model.maximize(total_benefit)
     solver = cp_model.CpSolver()
     solver.parameters.num_search_workers = 1
+    solver.parameters.max_time_in_seconds = SOLVER_TIME_LIMIT_SECONDS
     if solver.solve(model) != cp_model.OPTIMAL:
         raise RuntimeError("Optimizer did not prove an optimal selection")
     model.add(total_benefit == solver.value(total_benefit))
@@ -93,6 +96,7 @@ def _rank_selected(selected: list[Candidate]) -> list[Candidate]:
     model.maximize(weighted_benefit)
     solver = cp_model.CpSolver()
     solver.parameters.num_search_workers = 1
+    solver.parameters.max_time_in_seconds = SOLVER_TIME_LIMIT_SECONDS
     if solver.solve(model) != cp_model.OPTIMAL:
         raise RuntimeError("Optimizer did not prove a ranking")
     model.add(weighted_benefit == solver.value(weighted_benefit))

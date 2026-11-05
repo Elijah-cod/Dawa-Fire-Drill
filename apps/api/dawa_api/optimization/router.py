@@ -63,7 +63,11 @@ class RunRankResponse(RankResponse):
     candidates: list[RunCandidate]
 
 
-@run_router.post("/runs/{run_id}/mitigations", response_model=RunRankResponse)
+@run_router.post(
+    "/runs/{run_id}/mitigations",
+    response_model=RunRankResponse,
+    responses={503: {"description": "Optimizer could not prove an optimal result"}},
+)
 async def rank_run(
     run_id: UUID,
     data: RunRankRequest,
@@ -92,7 +96,11 @@ async def rank_run(
     return RunRankResponse(**result.model_dump(), run_id=run_id, candidates=data.candidates)
 
 
-@router.post("/rank", response_model=RankResponse)
+@router.post(
+    "/rank",
+    response_model=RankResponse,
+    responses={503: {"description": "Optimizer could not prove an optimal result"}},
+)
 async def rank(
     data: RankRequest, request: Request, principal: Annotated[Principal, Depends(can_create)]
 ) -> RankResponse:
@@ -115,6 +123,10 @@ async def rank(
         )
     except ValueError as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
+    except RuntimeError as exc:
+        raise HTTPException(
+            status_code=503, detail="Optimizer could not prove an optimal result"
+        ) from exc
     explanation = explain_selection(result, budget=data.budget)
     if data.include_llm_explanation:
         store = PostgresExtractionStore(

@@ -94,6 +94,14 @@ def test_optimizer_endpoint_respects_budget_and_roles(monkeypatch: pytest.Monkey
             ).status_code
             == 422
         )
+
+        def unavailable(*args: object, **kwargs: object) -> None:
+            raise RuntimeError("internal solver detail")
+
+        monkeypatch.setattr("dawa_api.optimization.router.select_actions", unavailable)
+        response = client.post("/v1/optimization/rank", json=body, headers=bearer("planner"))
+        assert response.status_code == 503
+        assert "internal solver detail" not in response.text
         assert (
             client.post(
                 "/v1/optimization/rank",
