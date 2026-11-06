@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Expose scoped synthetic county planning and Kisumu pilot snapshots to authorized roles.
 - Validate trusted county and national-planning claims in preparation for county access control.
 - Persist synthetic county planning and Kisumu pilot snapshots behind a county-scoped repository.
 - Add county-scoped immutable snapshot storage with forced row-level security and a Kisumu-only pilot constraint.
