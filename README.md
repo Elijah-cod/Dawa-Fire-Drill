@@ -18,7 +18,7 @@ flowchart LR
 
 The backend is under development and is not deployed. The design was approved; frontend implementation remains for a later phase.
 
-Phase 2b is extending planning to Kenya's 47 counties, with Kisumu as the only facility-level pilot; see [Phase 2b notes](docs/phases/2b.md) for progress and limitations.
+Phase 2b covers synthetic planning records for Kenya's 47 counties, with Kisumu as the only facility-level pilot; see [Phase 2 notes](docs/phases/2.md) for the demo evidence and limitations, including legacy country-only paths and the missing map.
 
 ## Local quickstart
 

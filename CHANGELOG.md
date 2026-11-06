@@ -1,5 +1,7 @@
 # Changelog
 
+- Documented the fresh-clone county demo, local timing sample, and Checkpoint B limitations; strengthened county-capture row-level security coverage.
+
 - Updated the curl demo to exercise county planning, the Kisumu shock, mitigation explanation and facility capture.
 
 - Added a separate county-scoped Kisumu facility bin-card capture and human-confirmation workflow.
