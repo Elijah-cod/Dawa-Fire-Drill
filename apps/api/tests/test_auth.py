@@ -3,7 +3,7 @@ from datetime import UTC, datetime, timedelta
 import jwt
 import pytest
 
-from dawa_api.auth.service import AuthenticationError, authenticate_token
+from dawa_api.auth.service import AuthenticationError, authenticate_token, principal_from_claims
 
 TEST_SIGNING_MATERIAL = "synthetic-test-material-" * 3
 ISSUER = "https://example.invalid/auth/v1"
@@ -52,6 +52,32 @@ def test_facility_role_requires_server_controlled_facility_scope() -> None:
         issuer=ISSUER,
     )
     assert principal.facility_id == "SYN-KE-F001"
+
+
+def test_county_and_national_scope_only_come_from_trusted_metadata() -> None:
+    scoped = principal_from_claims(
+        {
+            "sub": "user",
+            "app_metadata": {"role": "planner", "country_code": "KE", "county_code": "042"},
+            "user_metadata": {"county_code": "047", "national_planning": True},
+        }
+    )
+    assert scoped.county_code == "042"
+    assert scoped.national_planning is False
+    national = principal_from_claims(
+        {
+            "sub": "user",
+            "app_metadata": {"role": "planner", "country_code": "KE", "national_planning": True},
+        }
+    )
+    assert national.national_planning is True
+    for metadata in (
+        {"role": "planner", "country_code": "KE", "county_code": "999"},
+        {"role": "facility", "country_code": "KE", "facility_id": "f", "national_planning": True},
+        {"role": "planner", "country_code": "KE", "national_planning": "true"},
+    ):
+        with pytest.raises(AuthenticationError):
+            principal_from_claims({"sub": "user", "app_metadata": metadata})
 
 
 @pytest.mark.parametrize(

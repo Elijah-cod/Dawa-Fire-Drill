@@ -2,6 +2,8 @@
 
 All data must be **synthetic**, with calibration to public aggregates as the target. Facility mix, lead-time anchors, ten tracer demand proxies and an overall funding scale use public aggregates; individual funding stages and temporal patterns remain illustrative assumptions. Model outputs are **illustrative and unvalidated**. See [data assumptions](../data-assumptions.md). Do not publish accuracy claims.
 
+Phase 2b recognizes optional, server-controlled `app_metadata.county_code` and `app_metadata.national_planning` claims. County codes must be valid three-digit Kenya codes; national planning scope may be granted only to planners or admins and must be a JSON Boolean. These claims are not yet enforced by the legacy country-scoped endpoints, which must not be treated as county-isolated. County-facing endpoints have not yet been exposed.
+
 `/health` is public. `/v1/scenarios` supports paginated GET and authenticated POST, and `/v1/scenarios/{id}` supports authenticated GET. POST requires an `Idempotency-Key` header; the same key and payload returns the original record, while a different payload returns 409. Only planner and admin roles can create scenarios. A signed token's trusted `app_metadata` supplies `role` and `country_code`; requests cannot choose a tenant in a header or payload.
 
 The current verifier supports legacy Supabase HS256 JWTs configured with backend-only `SUPABASE_URL` and `SUPABASE_JWT_SECRET`. Asymmetric JWKS verification is not implemented. Missing or invalid configuration fails authentication closed. The Postgres policy requires transaction-local country context. Use a non-superuser application database role without `BYPASSRLS`; Postgres superusers bypass row-level security.

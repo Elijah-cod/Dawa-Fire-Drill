@@ -6,6 +6,7 @@ from typing import Any, Literal, cast
 
 import jwt
 
+from dawa_api.countries.ke.counties import county_by_code
 from dawa_api.countries.service import CountryNotConfigured, get_country
 
 Role = Literal["planner", "pharmacist", "facility", "admin"]
@@ -22,6 +23,8 @@ class Principal:
     role: Role
     country_code: str
     facility_id: str | None = None
+    county_code: str | None = None
+    national_planning: bool = False
 
 
 def principal_from_claims(claims: dict[str, Any]) -> Principal:
@@ -50,8 +53,24 @@ def principal_from_claims(claims: dict[str, Any]) -> Principal:
         raise AuthenticationError("Invalid facility scope")
     if role == "facility" and facility is None:
         raise AuthenticationError("Facility scope is required")
+    county = metadata.get("county_code")
+    if county is not None:
+        if not isinstance(county, str) or country_code != "KE":
+            raise AuthenticationError("Invalid county scope")
+        try:
+            county_by_code(county)
+        except ValueError as exc:
+            raise AuthenticationError("Invalid county scope") from exc
+    national = metadata.get("national_planning", False)
+    if type(national) is not bool or (national and role not in {"planner", "admin"}):
+        raise AuthenticationError("Invalid national planning scope")
     return Principal(
-        subject=subject, role=cast(Role, role), country_code=country_code, facility_id=facility
+        subject=subject,
+        role=cast(Role, role),
+        country_code=country_code,
+        facility_id=facility,
+        county_code=county,
+        national_planning=national,
     )
 
 
