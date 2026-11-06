@@ -1,6 +1,8 @@
 /* global console, document, getComputedStyle, innerWidth */
 import { chromium } from "@playwright/test";
-import { resolve } from "node:path";
+import { mkdtemp, rm } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join, resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 
 const prototype = resolve(
@@ -23,6 +25,7 @@ const routes = [
 ];
 const widths = [360, 390, 768, 1024, 1280, 1536];
 const browser = await chromium.launch({ headless: true });
+const screenshotDir = await mkdtemp(join(tmpdir(), "dawa-prototype-"));
 let checked = 0;
 
 try {
@@ -78,10 +81,7 @@ try {
       for (const route of ["overview", "results", "capture"]) {
         await page.goto(`${url}#${route}`);
         await page.screenshot({
-          path: resolve(
-            import.meta.dirname,
-            `../../../docs/design/prototype/${route}-${width}.png`,
-          ),
+          path: join(screenshotDir, `${route}-${width}.png`),
           fullPage: true,
         });
       }
@@ -107,10 +107,7 @@ try {
       throw new Error(`dark ${width}: ${JSON.stringify(colors)}`);
     }
     await page.screenshot({
-      path: resolve(
-        import.meta.dirname,
-        `../../../docs/design/prototype/overview-dark-${width}.png`,
-      ),
+      path: join(screenshotDir, `overview-dark-${width}.png`),
       fullPage: true,
     });
     await page.close();
@@ -119,5 +116,9 @@ try {
     `prototype checks passed: ${checked} screen/width combinations and 2 dark-theme checks`,
   );
 } finally {
-  await browser.close();
+  try {
+    await browser.close();
+  } finally {
+    await rm(screenshotDir, { recursive: true, force: true });
+  }
 }
