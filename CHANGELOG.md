@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Update the synthetic demo to rank replayed emergency-delivery effects.
 - Include the selected reasons and cut line in modeled mitigation results.
 - Anchor the total synthetic funding scale to a published procurement-value proxy while keeping funding stages explicitly assumed.
 - Add public-aggregate proxies for all ten synthetic tracer demand series, with source periods and scaling limitations.

@@ -39,9 +39,9 @@ for ((attempt=0; attempt<60; attempt++)); do
 done
 if [[ "$status" != succeeded ]]; then printf '%s\n' 'Synthetic run did not complete in time.' >&2; exit 1; fi
 printf '%s\n' "$run"
-mitigation="$(python3 -c 'import json,sys; r=json.load(sys.stdin)["result"]["stockouts"]; print(json.dumps({"synthetic_attested": True, "budget": 100, "candidates": [{"id":"synthetic-emergency", "kind":"emergency_procurement", "facility_id":r[0]["facility_id"], "commodity_id":r[0]["commodity_id"], "cost":80, "benefit":1}]} if r else {}))' <<< "$run")"
+mitigation="$(python3 -c 'import json,sys; r=json.load(sys.stdin)["result"]["stockouts"]; print(json.dumps({"synthetic_attested": True, "budget": 100, "candidates": [{"id":"synthetic-emergency", "kind":"emergency_procurement", "facility_id":r[0]["facility_id"], "commodity_id":r[0]["commodity_id"], "cost":80, "arrival_day":1, "quantity":100000}]} if r else {}))' <<< "$run")"
 if [[ "$mitigation" == '{}' ]]; then printf '%s\n' 'No synthetic stockouts to rank.'; exit 0; fi
-printf '%s\n' 'Ranking uses illustrative assumed cost and benefit, not validated estimates.'
+printf '%s\n' 'Ranking replays an assumed delivery; costs and quantities are synthetic and results unvalidated.'
 curl --silent --show-error --fail-with-body --config "$auth_file" \
-  -H 'Content-Type: application/json' -d "$mitigation" "$api_base/v1/runs/$run_id/mitigations"
+  -H 'Content-Type: application/json' -d "$mitigation" "$api_base/v1/runs/$run_id/modeled-mitigations"
 printf '\n'

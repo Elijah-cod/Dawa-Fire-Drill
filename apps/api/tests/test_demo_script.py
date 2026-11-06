@@ -9,7 +9,8 @@ def test_demo_script_drives_seed_run_and_ranking(tmp_path: Path) -> None:
     curl = tmp_path / "curl"
     curl.write_text("""#!/bin/sh
 case "$*" in
-  *"/mitigations"*) printf '%s' '{"synthetic":true,"selected_ids":["synthetic-emergency"]}' ;;
+  *"arrival_day"*"/modeled-mitigations"*)
+    printf '%s' '{"synthetic":true,"selected_ids":["synthetic-emergency"]}' ;;
   *"/scenarios/"*"/runs"*) printf '%s' '{"id":"run-demo"}' ;;
   *"/runs/run-demo"*) printf '%s' '{"status":"succeeded","result":{"stockouts":[
   {"facility_id":"SYN-KE-F001","commodity_id":"SYN-C01","day":30}]}}' ;;
