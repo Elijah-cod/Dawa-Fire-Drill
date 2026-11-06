@@ -27,11 +27,23 @@ class ModeledReorder(CandidateBase):
     original_day: JsonInteger = Field(ge=1, le=365)
 
 
+class ModeledTransfer(CandidateBase):
+    kind: Literal["redistribution"]
+    donor_facility_id: str = Field(min_length=1, max_length=120)
+    dispatch_day: JsonInteger = Field(ge=1, le=365)
+    quantity: JsonInteger = Field(ge=1, le=1_000_000_000)
+    available_units: JsonInteger = Field(ge=0, le=1_000_000_000)
+    expiry_day: JsonInteger = Field(ge=1, le=10_000)
+    minimum_shelf_days: JsonInteger = Field(ge=0, le=365)
+    distance_km: JsonInteger = Field(ge=0, le=100_000)
+    max_distance_km: JsonInteger = Field(ge=0, le=100_000)
+
+
 class ModeledRequest(BaseModel):
     synthetic_attested: ExplicitTrue
     budget: JsonInteger = Field(ge=0, le=1_000_000_000)
     minimum_benefit: BenefitTarget | None = None
-    candidates: list[ModeledDelivery | ModeledReorder] = Field(max_length=50)
+    candidates: list[ModeledDelivery | ModeledReorder | ModeledTransfer] = Field(max_length=50)
 
 
 class ModeledEffect(BaseModel):

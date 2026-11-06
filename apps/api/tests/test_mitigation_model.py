@@ -1,6 +1,12 @@
 import pytest
 
-from dawa_api.optimization.mitigation import evaluate_delivery, evaluate_reorder
+from dawa_api.optimization.mitigation import (
+    donor_safe_capacity,
+    evaluate_delivery,
+    evaluate_reorder,
+    rank_deliveries,
+)
+from dawa_api.optimization.modeled_schemas import ModeledRequest
 from dawa_api.scenarios.schemas import ScenarioCreate
 
 
@@ -86,3 +92,91 @@ def test_reorder_moves_existing_delivery_without_adding_stock() -> None:
             original_day=74,
             arrival_day=28,
         )
+
+
+def test_donor_capacity_preserves_its_baseline_first_stockout() -> None:
+    scenario = ScenarioCreate(name="Synthetic delay", shock_type="cash_delay", magnitude=45)
+    data = {
+        "synthetic": True,
+        "country_code": "KE",
+        "facilities": [{"id": "SYN-F1"}],
+        "consumption": [
+            {"facility_id": "SYN-F1", "commodity_id": "SYN-C1", "month_index": 23, "quantity": 300}
+        ],
+    }
+    assert (
+        donor_safe_capacity(
+            scenario,
+            data,
+            horizon_days=60,
+            facility_id="SYN-F1",
+            commodity_id="SYN-C1",
+            dispatch_day=10,
+        )
+        == 9
+    )
+    assert (
+        donor_safe_capacity(
+            scenario,
+            data,
+            horizon_days=60,
+            facility_id="SYN-F1",
+            commodity_id="SYN-C1",
+            dispatch_day=30,
+        )
+        == 0
+    )
+
+
+def test_redistribution_replay_shares_donor_stock_and_rejects_bad_routes() -> None:
+    scenario = ScenarioCreate(name="delay", shock_type="cash_delay", magnitude=45)
+    data = {
+        "synthetic": True,
+        "country_code": "KE",
+        "facilities": [{"id": f} for f in ("donor", "a", "b")],
+        "consumption": [
+            {
+                "facility_id": f,
+                "commodity_id": "c",
+                "month_index": 23,
+                "quantity": 900 if f == "donor" else 300,
+            }
+            for f in ("donor", "a", "b")
+        ],
+    }
+    base = {
+        "kind": "redistribution",
+        "commodity_id": "c",
+        "donor_facility_id": "donor",
+        "cost": 1,
+        "dispatch_day": 10,
+        "arrival_day": 11,
+        "quantity": 20,
+        "available_units": 100,
+        "expiry_day": 50,
+        "minimum_shelf_days": 5,
+        "distance_km": 10,
+        "max_distance_km": 20,
+    }
+    request = ModeledRequest.model_validate(
+        {
+            "synthetic_attested": True,
+            "budget": 2,
+            "candidates": [
+                base | {"id": "a", "facility_id": "a"},
+                base | {"id": "b", "facility_id": "b"},
+            ],
+        }
+    )
+    recorded = [{"facility_id": f, "commodity_id": "c", "day": 30} for f in ("a", "b")]
+    result, _ = rank_deliveries(scenario, data, recorded, horizon_days=60, request=request)
+    assert len(result.selected_ids) == 1
+    bad = ModeledRequest.model_validate(
+        {
+            "synthetic_attested": True,
+            "budget": 2,
+            "candidates": [base | {"id": "a", "facility_id": "a", "distance_km": 21}],
+        }
+    )
+    with pytest.raises(ValueError, match="distance"):
+        rank_deliveries(scenario, data, recorded, horizon_days=60, request=bad)

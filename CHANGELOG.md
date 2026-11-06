@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Model synthetic redistribution with donor stock preservation, shared inventory, distance, and shelf-life constraints.
 - Replay synthetic reorder-timing candidates by advancing an existing replenishment without duplicating stock.
 - Add run-pinned synthetic emergency-delivery replay and solver ranking by modeled first-stockout deferral.
 - Anchor version-2 synthetic facility lead times to published national turnaround aggregates, with explicit provenance and modelling limitations.

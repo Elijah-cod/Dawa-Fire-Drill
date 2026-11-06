@@ -22,6 +22,9 @@ class Candidate:
     cost: int
     benefit: int
     group: tuple[str, str] | None = None
+    resource: tuple[str, str] | None = None
+    resource_units: int = 0
+    resource_capacity: int = 0
 
 
 @dataclass(frozen=True)
@@ -39,6 +42,13 @@ def select_actions(
         raise ValueError("Budget or candidate count is outside supported bounds")
     if any(not 0 <= c.cost <= 1_000_000_000 or not 0 <= c.benefit <= 1_000_000 for c in candidates):
         raise ValueError("Costs or benefits are outside supported bounds")
+    if any(
+        not 0 <= c.resource_units <= 1_000_000_000
+        or not 0 <= c.resource_capacity <= 1_000_000_000
+        or (c.resource is None and (c.resource_units or c.resource_capacity))
+        for c in candidates
+    ):
+        raise ValueError("Shared inventory is outside supported bounds")
     if len({c.id for c in candidates}) != len(candidates):
         raise DuplicateCandidateID("Candidate IDs must be unique")
     if minimum_benefit is not None and not 0 <= minimum_benefit <= 50_000_000:
@@ -58,6 +68,18 @@ def select_actions(
             )
             <= 1
         )
+    resources = {candidate.resource for candidate in candidates if candidate.resource is not None}
+    for resource in sorted(resources):
+        matching = [
+            (candidate, choice)
+            for candidate, choice in zip(candidates, choices, strict=True)
+            if candidate.resource == resource
+        ]
+        total_units = sum(candidate.resource_units * choice for candidate, choice in matching)
+        max_units = sum(candidate.resource_units for candidate, _ in matching)
+        # Selected transfers share the smallest selected safe capacity, conservatively.
+        for candidate, choice in matching:
+            model.add(total_units <= candidate.resource_capacity + max_units * (1 - choice))
     solver = cp_model.CpSolver()
     solver.parameters.num_search_workers = 1
     solver.parameters.max_time_in_seconds = SOLVER_TIME_LIMIT_SECONDS
@@ -90,12 +112,27 @@ def select_actions(
     ranked = _rank_selected(selected)
     selected_ids = {c.id for c in selected}
     selected_groups = {c.group for c in selected if c.group is not None}
+    selected_resource_units = {
+        resource: sum(item.resource_units for item in selected if item.resource == resource)
+        for resource in resources
+    }
+    selected_resource_limits = {
+        resource: min(item.resource_capacity for item in selected if item.resource == resource)
+        for resource in resources
+        if any(item.resource == resource for item in selected)
+    }
     reasons = {
         c.id: (
             "cost_exceeds_ceiling"
             if c.cost > budget
             else "alternative_selected"
             if c.group is not None and c.group in selected_groups
+            else "shared_inventory_constraint"
+            if c.resource is not None
+            and selected_resource_units[c.resource] + c.resource_units
+            > min(
+                c.resource_capacity, selected_resource_limits.get(c.resource, c.resource_capacity)
+            )
             else "not_selected_by_optimal_set"
         )
         for c in candidates

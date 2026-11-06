@@ -62,6 +62,22 @@ def test_unreachable_target_respects_budget_and_alternative_groups() -> None:
         )
 
 
+def test_shared_inventory_is_not_double_allocated() -> None:
+    result = select_actions(
+        [
+            Candidate(
+                "a", 1, 5, resource=("donor", "commodity"), resource_units=7, resource_capacity=10
+            ),
+            Candidate(
+                "b", 1, 4, resource=("donor", "commodity"), resource_units=6, resource_capacity=10
+            ),
+        ],
+        budget=2,
+    )
+    assert result.selected_ids == ("a",)
+    assert result.excluded_reasons["b"] == "shared_inventory_constraint"
+
+
 @given(budget=st.integers(min_value=0, max_value=100))
 def test_optimizer_never_exceeds_ceiling(budget: int) -> None:
     result = select_actions([Candidate("a", 8, 10), Candidate("b", 3, 4)], budget=budget)

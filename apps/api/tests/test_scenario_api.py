@@ -236,6 +236,26 @@ def test_scenario_api_auth_roles_idempotency_and_pagination() -> None:
                                 "arrival_day": 27,
                                 "original_day": 58,
                             },
+                            {
+                                "id": "transfer-modeled",
+                                "kind": "redistribution",
+                                "facility_id": stockout["facility_id"],
+                                "commodity_id": stockout["commodity_id"],
+                                "donor_facility_id": (
+                                    "SYN-KE-F002"
+                                    if stockout["facility_id"] == "SYN-KE-F001"
+                                    else "SYN-KE-F001"
+                                ),
+                                "cost": 1,
+                                "dispatch_day": 1,
+                                "arrival_day": 2,
+                                "quantity": 1,
+                                "available_units": 1,
+                                "expiry_day": 30,
+                                "minimum_shelf_days": 5,
+                                "distance_km": 10,
+                                "max_distance_km": 20,
+                            },
                         ],
                     },
                     headers=bearer("planner"),
@@ -247,6 +267,7 @@ def test_scenario_api_auth_roles_idempotency_and_pagination() -> None:
                 assert effect["deferred_days"] > 0
                 assert modeled.json()["effects"][1]["deferred_days"] == 0
                 assert modeled.json()["effects"][2]["id"] == "reorder-modeled"
+                assert modeled.json()["effects"][3]["id"] == "transfer-modeled"
                 unknown = mitigation | {
                     "candidates": [mitigation["candidates"][0] | {"facility_id": "unknown"}]
                 }

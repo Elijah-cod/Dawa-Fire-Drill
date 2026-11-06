@@ -3,7 +3,12 @@
 from dataclasses import dataclass
 from typing import Any
 
-from dawa_api.optimization.modeled_schemas import ModeledDelivery, ModeledEffect, ModeledRequest
+from dawa_api.optimization.modeled_schemas import (
+    ModeledDelivery,
+    ModeledEffect,
+    ModeledReorder,
+    ModeledRequest,
+)
 from dawa_api.optimization.service import Candidate, OptimizationResult, select_actions
 from dawa_api.scenarios.schemas import ScenarioCreate
 from dawa_api.simulation.scenario import stock_parameters
@@ -111,6 +116,40 @@ def evaluate_reorder(
     return _compare(demand, deliveries, changed, horizon_days)
 
 
+def donor_safe_capacity(
+    scenario: ScenarioCreate,
+    data: dict[str, Any],
+    *,
+    horizon_days: int,
+    facility_id: str,
+    commodity_id: str,
+    dispatch_day: int,
+) -> int:
+    """Conservatively avoid advancing the donor's baseline first stockout."""
+    if not 1 <= dispatch_day <= horizon_days:
+        raise ValueError("Dispatch day is outside the run horizon")
+    demand, deliveries = _stock_inputs(
+        scenario,
+        data,
+        horizon_days=horizon_days,
+        facility_id=facility_id,
+        commodity_id=commodity_id,
+    )
+    baseline = simulate_stock(
+        opening_stock=demand * 30, daily_demand=demand, days=horizon_days, deliveries=deliveries
+    ).stockout_day
+    last_day = (baseline - 1) if baseline is not None else horizon_days
+    if dispatch_day > last_day:
+        return 0
+    stock = demand * 30
+    capacity = 1_000_000_000
+    for day in range(1, last_day + 1):
+        stock = max(0, stock + deliveries.get(day, 0) - demand)
+        if day >= dispatch_day:
+            capacity = min(capacity, max(0, stock - 1))
+    return capacity
+
+
 def rank_deliveries(
     scenario: ScenarioCreate,
     snapshot: dict[str, Any],
@@ -136,7 +175,7 @@ def rank_deliveries(
                 arrival_day=item.arrival_day,
                 quantity=item.quantity,
             )
-        else:
+        elif isinstance(item, ModeledReorder):
             effect = evaluate_reorder(
                 scenario,
                 snapshot,
@@ -145,6 +184,23 @@ def rank_deliveries(
                 commodity_id=item.commodity_id,
                 arrival_day=item.arrival_day,
                 original_day=item.original_day,
+            )
+        else:
+            if (
+                item.donor_facility_id == item.facility_id
+                or item.dispatch_day > item.arrival_day
+                or item.distance_km > item.max_distance_km
+                or item.expiry_day <= item.arrival_day + item.minimum_shelf_days
+            ):
+                raise ValueError("Redistribution violates donor, timing, distance, or shelf life")
+            effect = evaluate_delivery(
+                scenario,
+                snapshot,
+                horizon_days=horizon_days,
+                facility_id=item.facility_id,
+                commodity_id=item.commodity_id,
+                arrival_day=item.arrival_day,
+                quantity=item.quantity,
             )
         if effect.baseline_stockout_day != stockouts[key]:
             raise RunMismatch("Pinned inputs do not match recorded run")
@@ -156,7 +212,28 @@ def rank_deliveries(
                 deferred_days=effect.deferred_days,
             )
         )
-        candidates.append(Candidate(item.id, item.cost, effect.deferred_days, group=key))
+        if isinstance(item, (ModeledDelivery, ModeledReorder)):
+            candidates.append(Candidate(item.id, item.cost, effect.deferred_days, group=key))
+        else:
+            safe = donor_safe_capacity(
+                scenario,
+                snapshot,
+                horizon_days=horizon_days,
+                facility_id=item.donor_facility_id,
+                commodity_id=item.commodity_id,
+                dispatch_day=item.dispatch_day,
+            )
+            candidates.append(
+                Candidate(
+                    item.id,
+                    item.cost,
+                    effect.deferred_days,
+                    group=key,
+                    resource=(item.donor_facility_id, item.commodity_id),
+                    resource_units=item.quantity,
+                    resource_capacity=min(safe, item.available_units),
+                )
+            )
     return select_actions(
         candidates, budget=request.budget, minimum_benefit=request.minimum_benefit
     ), effects
