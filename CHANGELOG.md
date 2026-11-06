@@ -1,5 +1,7 @@
 # Changelog
 
+- Began the Phase 3 frontend with a testable schematic county grid and documented boundary-license uncertainty.
+
 - Distinguished pre-shock shortages and shock-caused stockouts using a no-shock counterfactual, ranked a fix for the first shock-caused event, and labeled the synthetic Kisumu funding trace in KES.
 
 - Documented the fresh-clone county demo, local timing sample, and Checkpoint B limitations; strengthened county-capture row-level security coverage.

@@ -1,5 +1,7 @@
 # Synthetic data assumptions
 
+- County boundary review, 2026-11-07: [geoBoundaries gbOpen Kenya ADM1 metadata](https://www.geoboundaries.org/api/current/gbOpen/KEN/ADM1/) reports boundary ID `KEN-ADM1-32016919`, source `RCMRD GeoPortal, Africa GeoPortal`, represented year 2020, build date Dec 12, 2023, `boundaryLicense: Public Domain`, `licenseDetail: nan`, and `licenseSource: rcmrd.africageoportal.com/datasets/africageoportal`. The license source is a general portal and does not itself establish reuse terms for this specific geometry. Metadata was consulted on 2026-11-07; no boundary geometry was downloaded or included. Until the rights are confirmed, the national view uses an original schematic grid of official county names and codes, explicitly not to scale; real boundaries remain a future optional layer.
+
 The generator produces synthetic demo records only. Model outputs remain illustrative and unvalidated.
 
 - Phase 2b uses county names and codes from the [State Department for Devolution county directory](https://www.devolution.go.ke/county-information/) and Kisumu's seven sub-county names from the [Kisumu County Integrated Development Plan 2023–2027](https://www.kisumu.go.ke/wp-content/uploads/KISUMU-CIDP-III-2023-2027.pdf). These administrative names are real reference labels; facility records and all numerical planning values will be synthetic. No disease burden or donor dependence is inferred from these names.
