@@ -107,6 +107,48 @@ class CountySnapshot(Base):
     )
 
 
+class CountyRun(Base):
+    __tablename__ = "county_runs"
+    __table_args__ = (
+        UniqueConstraint("country_code", "county_code", "idempotency_key"),
+        ForeignKeyConstraint(
+            ["country_code", "county_code", "seed", "snapshot_version", "snapshot_kind"],
+            [
+                "county_snapshots.country_code",
+                "county_snapshots.county_code",
+                "county_snapshots.seed",
+                "county_snapshots.version",
+                "county_snapshots.kind",
+            ],
+        ),
+        CheckConstraint(
+            "country_code = 'KE' AND county_code = '042' AND snapshot_kind = 'pilot'",
+            name="ck_county_run_pilot",
+        ),
+        CheckConstraint(
+            "status IN ('queued','running','succeeded','failed')", name="ck_county_run_status"
+        ),
+    )
+    id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid4)
+    country_code: Mapped[str] = mapped_column(String(2), nullable=False)
+    county_code: Mapped[str] = mapped_column(String(16), nullable=False)
+    idempotency_key: Mapped[str] = mapped_column(String(128), nullable=False)
+    seed: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    snapshot_version: Mapped[int] = mapped_column(Integer, nullable=False)
+    snapshot_kind: Mapped[str] = mapped_column(String(16), nullable=False)
+    simulation_version: Mapped[int] = mapped_column(Integer, nullable=False)
+    scenario: Mapped[dict[str, Any]] = mapped_column(JSON, nullable=False)
+    horizon_days: Mapped[int] = mapped_column(Integer, nullable=False)
+    status: Mapped[str] = mapped_column(String(16), nullable=False)
+    result: Mapped[dict[str, Any] | None] = mapped_column(JSON, nullable=True)
+    lease_token: Mapped[UUID | None] = mapped_column(nullable=True)
+    lease_until: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    attempts: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=lambda: datetime.now(UTC)
+    )
+
+
 class FundingFlow(Base):
     __tablename__ = "funding_flows"
     __table_args__ = (

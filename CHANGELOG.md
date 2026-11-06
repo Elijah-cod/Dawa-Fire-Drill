@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Add county-scoped asynchronous Kisumu runs and modeled mitigation ranking against pinned pilot inputs.
 - Add an idempotent CLI to seed all county planning snapshots and the Kisumu pilot.
 - Add a Kisumu facility view that limits facility-role users to their own synthetic records.
 - Expose scoped synthetic county planning and Kisumu pilot snapshots to authorized roles.

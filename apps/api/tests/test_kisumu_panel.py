@@ -3,6 +3,8 @@ from hypothesis import given, settings
 from hypothesis import strategies as st
 
 from dawa_api.ingestion.kisumu import generate_kisumu_panel
+from dawa_api.optimization.mitigation import rank_deliveries
+from dawa_api.optimization.modeled_schemas import ModeledRequest
 from dawa_api.scenarios.schemas import ScenarioCreate
 from dawa_api.simulation.kisumu import simulate_kisumu
 
@@ -77,3 +79,52 @@ def test_subcounty_rollups_equal_facility_stockouts(seed: int, magnitude: int) -
         assert row["stockout_count"] == sum(
             1 for item in result["stockouts"] if item["subcounty_id"] == row["subcounty_id"]
         )
+
+
+def test_planted_transfer_is_ranked_against_emergency_procurement() -> None:
+    data = generate_kisumu_panel(seed=42)
+    scenario = ScenarioCreate(
+        name="Synthetic donor shock", shock_type="logistics_reduction", magnitude=40
+    )
+    result = simulate_kisumu(scenario, data, horizon_days=90)
+    transfer = data["demo_cases"]["near_expiry_transfer"]
+    request = ModeledRequest.model_validate(
+        {
+            "synthetic_attested": True,
+            "budget": 100,
+            "minimum_benefit": 1,
+            "candidates": [
+                {
+                    "id": "transfer",
+                    "kind": "redistribution",
+                    "cost": 10,
+                    "facility_id": transfer["facility_id"],
+                    "donor_facility_id": transfer["donor_facility_id"],
+                    "commodity_id": transfer["commodity_id"],
+                    "quantity": transfer["quantity"],
+                    "available_units": transfer["available_units"],
+                    "dispatch_day": transfer["dispatch_day"],
+                    "arrival_day": transfer["arrival_day"],
+                    "expiry_day": transfer["expiry_day"],
+                    "minimum_shelf_days": transfer["minimum_shelf_days"],
+                    "distance_km": transfer["distance_km"],
+                    "max_distance_km": transfer["maximum_distance_km"],
+                },
+                {
+                    "id": "emergency",
+                    "kind": "emergency_procurement",
+                    "cost": 50,
+                    "facility_id": transfer["facility_id"],
+                    "commodity_id": transfer["commodity_id"],
+                    "quantity": transfer["quantity"],
+                    "arrival_day": transfer["arrival_day"],
+                },
+            ],
+        }
+    )
+    ranked, effects = rank_deliveries(
+        scenario, data, result["stockouts"], horizon_days=90, request=request, simulation_version=5
+    )
+    assert ranked.selected_ids == ("transfer",)
+    assert ranked.total_cost == 10
+    assert effects[0].deferred_days >= 1

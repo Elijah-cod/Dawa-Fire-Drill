@@ -34,7 +34,7 @@ def _stock_inputs(
     facility_id: str,
     commodity_id: str,
     simulation_version: int,
-) -> tuple[int, dict[int, int]]:
+) -> tuple[int, dict[int, int], int]:
     if data.get("synthetic") is not True or data.get("country_code") != "KE":
         raise ValueError("A synthetic Kenya snapshot is required")
     facilities = [item for item in data["facilities"] if item["id"] == facility_id]
@@ -49,23 +49,39 @@ def _stock_inputs(
     ]
     if len(history) != 1:
         raise ValueError("Synthetic facility and commodity history is unavailable")
-    return stock_parameters(
+    demand, deliveries = stock_parameters(
         scenario,
         monthly_demand=history[0]["quantity"],
         horizon_days=horizon_days,
-        simulation_version=simulation_version,
+        simulation_version=4 if simulation_version == 5 else simulation_version,
         lead_time_days=facilities[0].get("lead_time_days"),
     )
+    if simulation_version == 5:
+        if data.get("county_code") != "042" or facilities[0].get("county_code") != "042":
+            raise ValueError("Kisumu synthetic snapshot required")
+        opening = [
+            row["opening_stock"]
+            for row in data["stock"]
+            if row["facility_id"] == facility_id and row["commodity_id"] == commodity_id
+        ]
+        if len(opening) != 1 or opening[0] < 0:
+            raise ValueError("Synthetic opening stock is unavailable")
+        return demand, deliveries, opening[0] * 30
+    return demand, deliveries, demand * 30
 
 
 def _compare(
-    demand: int, deliveries: dict[int, int], changed: dict[int, int], horizon_days: int
+    demand: int,
+    deliveries: dict[int, int],
+    changed: dict[int, int],
+    horizon_days: int,
+    opening_stock: int,
 ) -> DeliveryEffect:
     baseline = simulate_stock(
-        opening_stock=demand * 30, daily_demand=demand, days=horizon_days, deliveries=deliveries
+        opening_stock=opening_stock, daily_demand=demand, days=horizon_days, deliveries=deliveries
     ).stockout_day
     counterfactual = simulate_stock(
-        opening_stock=demand * 30, daily_demand=demand, days=horizon_days, deliveries=changed
+        opening_stock=opening_stock, daily_demand=demand, days=horizon_days, deliveries=changed
     ).stockout_day
     delta = (counterfactual or horizon_days + 1) - (baseline or horizon_days + 1)
     return DeliveryEffect(baseline, counterfactual, delta)
@@ -85,7 +101,7 @@ def evaluate_delivery(
     """Compare first stockout dates, treating no stockout as horizon plus one."""
     if not 1 <= arrival_day <= horizon_days or not 1 <= quantity <= 1_000_000_000:
         raise ValueError("Delivery timing or quantity is outside supported bounds")
-    demand, deliveries = _stock_inputs(
+    demand, deliveries, opening_stock = _stock_inputs(
         scenario,
         data,
         horizon_days=horizon_days,
@@ -95,9 +111,9 @@ def evaluate_delivery(
     )
     changed = deliveries.copy()
     changed[arrival_day] = changed.get(arrival_day, 0) + quantity * (
-        30 if simulation_version == 4 else 1
+        30 if simulation_version in (4, 5) else 1
     )
-    return _compare(demand, deliveries, changed, horizon_days)
+    return _compare(demand, deliveries, changed, horizon_days, opening_stock)
 
 
 def evaluate_reorder(
@@ -112,7 +128,7 @@ def evaluate_reorder(
     simulation_version: int = 2,
 ) -> DeliveryEffect:
     """Move an existing modeled replenishment earlier without adding units."""
-    demand, deliveries = _stock_inputs(
+    demand, deliveries, opening_stock = _stock_inputs(
         scenario,
         data,
         horizon_days=horizon_days,
@@ -125,7 +141,7 @@ def evaluate_reorder(
     changed = deliveries.copy()
     quantity = changed.pop(original_day)
     changed[arrival_day] = changed.get(arrival_day, 0) + quantity
-    return _compare(demand, deliveries, changed, horizon_days)
+    return _compare(demand, deliveries, changed, horizon_days, opening_stock)
 
 
 def donor_safe_capacity(
@@ -141,7 +157,7 @@ def donor_safe_capacity(
     """Conservatively avoid advancing the donor's baseline first stockout."""
     if not 1 <= dispatch_day <= horizon_days:
         raise ValueError("Dispatch day is outside the run horizon")
-    demand, deliveries = _stock_inputs(
+    demand, deliveries, opening_stock = _stock_inputs(
         scenario,
         data,
         horizon_days=horizon_days,
@@ -150,18 +166,18 @@ def donor_safe_capacity(
         simulation_version=simulation_version,
     )
     baseline = simulate_stock(
-        opening_stock=demand * 30, daily_demand=demand, days=horizon_days, deliveries=deliveries
+        opening_stock=opening_stock, daily_demand=demand, days=horizon_days, deliveries=deliveries
     ).stockout_day
     last_day = (baseline - 1) if baseline is not None else horizon_days
     if dispatch_day > last_day:
         return 0
-    stock = demand * 30
-    capacity = 30_000_000_000 if simulation_version == 4 else 1_000_000_000
+    stock = opening_stock
+    capacity = 30_000_000_000 if simulation_version in (4, 5) else 1_000_000_000
     for day in range(1, last_day + 1):
         stock = max(0, stock + deliveries.get(day, 0) - demand)
         if day >= dispatch_day:
             capacity = min(capacity, max(0, stock - 1))
-    return capacity // 30 if simulation_version == 4 else capacity
+    return capacity // 30 if simulation_version in (4, 5) else capacity
 
 
 def rank_deliveries(

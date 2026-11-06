@@ -60,6 +60,11 @@ def test_migrations_upgrade_and_downgrade() -> None:
                     assert versions == {"old": 1, "new": 2}
                     assert inspect(sync_conn).has_table("scenarios")
                     assert inspect(sync_conn).has_table("county_snapshots")
+                    assert inspect(sync_conn).has_table("county_runs")
+                    command.downgrade(config, "0010_county_snapshots")
+                    assert not inspect(sync_conn).has_table("county_runs")
+                    assert inspect(sync_conn).has_table("county_snapshots")
+                    command.upgrade(config, "head")
                     command.downgrade(config, "0009_simulation_version")
                     assert not inspect(sync_conn).has_table("county_snapshots")
                     command.upgrade(config, "head")

@@ -8,6 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_asyn
 
 from dawa_api.countries.service import get_country
 from dawa_api.ingestion.repository import GENERATOR_VERSION, DatasetRepository
+from dawa_api.jobs.county_worker import process_kisumu_one
 from dawa_api.jobs.queue import RunQueue
 from dawa_api.jobs.repository import RunRepository
 from dawa_api.scenarios.schemas import ScenarioCreate
@@ -76,6 +77,8 @@ async def run_worker(country: str, *, once: bool, poll_seconds: int) -> None:
         sessions = async_sessionmaker(engine, expire_on_commit=False)
         while True:
             processed = await process_one(sessions, country)
+            if country == "KE":
+                processed = await process_kisumu_one(sessions) or processed
             if once:
                 break
             if not processed:

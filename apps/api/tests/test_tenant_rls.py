@@ -42,6 +42,7 @@ def test_database_policy_denies_other_country() -> None:
                 )
                 await conn.execute(text(f'GRANT SELECT, INSERT ON scenario_runs TO "{role}"'))
                 await conn.execute(text(f'GRANT SELECT, INSERT ON county_snapshots TO "{role}"'))
+                await conn.execute(text(f'GRANT SELECT, INSERT, UPDATE ON county_runs TO "{role}"'))
                 await conn.execute(text(f'GRANT SELECT ON extraction_cache TO "{role}"'))
                 await conn.execute(
                     text(f'GRANT SELECT, UPDATE, DELETE ON synthetic_datasets TO "{role}"')
@@ -77,7 +78,16 @@ def test_database_policy_denies_other_country() -> None:
                         "INSERT INTO county_snapshots (country_code, county_code, seed, "
                         "version, kind, data, created_at) VALUES "
                         "('KE','042',42,1,'planning','{}',now()), "
-                        "('KE','047',42,1,'planning','{}',now())"
+                        "('KE','047',42,1,'planning','{}',now()), "
+                        "('KE','042',42,1,'pilot','{}',now())"
+                    )
+                )
+                await conn.execute(
+                    text(
+                        "INSERT INTO county_runs (id,country_code,county_code,idempotency_key,seed,"
+                        "snapshot_version,snapshot_kind,simulation_version,scenario,horizon_days,"
+                        "status,attempts,created_at) VALUES (gen_random_uuid(),'KE','042','run',"
+                        "42,1,'pilot',1,'{}',90,'queued',0,now())"
                     )
                 )
                 await conn.execute(
@@ -135,7 +145,10 @@ def test_database_policy_denies_other_country() -> None:
                     .scalars()
                     .all()
                 )
-                assert county_rows == ["042"]
+                assert county_rows == ["042", "042"]
+                assert (
+                    await conn.execute(text("SELECT count(*) FROM county_runs"))
+                ).scalar_one() == 1
                 with pytest.raises(DBAPIError):
                     async with conn.begin_nested():
                         await conn.execute(
@@ -145,6 +158,11 @@ def test_database_policy_denies_other_country() -> None:
                                 "('KE','047',43,1,'planning','{}',now())"
                             )
                         )
+                await conn.execute(text("SELECT set_config('app.county_code', '047', true)"))
+                assert (
+                    await conn.execute(text("SELECT count(*) FROM county_runs"))
+                ).scalar_one() == 0
+                await conn.execute(text("SELECT set_config('app.county_code', '042', true)"))
                 rows = (
                     (await conn.execute(text("SELECT country_code FROM scenarios"))).scalars().all()
                 )
