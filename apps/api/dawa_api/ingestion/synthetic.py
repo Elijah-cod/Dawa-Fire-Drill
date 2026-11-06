@@ -12,6 +12,9 @@ SEASONAL_INDEX = (90, 92, 96, 100, 105, 110, 112, 108, 103, 100, 96, 92)
 TURNAROUND_SOURCE = (
     "https://www.treasury.go.ke/sites/default/files/NEW/Draft-Health-Sector-Report-11.11.2025.pdf"
 )
+MALARIA_SOURCE = "https://www.pmi.gov/wp-content/uploads/2022/01/FY-2022-Kenya-MOP.pdf"
+MALARIA_NEEDS = {"SYN-C01": 6_067_513, "SYN-C02": 9_649_693, "SYN-C03": 1_087_808}
+PUBLIC_FACILITY_COUNT = 6_304
 
 
 class Facility(TypedDict):
@@ -49,9 +52,19 @@ def generate_dataset(*, seed: int) -> dict[str, Any]:
         for index in range(1, 11)
     ]
     consumption = []
+    total_levels = sum(facility["level"] for facility in facilities)
     for facility in facilities:
         for commodity in commodities:
-            baseline = rng.randint(10, 100) * facility["level"]
+            if commodity["id"] in MALARIA_NEEDS:
+                # Equal national facility share and level weighting are synthetic assumptions.
+                baseline = (
+                    MALARIA_NEEDS[commodity["id"]]
+                    * len(facilities)
+                    * facility["level"]
+                    // (PUBLIC_FACILITY_COUNT * 12 * total_levels)
+                )
+            else:
+                baseline = rng.randint(10, 100) * facility["level"]
             for month in range(24):
                 quantity = max(
                     0, baseline * SEASONAL_INDEX[month % 12] * rng.randint(90, 110) // 10000
@@ -88,8 +101,8 @@ def generate_dataset(*, seed: int) -> dict[str, Any]:
         "synthetic": True,
         "country_code": "KE",
         "seed": seed,
-        "calibration_scope": "facility level mix and order turnaround anchors only; "
-        "other quantities are illustrative assumptions",
+        "calibration_scope": "facility mix, order turnaround, and three malaria tracer "
+        "need proxies only; other quantities are illustrative assumptions",
         "calibration": {
             "delivery_lead_time": {
                 "primary_facility_days": 24.2,
@@ -97,7 +110,19 @@ def generate_dataset(*, seed: int) -> dict[str, Any]:
                 "period": "2024/25",
                 "source_url": TURNAROUND_SOURCE,
                 "dispersion": "synthetic assumption; not measured by source",
-            }
+            },
+            "malaria_tracers": {
+                "period": "2023 projected",
+                "source_url": MALARIA_SOURCE,
+                "national_need": MALARIA_NEEDS,
+                "units": {
+                    "SYN-C01": "ACT treatment courses",
+                    "SYN-C02": "malaria rapid diagnostic tests",
+                    "SYN-C03": "injectable artesunate vials",
+                },
+                "national_facility_denominator": PUBLIC_FACILITY_COUNT,
+                "scope": "synthetic equal-share and level-weighted proxy, not observed use",
+            },
         },
         "facilities": facilities,
         "commodities": commodities,

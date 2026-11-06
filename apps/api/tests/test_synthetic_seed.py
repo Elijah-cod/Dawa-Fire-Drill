@@ -18,7 +18,7 @@ def test_seed_is_reproducible_and_structurally_complete() -> None:
 def test_lead_times_use_separate_public_aggregate_anchors_with_provenance() -> None:
     data = generate_dataset(seed=42)
     calibration = data["calibration"]["delivery_lead_time"]
-    assert GENERATOR_VERSION == 2
+    assert GENERATOR_VERSION == 3
     assert calibration["primary_facility_days"] == 24.2
     assert calibration["hospital_days"] == 19.5
     assert calibration["period"] == "2024/25"
@@ -26,3 +26,19 @@ def test_lead_times_use_separate_public_aggregate_anchors_with_provenance() -> N
     for facility in data["facilities"]:
         center = 24 if facility["level"] in (2, 3) else 20
         assert center - 5 <= facility["lead_time_days"] <= center + 5
+
+
+def test_malaria_tracers_have_scoped_projected_need_anchors() -> None:
+    data = generate_dataset(seed=42)
+    calibration = data["calibration"]["malaria_tracers"]
+    assert calibration["period"] == "2023 projected"
+    assert calibration["source_url"].startswith("https://www.pmi.gov/")
+    anchors = {"SYN-C01": 6_067_513, "SYN-C02": 9_649_693, "SYN-C03": 1_087_808}
+    for commodity, annual_national in anchors.items():
+        total = sum(
+            row["quantity"]
+            for row in data["consumption"]
+            if row["commodity_id"] == commodity and row["month_index"] < 12
+        )
+        expected = annual_national * 40 / 6304
+        assert abs(total - expected) < expected * 0.15
