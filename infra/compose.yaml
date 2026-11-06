@@ -5,6 +5,10 @@ services:
     environment:
       DATABASE_URL: postgresql+asyncpg://postgres:postgres@postgres:5432/dawa
       NEO4J_URI: bolt://neo4j:7687
+      APP_ENV: ${APP_ENV:-local}
+      DEMO_ROLE_SWITCHER: ${DEMO_ROLE_SWITCHER:-false}
+      SUPABASE_URL: ${SUPABASE_URL:-}
+      SUPABASE_JWT_SECRET: ${SUPABASE_JWT_SECRET:-}
     ports:
       - "8000:8000"
     depends_on:

@@ -1,5 +1,7 @@
 # Changelog
 
+- Updated the curl demo to exercise county planning, the Kisumu shock, mitigation explanation and facility capture.
+
 - Added a separate county-scoped Kisumu facility bin-card capture and human-confirmation workflow.
 
 - Added an opt-in administrator-only demo role switcher for local or staging environments, refused in production.

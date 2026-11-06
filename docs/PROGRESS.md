@@ -1,5 +1,7 @@
 # Progress
 
+- Phase 2b closeout: updated the curl demo for the national overview, Kisumu shock and first-stockout order, forecast, funding trace, mitigation explanation and reviewed capture; enabled explicit Compose environment configuration for local demo auth. Mocked command-flow test and full suite passed (131 tests, one existing warning); Ruff, mypy and Bandit passed. Next: clean-clone Compose execution, timing and security audits.
+
 - Phase 2b closeout: added separate county-scoped Kisumu facility capture storage, validated synthetic images and manual/provider extraction, and human confirmation; tests cover wrong facility and county and migration up/down. Full suite: 131 passed, one existing warning; Ruff, mypy and Bandit passed. Next: fresh-clone Compose demo and final checks.
 
 - Phase 2b closeout: added an opt-in authenticated-admin demo role switcher with fixed synthetic scopes and a production startup prohibition. Full suite: 131 passed, one existing warning; Ruff, mypy, and Bandit passed (Ruff first caught a test line length, then passed after formatting). Next: county-scoped capture and the full demo.
