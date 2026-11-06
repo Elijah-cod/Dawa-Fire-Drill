@@ -1,6 +1,7 @@
 """County-scoped synthetic planning and Kisumu pilot reads."""
 
 import asyncio
+from datetime import date
 from typing import Annotated, Any
 from uuid import UUID
 
@@ -11,6 +12,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from dawa_api.auth.service import Principal
 from dawa_api.countries.facility_view import facility_view
 from dawa_api.countries.ke.counties import KENYA_COUNTIES, county_by_code
+from dawa_api.finance_flow.application import trace_kisumu_case
+from dawa_api.finance_flow.schemas import FundingTraceResponse
 from dawa_api.ingestion.county_repository import COUNTY_GENERATOR_VERSION, CountySnapshotRepository
 from dawa_api.jobs.county_repository import CountyRunConflict, CountyRunRepository
 from dawa_api.optimization.kisumu import rank_kisumu
@@ -149,6 +152,32 @@ async def facility(
         return facility_view(snapshot.data, facility_id=facility_id)
     except LookupError as exc:
         raise HTTPException(status_code=404, detail="Synthetic facility not found") from exc
+
+
+@router.get("/{county_code}/funding/{flow_id}/trace", response_model=FundingTraceResponse)
+async def funding_trace(
+    county_code: str,
+    flow_id: str,
+    as_of: date,
+    principal: Annotated[Principal, Depends(can_plan)],
+    session: Annotated[AsyncSession, Depends(session_for_request)],
+    seed: Seed,
+    version: Annotated[int, Query(ge=1)] = COUNTY_GENERATOR_VERSION,
+) -> FundingTraceResponse:
+    _check_county(principal, county_code, planning=False)
+    if county_code != "042":
+        raise HTTPException(status_code=404, detail="Facility pilot is available only in Kisumu")
+    snapshot = await CountySnapshotRepository(
+        session, country_code="KE", county_code=county_code
+    ).get(seed=seed, kind="pilot", version=version)
+    if snapshot is None:
+        raise HTTPException(status_code=404, detail="Synthetic pilot snapshot not found")
+    try:
+        return trace_kisumu_case(snapshot.data, flow_id=flow_id, as_of=as_of)
+    except LookupError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
 
 
 @router.post("/{county_code}/runs", response_model=CountyRunRead, status_code=202)

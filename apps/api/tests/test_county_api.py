@@ -90,6 +90,18 @@ def test_county_endpoints_enforce_county_and_role_scopes() -> None:
                 result = completed.json()["result"]
                 assert result["county_code"] == "042"
                 assert any(row["facility_id"] == "SYN-KE-042-F001" for row in result["stockouts"])
+                trace = client.get(
+                    "/v1/counties/042/funding/SYN-042-FLOW-01/trace?seed=42&as_of=2025-04-01"
+                )
+                assert trace.status_code == 200
+                assert trace.json()["synthetic"] is True
+                assert trace.json()["bottlenecks"][0]["stage"] == "approved_not_released"
+                assert (
+                    client.get(
+                        "/v1/counties/047/funding/SYN-042-FLOW-01/trace?seed=42&as_of=2025-04-01"
+                    ).status_code
+                    == 403
+                )
                 assert client.get(f"/v1/counties/047/runs/{run_id}").status_code == 403
                 transfer = result["demo_cases"]["near_expiry_transfer"]
                 candidates = [
