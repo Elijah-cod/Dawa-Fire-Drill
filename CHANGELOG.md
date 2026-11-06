@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Add a public health-sector first-quarter release proxy to synthetic funding records, with scope limitations.
 - Update the synthetic demo to rank replayed emergency-delivery effects.
 - Include the selected reasons and cut line in modeled mitigation results.
 - Anchor the total synthetic funding scale to a published procurement-value proxy while keeping funding stages explicitly assumed.

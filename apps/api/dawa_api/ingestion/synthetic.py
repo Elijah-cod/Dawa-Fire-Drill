@@ -33,6 +33,11 @@ FAMILY_PLANNING_NEEDS = {
 }
 PUBLIC_FACILITY_COUNT = 6_304
 NATIONAL_PROCUREMENT_KES = 31_138_078_092
+RELEASE_SOURCE = (
+    "https://parliament.go.ke/sites/default/files/2025-02/"
+    "Report%20of%20the%20National%20Government%20Budget%20Implementation%20Review%20Report%20"
+    "First%20Quarter%20FY%202024%3A25.pdf"
+)
 
 
 class Facility(TypedDict):
@@ -119,16 +124,16 @@ def generate_dataset(*, seed: int) -> dict[str, Any]:
     cash_releases = [
         {
             "budget_line_id": line["id"],
-            "amount": line["approved"] * 4 // 5,
-            "day": rng.randint(1, 30),
+            "amount": line["approved"] * 14 // 100,
+            "day": 90,
         }
         for line in budget_lines
     ]
     procurement_orders = [
         {
             "budget_line_id": line["id"],
-            "amount": line["approved"] * 3 // 5,
-            "delivery_day": rng.randint(31, 90),
+            "amount": (line["approved"] * 14 // 100) * 3 // 5,
+            "delivery_day": rng.randint(91, 150),
         }
         for line in budget_lines
     ]
@@ -182,6 +187,13 @@ def generate_dataset(*, seed: int) -> dict[str, Any]:
                 "national_facility_denominator": PUBLIC_FACILITY_COUNT,
                 "scope": "procurement value is only a synthetic approved-budget scale proxy; "
                 "line allocations and cash-flow stages are assumptions",
+            },
+            "release_proxy": {
+                "period": "2024/25 Q1",
+                "source_url": RELEASE_SOURCE,
+                "percent_of_revised_net_estimates": 14,
+                "scope": "national health sector first-quarter exchequer ratio used as a "
+                "synthetic commodity-budget proxy; not actual commodity releases",
             },
         },
         "facilities": facilities,

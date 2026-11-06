@@ -18,7 +18,7 @@ def test_seed_is_reproducible_and_structurally_complete() -> None:
 def test_lead_times_use_separate_public_aggregate_anchors_with_provenance() -> None:
     data = generate_dataset(seed=42)
     calibration = data["calibration"]["delivery_lead_time"]
-    assert GENERATOR_VERSION == 5
+    assert GENERATOR_VERSION == 6
     assert calibration["primary_facility_days"] == 24.2
     assert calibration["hospital_days"] == 19.5
     assert calibration["period"] == "2024/25"
@@ -78,3 +78,18 @@ def test_synthetic_funding_scale_has_source_and_preserves_panel_total() -> None:
     assert source["period"] == "2024/25"
     assert source["source_url"].startswith("https://www.treasury.go.ke/")
     assert sum(line["approved"] for line in data["budget_lines"]) == 31_138_078_092 * 40 // 6304
+
+
+def test_release_proxy_uses_first_quarter_health_sector_aggregate() -> None:
+    data = generate_dataset(seed=42)
+    release_source = data["calibration"]["release_proxy"]
+    assert release_source["percent_of_revised_net_estimates"] == 14
+    assert release_source["period"] == "2024/25 Q1"
+    assert release_source["source_url"].startswith("https://parliament.go.ke/")
+    budgets = {line["id"]: line["approved"] for line in data["budget_lines"]}
+    for release in data["cash_releases"]:
+        assert release["amount"] == budgets[release["budget_line_id"]] * 14 // 100
+        assert release["day"] == 90
+    releases = {line["budget_line_id"]: line["amount"] for line in data["cash_releases"]}
+    for order in data["procurement_orders"]:
+        assert order["amount"] <= releases[order["budget_line_id"]]
