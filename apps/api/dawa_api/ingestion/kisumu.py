@@ -89,8 +89,10 @@ def generate_kisumu_panel(*, seed: int) -> dict[str, Any]:
     ]
     chronic_id, donor_id, neighbor_id = (f"SYN-KE-042-F{index:03d}" for index in (1, 2, 3))
     for item in stock:
-        if item["commodity_id"] == "SYN-C01" and item["facility_id"] in (chronic_id, neighbor_id):
+        if item["commodity_id"] == "SYN-C01" and item["facility_id"] == chronic_id:
             item["opening_stock"] = 0
+        if item["commodity_id"] == "SYN-C01" and item["facility_id"] == neighbor_id:
+            item["opening_stock"] = 10
         if item["commodity_id"] == "SYN-C01" and item["facility_id"] == donor_id:
             item["opening_stock"] = int(item["opening_stock"]) + 600
     chronic = {

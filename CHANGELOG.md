@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Simulate the isolated Kisumu panel with its synthetic opening stock and sub-county stockout roll-ups.
 - Add an isolated synthetic Kisumu facility panel and planted demo inputs, pending scenario integration.
 - Generate reproducible 47-county synthetic planning proxies anchored to published all-sector totals.
 - Make OR-Tools tie ordering tractable for the maximum supported candidate count.
