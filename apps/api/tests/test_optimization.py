@@ -29,6 +29,12 @@ def test_selected_actions_are_ranked_by_solver() -> None:
     assert result.selected_ids == ("higher", "lower")
 
 
+def test_fifty_equal_benefits_have_a_deterministic_solver_order() -> None:
+    candidates = [Candidate(f"candidate-{index}", 1, 1) for index in range(50)]
+    result = select_actions(candidates, budget=50)
+    assert result.selected_ids == tuple(candidate.id for candidate in candidates)
+
+
 def test_same_stockout_alternatives_are_not_double_counted() -> None:
     result = select_actions(
         [

@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Generate reproducible 47-county synthetic planning proxies anchored to published all-sector totals.
+- Make OR-Tools tie ordering tractable for the maximum supported candidate count.
 - Add a county overview and Kisumu pilot design addendum, including responsive and failure states.
 - Begin Phase 2b with an official Kenya county and Kisumu sub-county reference directory.
 - Add a public health-sector first-quarter release proxy to synthetic funding records, with scope limitations.

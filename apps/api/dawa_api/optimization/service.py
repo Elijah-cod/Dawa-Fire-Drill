@@ -153,35 +153,22 @@ def _rank_selected(selected: list[Candidate]) -> list[Candidate]:
         return []
     model = cp_model.CpModel()
     count = len(selected)
-    positions = [[model.new_bool_var(f"rank_{i}_{j}") for j in range(count)] for i in range(count)]
-    for row in positions:
-        model.add_exactly_one(row)
-    for rank in range(count):
-        model.add_exactly_one(positions[index][rank] for index in range(count))
-    weighted_benefit = sum(
-        selected[index].benefit * (count - rank) * positions[index][rank]
-        for index in range(count)
-        for rank in range(count)
-    )
-    model.maximize(weighted_benefit)
+    positions = [model.new_int_var(0, count - 1, f"rank_{i}") for i in range(count)]
+    model.add_all_different(positions)
+    for i in range(count):
+        for j in range(i + 1, count):
+            if selected[i].benefit >= selected[j].benefit:
+                model.add(positions[i] < positions[j])
+            else:
+                model.add(positions[j] < positions[i])
     solver = cp_model.CpSolver()
     solver.parameters.num_search_workers = 1
     solver.parameters.max_time_in_seconds = SOLVER_TIME_LIMIT_SECONDS
     if solver.solve(model) != cp_model.OPTIMAL:
         raise RuntimeError("Optimizer did not prove a ranking")
-    model.add(weighted_benefit == solver.value(weighted_benefit))
-    model.minimize(
-        sum(
-            index * (count - rank) * positions[index][rank]
-            for index in range(count)
-            for rank in range(count)
-        )
-    )
-    if solver.solve(model) != cp_model.OPTIMAL:
-        raise RuntimeError("Optimizer did not resolve ranking ties")
     return [
         selected[index]
         for rank in range(count)
         for index in range(count)
-        if solver.value(positions[index][rank])
+        if solver.value(positions[index]) == rank
     ]
