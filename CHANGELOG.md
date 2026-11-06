@@ -1,6 +1,7 @@
 # Changelog
 
 - Calibrated version 2 synthetic county budget scales to published county aggregates, retaining invented release shares and immutable older snapshots.
+- Added an integration comparison of synthetic redistribution and emergency-delivery costs in the Kisumu mitigation workflow.
 
 ## Unreleased
 

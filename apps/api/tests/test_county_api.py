@@ -133,6 +133,27 @@ def test_county_endpoints_enforce_county_and_role_scopes() -> None:
                 )
                 assert ranked.status_code == 200, ranked.text
                 assert ranked.json()["selected_ids"] == ["transfer"]
+                emergency = {
+                    "id": "emergency",
+                    "kind": "emergency_procurement",
+                    "cost": 50,
+                    "facility_id": transfer["facility_id"],
+                    "commodity_id": transfer["commodity_id"],
+                    "quantity": transfer["quantity"],
+                    "arrival_day": transfer["arrival_day"],
+                }
+                compared = client.post(
+                    f"/v1/counties/042/runs/{run_id}/mitigations",
+                    json={
+                        "synthetic_attested": True,
+                        "budget": 100,
+                        "minimum_benefit": 1,
+                        "candidates": [candidates[0], emergency],
+                    },
+                )
+                assert compared.status_code == 200, compared.text
+                assert compared.json()["selected_ids"] == ["transfer"]
+                assert compared.json()["total_cost"] == 10
                 forged = candidates[0] | {"available_units": 999999}
                 assert (
                     client.post(
