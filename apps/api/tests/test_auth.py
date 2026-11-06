@@ -1,15 +1,19 @@
 from datetime import UTC, datetime, timedelta
+from typing import Any
 
 import jwt
 import pytest
+from fastapi.testclient import TestClient
 
+from dawa_api.app import create_app
 from dawa_api.auth.service import AuthenticationError, authenticate_token, principal_from_claims
+from dawa_api.settings import Settings
 
 TEST_SIGNING_MATERIAL = "synthetic-test-material-" * 3
 ISSUER = "https://example.invalid/auth/v1"
 
 
-def token(*, metadata: dict[str, str], expired: bool = False) -> str:
+def token(*, metadata: dict[str, Any], expired: bool = False) -> str:
     now = datetime.now(UTC)
     return jwt.encode(
         {
@@ -78,6 +82,41 @@ def test_county_and_national_scope_only_come_from_trusted_metadata() -> None:
     ):
         with pytest.raises(AuthenticationError):
             principal_from_claims({"sub": "user", "app_metadata": metadata})
+
+
+def test_county_scoped_users_cannot_access_legacy_country_only_paths(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    async def allow_request(*args: object, **kwargs: object) -> bool:
+        return True
+
+    monkeypatch.setattr("dawa_api.scenarios.router.reserve_request", allow_request)
+    settings = Settings(
+        DATABASE_URL="postgresql+asyncpg://postgres:postgres@localhost:5432/dawa",
+        supabase_url="https://example.invalid",
+        supabase_jwt_secret=TEST_SIGNING_MATERIAL,
+    )
+    with TestClient(create_app(settings=settings)) as client:
+        for role in ("planner", "pharmacist", "admin", "facility"):
+            metadata = {"role": role, "country_code": "KE", "county_code": "042"}
+            if role == "facility":
+                metadata["facility_id"] = "SYN-KE-042-F001"
+            headers = {"Authorization": f"Bearer {token(metadata=metadata)}"}
+            for path in (
+                "/v1/scenarios",
+                "/v1/runs/compare",
+                "/v1/catalog/facilities?seed=42",
+                "/v1/funding/flows",
+                "/v1/captures",
+            ):
+                assert client.get(path, headers=headers).status_code == 403
+        national = {"role": "planner", "country_code": "KE", "national_planning": True}
+        assert (
+            client.get(
+                "/v1/scenarios", headers={"Authorization": f"Bearer {token(metadata=national)}"}
+            ).status_code
+            == 403
+        )
 
 
 @pytest.mark.parametrize(

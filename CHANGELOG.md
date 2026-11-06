@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Block county-scoped identities from legacy country-only data paths pending their migration.
 - Add a scoped funding trace for the synthetic Kisumu stalled-release case.
 - Add county-scoped asynchronous Kisumu runs and modeled mitigation ranking against pinned pilot inputs.
 - Add an idempotent CLI to seed all county planning snapshots and the Kisumu pilot.

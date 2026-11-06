@@ -50,6 +50,16 @@ async def current_principal(
         raise HTTPException(
             status_code=401, detail="Invalid credentials", headers={"WWW-Authenticate": "Bearer"}
         ) from exc
+    # County-aware identities cannot enter older storage paths until those paths
+    # have county-level tenancy. The separate county API enforces both scopes.
+    path = request.url.path.removeprefix(settings.api_prefix.rstrip("/"))
+    legacy_prefixes = ("/scenarios", "/runs", "/catalog", "/funding", "/captures")
+    if (principal.county_code is not None or principal.national_planning) and any(
+        path == prefix or path.startswith(prefix + "/") for prefix in legacy_prefixes
+    ):
+        raise HTTPException(
+            status_code=403, detail="Legacy country-only path unavailable for county scope"
+        )
     if not await reserve_request(
         request.app.state.sessions, principal, limit=settings.rate_limit_per_minute
     ):
