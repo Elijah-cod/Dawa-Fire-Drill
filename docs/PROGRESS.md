@@ -1,5 +1,7 @@
 # Progress
 
+- Phase 2b: calibrated synthetic county budget scales against the Controller of Budget's county-level all-sector totals, preserving immutable version 1 snapshots and inventing release shares. The sandbox blocked PostgreSQL connections on the first run; with local database access the full suite passed 129 tests with one existing warning, and Ruff, mypy, and Bandit passed. Next: address legacy repository county isolation and verify the complete county demo.
+
 ## Phase 0: Foundations — in progress
 
 ### Completed locally

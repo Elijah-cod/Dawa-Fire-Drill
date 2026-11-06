@@ -9,6 +9,57 @@ from dawa_api.countries.ke.counties import KENYA_COUNTIES
 REPORT_URL = "https://www.busiacounty.go.ke/assets/documents/uploads/CGBIRR%20August%202025.pdf"
 TOTAL_APPROVED = 601_690_000_000
 TOTAL_RELEASED = 469_340_000_000
+# Controller of Budget table 2.5, county budget totals in 0.01 million KSh,
+# ordered by official county code. These public aggregates are calibration inputs.
+COUNTY_BUDGET_WEIGHTS = (
+    1736000,
+    1487606,
+    2140650,
+    917772,
+    498865,
+    817970,
+    1200581,
+    1351762,
+    1456755,
+    1031861,
+    680505,
+    1310895,
+    700568,
+    853354,
+    1430536,
+    1562216,
+    1158021,
+    877976,
+    900403,
+    792571,
+    1074365,
+    2348038,
+    1721359,
+    810151,
+    738222,
+    1045502,
+    1517979,
+    789987,
+    1018822,
+    898376,
+    847954,
+    2398040,
+    1756752,
+    1278647,
+    975694,
+    983170,
+    1764679,
+    710590,
+    1670446,
+    1077015,
+    1094813,
+    1531433,
+    1313057,
+    1214701,
+    1515535,
+    810290,
+    4356427,
+)
 
 
 class CountyPlanning(TypedDict):
@@ -39,10 +90,12 @@ def roll_up(rows: Iterable[Mapping[str, Any]]) -> dict[str, int]:
 
 
 def generate_county_planning(*, seed: int) -> dict[str, Any]:
-    """Generate unrelated-to-real-county shares of two national all-sector totals."""
+    """Generate synthetic county budgets and release shares from public anchors."""
     # Reproducible synthetic data does not need cryptographic randomness.
     rng = random.Random(seed)  # nosec B311
-    approved = _allocate(TOTAL_APPROVED, [rng.randint(50, 150) for _ in KENYA_COUNTIES])
+    approved = _allocate(
+        TOTAL_APPROVED, [weight * rng.randint(95, 105) for weight in COUNTY_BUDGET_WEIGHTS]
+    )
     released = _allocate(TOTAL_RELEASED, [budget * rng.randint(90, 110) for budget in approved])
     counties: list[CountyPlanning] = [
         {
@@ -64,7 +117,8 @@ def generate_county_planning(*, seed: int) -> dict[str, Any]:
             "source_url": REPORT_URL,
             "approved_total_kes": TOTAL_APPROVED,
             "released_to_operational_accounts_total_kes": TOTAL_RELEASED,
-            "scope": "national all-sector totals; county allocation is invented",
+            "scope": "all-sector county budgets with synthetic variation; "
+            "county release shares are invented",
         },
         "counties": counties,
     }

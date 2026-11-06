@@ -18,6 +18,14 @@ def test_county_planning_seed_is_complete_and_reproducible() -> None:
     assert all(0 <= row["released"] <= row["approved"] for row in first["counties"])
 
 
+def test_synthetic_county_budget_scale_tracks_cited_county_aggregate() -> None:
+    records = {row["county_code"]: row for row in generate_county_planning(seed=42)["counties"]}
+    for code, published in (("042", 15_314_330_000), ("047", 43_564_270_000)):
+        amount = records[code]["approved"]
+        assert amount != published
+        assert abs(amount - published) < published * 0.15
+
+
 @given(seed=st.integers(min_value=0, max_value=2**31 - 1))
 def test_county_allocations_preserve_totals_and_never_overrelease(seed: int) -> None:
     records = generate_county_planning(seed=seed)["counties"]

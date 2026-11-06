@@ -1,5 +1,7 @@
 # Changelog
 
+- Calibrated version 2 synthetic county budget scales to published county aggregates, retaining invented release shares and immutable older snapshots.
+
 ## Unreleased
 
 - Block county-scoped identities from legacy country-only data paths pending their migration.

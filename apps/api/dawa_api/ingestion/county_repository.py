@@ -12,7 +12,7 @@ from dawa_api.ingestion.county_planning import generate_county_planning
 from dawa_api.ingestion.kisumu import generate_kisumu_panel
 from dawa_api.storage.models import CountySnapshot
 
-COUNTY_GENERATOR_VERSION = 1
+COUNTY_GENERATOR_VERSION = 2
 SnapshotKind = Literal["planning", "pilot"]
 
 
