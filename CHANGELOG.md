@@ -1,5 +1,7 @@
 # Changelog
 
+- Added an opt-in administrator-only demo role switcher for local or staging environments, refused in production.
+
 - Added a Kisumu run forecast from pinned synthetic inputs and a deterministic explanation of the optimizer result.
 
 - Calibrated version 2 synthetic county budget scales to published county aggregates, retaining invented release shares and immutable older snapshots.

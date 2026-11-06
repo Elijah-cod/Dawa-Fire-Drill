@@ -119,6 +119,48 @@ def test_county_scoped_users_cannot_access_legacy_country_only_paths(
         )
 
 
+def test_demo_switcher_is_off_by_default_and_forbidden_in_production() -> None:
+    url = "postgresql+asyncpg://postgres:postgres@localhost:5432/dawa"
+    assert not Settings(DATABASE_URL=url).demo_role_switcher
+    with pytest.raises(ValueError):
+        Settings(DATABASE_URL=url, app_env="production", demo_role_switcher=True)
+
+
+def test_demo_switcher_requires_explicit_enablement_and_admin(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    async def allow_request(*args: object, **kwargs: object) -> bool:
+        return True
+
+    monkeypatch.setattr("dawa_api.scenarios.router.reserve_request", allow_request)
+    base = dict(
+        DATABASE_URL="postgresql+asyncpg://postgres:postgres@localhost:5432/dawa",
+        supabase_url="https://example.invalid",
+        supabase_jwt_secret=TEST_SIGNING_MATERIAL,
+    )
+    body = {"synthetic_attested": True, "history": [1], "lead_time_periods": 1, "safety_periods": 0}
+    admin = {
+        "Authorization": f"Bearer {token(metadata={'role': 'admin', 'country_code': 'KE'})}",
+        "X-Demo-Role": "facility",
+    }
+    with TestClient(create_app(settings=Settings(**base))) as client:
+        assert client.post("/v1/forecast", json=body, headers=admin).status_code == 403
+    with TestClient(create_app(settings=Settings(**base, demo_role_switcher=True))) as client:
+        assert client.post("/v1/forecast", json=body, headers=admin).status_code == 403
+        admin["X-Demo-Role"] = "planner"
+        assert client.post("/v1/forecast", json=body, headers=admin).status_code == 200
+        facility_metadata = {
+            "role": "facility",
+            "country_code": "KE",
+            "facility_id": "SYN-KE-042-F001",
+        }
+        nonadmin = {
+            "Authorization": f"Bearer {token(metadata=facility_metadata)}",
+            "X-Demo-Role": "planner",
+        }
+        assert client.post("/v1/forecast", json=body, headers=nonadmin).status_code == 403
+
+
 @pytest.mark.parametrize(
     "encoded",
     [

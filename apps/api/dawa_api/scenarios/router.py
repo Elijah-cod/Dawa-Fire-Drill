@@ -1,7 +1,7 @@
 """Authenticated, country-scoped scenario endpoints."""
 
 from collections.abc import AsyncIterator
-from typing import Annotated
+from typing import Annotated, cast
 from uuid import UUID
 
 import jwt
@@ -11,7 +11,7 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from dawa_api.auth.jwks import authenticate_jwks
 from dawa_api.auth.limits import reserve_request
-from dawa_api.auth.service import AuthenticationError, Principal, authenticate_token
+from dawa_api.auth.service import AuthenticationError, Principal, Role, authenticate_token
 from dawa_api.scenarios.schemas import ScenarioCreate, ScenarioPage, ScenarioRead
 from dawa_api.scenarios.service import ScenarioService
 from dawa_api.settings import Settings
@@ -50,6 +50,24 @@ async def current_principal(
         raise HTTPException(
             status_code=401, detail="Invalid credentials", headers={"WWW-Authenticate": "Bearer"}
         ) from exc
+    demo_role = request.headers.get("X-Demo-Role")
+    if demo_role is not None:
+        if (
+            not settings.demo_role_switcher
+            or settings.app_env == "production"
+            or principal.role != "admin"
+        ):
+            raise HTTPException(status_code=403, detail="Demo role switching unavailable")
+        if demo_role not in {"national", "planner", "pharmacist", "facility"}:
+            raise HTTPException(status_code=400, detail="Unknown demo role")
+        principal = Principal(
+            subject=principal.subject,
+            role="planner" if demo_role == "national" else cast(Role, demo_role),
+            country_code="KE",
+            county_code=None if demo_role == "national" else "042",
+            national_planning=demo_role == "national",
+            facility_id="SYN-KE-042-F001" if demo_role == "facility" else None,
+        )
     # County-aware identities cannot enter older storage paths until those paths
     # have county-level tenancy. The separate county API enforces both scopes.
     path = request.url.path.removeprefix(settings.api_prefix.rstrip("/"))

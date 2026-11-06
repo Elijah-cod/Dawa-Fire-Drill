@@ -2,7 +2,7 @@
 
 from typing import Literal
 
-from pydantic import Field, field_validator
+from pydantic import Field, field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -10,6 +10,7 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_prefix="", extra="ignore", case_sensitive=False)
 
     app_env: Literal["local", "staging", "production"] = "local"
+    demo_role_switcher: bool = False
     log_level: str = "INFO"
     api_prefix: str = "/v1"
     cors_origins: str = "http://localhost:3000"
@@ -36,6 +37,12 @@ class Settings(BaseSettings):
     allowed_image_types: str = "image/jpeg,image/png,image/webp"
     rate_limit_per_minute: int = Field(60, gt=0)
     job_trigger_token: str = ""
+
+    @model_validator(mode="after")
+    def reject_production_demo_switcher(self) -> "Settings":
+        if self.app_env == "production" and self.demo_role_switcher:
+            raise ValueError("Demo role switcher cannot be enabled in production")
+        return self
 
     @field_validator("database_url")
     @classmethod

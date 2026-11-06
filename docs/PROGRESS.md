@@ -1,5 +1,7 @@
 # Progress
 
+- Phase 2b closeout: added an opt-in authenticated-admin demo role switcher with fixed synthetic scopes and a production startup prohibition. Full suite: 131 passed, one existing warning; Ruff, mypy, and Bandit passed (Ruff first caught a test line length, then passed after formatting). Next: county-scoped capture and the full demo.
+
 - Phase 2b closeout: added the Kisumu-run baseline forecast from pinned synthetic inputs and a deterministic optimizer-result explanation; cross-county forecast denial is tested. Full suite: 129 passed, one existing warning; Ruff, mypy, and Bandit passed. Next: scoped capture and demo-only role switching.
 
 - Phase 2b: verified the county mitigation API chooses the cheaper qualifying planted transfer over a synthetic emergency delivery and corrected stale planning notes. The full suite passed 129 tests with one existing warning; Ruff, formatting, mypy, and Bandit passed. Next: migrate legacy country-only storage and routes, then exercise the complete demo.
