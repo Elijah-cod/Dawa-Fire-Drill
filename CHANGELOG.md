@@ -1,5 +1,7 @@
 # Changelog
 
+- Added an authenticated demo-capability endpoint so the server proxy can determine whether role switching is enabled.
+
 - Began the Phase 3 frontend with a testable schematic county grid and documented boundary-license uncertainty.
 
 - Distinguished pre-shock shortages and shock-caused stockouts using a no-shock counterfactual, ranked a fix for the first shock-caused event, and labeled the synthetic Kisumu funding trace in KES.

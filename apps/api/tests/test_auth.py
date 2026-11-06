@@ -161,6 +161,29 @@ def test_demo_switcher_requires_explicit_enablement_and_admin(
         assert client.post("/v1/forecast", json=body, headers=nonadmin).status_code == 403
 
 
+def test_demo_capability_reports_server_switcher_state_for_admin(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    async def allow_request(*args: object, **kwargs: object) -> bool:
+        return True
+
+    monkeypatch.setattr("dawa_api.scenarios.router.reserve_request", allow_request)
+    base = dict(
+        DATABASE_URL="postgresql+asyncpg://postgres:postgres@localhost:5432/dawa",
+        supabase_url="https://example.invalid",
+        supabase_jwt_secret=TEST_SIGNING_MATERIAL,
+    )
+    headers = {"Authorization": f"Bearer {token(metadata={'role': 'admin', 'country_code': 'KE'})}"}
+    for enabled in (False, True):
+        with TestClient(
+            create_app(settings=Settings(**base, demo_role_switcher=enabled))
+        ) as client:
+            assert client.get("/v1/demo/capabilities").status_code == 401
+            assert client.get("/v1/demo/capabilities", headers=headers).json() == {
+                "role_switcher": enabled
+            }
+
+
 @pytest.mark.parametrize(
     "encoded",
     [
