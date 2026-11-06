@@ -50,8 +50,8 @@ def create_app(settings: Settings | None = None, engine: AsyncEngine | None = No
     app = FastAPI(
         title="Dawa Fire Drill API",
         description=(
-            "All data is synthetic; facility mix, lead-time anchors, and three malaria tracer "
-            "proxies use public aggregates. Other quantities remain assumptions. "
+            "All data is synthetic; facility mix, lead-time anchors, and tracer demand "
+            "proxies use public aggregates. Funding and temporal patterns remain assumptions. "
             "Other quantities are illustrative assumptions. "
             "Model outputs are illustrative and unvalidated."
         ),

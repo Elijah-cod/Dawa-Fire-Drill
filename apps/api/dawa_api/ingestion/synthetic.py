@@ -13,7 +13,24 @@ TURNAROUND_SOURCE = (
     "https://www.treasury.go.ke/sites/default/files/NEW/Draft-Health-Sector-Report-11.11.2025.pdf"
 )
 MALARIA_SOURCE = "https://www.pmi.gov/wp-content/uploads/2022/01/FY-2022-Kenya-MOP.pdf"
-MALARIA_NEEDS = {"SYN-C01": 6_067_513, "SYN-C02": 9_649_693, "SYN-C03": 1_087_808}
+MALARIA_NEEDS = {
+    "SYN-C01": 6_067_513,
+    "SYN-C02": 9_649_693,
+    "SYN-C03": 1_087_808,
+    "SYN-C10": 1_241_175,
+}
+FAMILY_PLANNING_SOURCE = (
+    "https://erepository.uonbi.ac.ke/server/api/core/bitstreams/"
+    "a391e712-280b-408a-b12d-413483cd201f/content"
+)
+FAMILY_PLANNING_NEEDS = {
+    "SYN-C04": 1_174_159,
+    "SYN-C05": 280_442,
+    "SYN-C06": 2_572_465,
+    "SYN-C07": 289_015,
+    "SYN-C08": 299_720,
+    "SYN-C09": 165_415,
+}
 PUBLIC_FACILITY_COUNT = 6_304
 
 
@@ -51,30 +68,36 @@ def generate_dataset(*, seed: int) -> dict[str, Any]:
         {"id": f"SYN-C{index:02d}", "name": f"Synthetic commodity {index:02d}"}
         for index in range(1, 11)
     ]
+    # National equal-share scaling and level-weighted variation are synthetic assumptions.
+    amounts: dict[tuple[str, str, int], int] = {}
+    for commodity_id, annual in (MALARIA_NEEDS | FAMILY_PLANNING_NEEDS).items():
+        for month in range(24):
+            target = (
+                annual
+                * len(facilities)
+                * SEASONAL_INDEX[month % 12]
+                // (PUBLIC_FACILITY_COUNT * 12 * 100)
+            )
+            weights = [facility["level"] * rng.randint(90, 110) for facility in facilities]
+            total_weight = sum(weights)
+            assigned = [target * weight // total_weight for weight in weights]
+            remainder_order = sorted(
+                range(len(facilities)), key=lambda i: (-(target * weights[i] % total_weight), i)
+            )
+            for index in remainder_order[: target - sum(assigned)]:
+                assigned[index] += 1
+            for facility, quantity in zip(facilities, assigned, strict=True):
+                amounts[(facility["id"], commodity_id, month)] = quantity
     consumption = []
-    total_levels = sum(facility["level"] for facility in facilities)
     for facility in facilities:
         for commodity in commodities:
-            if commodity["id"] in MALARIA_NEEDS:
-                # Equal national facility share and level weighting are synthetic assumptions.
-                baseline = (
-                    MALARIA_NEEDS[commodity["id"]]
-                    * len(facilities)
-                    * facility["level"]
-                    // (PUBLIC_FACILITY_COUNT * 12 * total_levels)
-                )
-            else:
-                baseline = rng.randint(10, 100) * facility["level"]
             for month in range(24):
-                quantity = max(
-                    0, baseline * SEASONAL_INDEX[month % 12] * rng.randint(90, 110) // 10000
-                )
                 consumption.append(
                     {
                         "facility_id": facility["id"],
                         "commodity_id": commodity["id"],
                         "month_index": month,
-                        "quantity": quantity,
+                        "quantity": amounts[(facility["id"], commodity["id"], month)],
                     }
                 )
     budget_lines: list[BudgetLine] = [
@@ -101,8 +124,8 @@ def generate_dataset(*, seed: int) -> dict[str, Any]:
         "synthetic": True,
         "country_code": "KE",
         "seed": seed,
-        "calibration_scope": "facility mix, order turnaround, and three malaria tracer "
-        "need proxies only; other quantities are illustrative assumptions",
+        "calibration_scope": "facility mix, order turnaround, and ten tracer demand proxies; "
+        "funding and temporal patterns are illustrative assumptions",
         "calibration": {
             "delivery_lead_time": {
                 "primary_facility_days": 24.2,
@@ -119,9 +142,26 @@ def generate_dataset(*, seed: int) -> dict[str, Any]:
                     "SYN-C01": "ACT treatment courses",
                     "SYN-C02": "malaria rapid diagnostic tests",
                     "SYN-C03": "injectable artesunate vials",
+                    "SYN-C10": "sulfadoxine-pyrimethamine treatment courses",
                 },
                 "national_facility_denominator": PUBLIC_FACILITY_COUNT,
                 "scope": "synthetic equal-share and level-weighted proxy, not observed use",
+            },
+            "family_planning_tracers": {
+                "period": "2014–2017 historical mean",
+                "source_url": FAMILY_PLANNING_SOURCE,
+                "national_mean": FAMILY_PLANNING_NEEDS,
+                "units": {
+                    "SYN-C04": "combined oral contraceptive cycles",
+                    "SYN-C05": "progestin-only pill cycles",
+                    "SYN-C06": "injectable contraceptive vials",
+                    "SYN-C07": "intrauterine contraceptive devices",
+                    "SYN-C08": "one-rod implants",
+                    "SYN-C09": "two-rod implants",
+                },
+                "national_facility_denominator": PUBLIC_FACILITY_COUNT,
+                "scope": "synthetic equal-share and level-weighted proxy, "
+                "not facility observations",
             },
         },
         "facilities": facilities,
