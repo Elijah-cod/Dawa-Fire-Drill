@@ -12,6 +12,10 @@ class DuplicateCandidateID(ValueError):
     """Candidates cannot share an identifier within one request."""
 
 
+class TargetUnreachable(ValueError):
+    """No candidate set meets the requested benefit within the budget."""
+
+
 @dataclass(frozen=True)
 class Candidate:
     id: str
@@ -27,14 +31,18 @@ class OptimizationResult:
     excluded_reasons: dict[str, str]
 
 
-def select_actions(candidates: Sequence[Candidate], *, budget: int) -> OptimizationResult:
-    """Select the greatest synthetic benefit without exceeding the ceiling."""
+def select_actions(
+    candidates: Sequence[Candidate], *, budget: int, minimum_benefit: int | None = None
+) -> OptimizationResult:
+    """Maximize assumed benefit, or minimize cost for a requested assumed benefit."""
     if budget < 0 or budget > 1_000_000_000 or len(candidates) > 50:
         raise ValueError("Budget or candidate count is outside supported bounds")
     if any(not 0 <= c.cost <= 1_000_000_000 or not 0 <= c.benefit <= 1_000_000 for c in candidates):
         raise ValueError("Costs or benefits are outside supported bounds")
     if len({c.id for c in candidates}) != len(candidates):
         raise DuplicateCandidateID("Candidate IDs must be unique")
+    if minimum_benefit is not None and not 0 <= minimum_benefit <= 50_000_000:
+        raise ValueError("Minimum benefit is outside supported bounds")
     model = cp_model.CpModel()
     choices = [model.new_bool_var(f"choice_{index}") for index in range(len(candidates))]
     total_cost = sum(c.cost * choice for c, choice in zip(candidates, choices, strict=True))
@@ -50,17 +58,31 @@ def select_actions(candidates: Sequence[Candidate], *, budget: int) -> Optimizat
             )
             <= 1
         )
-    model.maximize(total_benefit)
     solver = cp_model.CpSolver()
     solver.parameters.num_search_workers = 1
     solver.parameters.max_time_in_seconds = SOLVER_TIME_LIMIT_SECONDS
-    if solver.solve(model) != cp_model.OPTIMAL:
-        raise RuntimeError("Optimizer did not prove an optimal selection")
-    model.add(total_benefit == solver.value(total_benefit))
-    model.minimize(total_cost)
-    if solver.solve(model) != cp_model.OPTIMAL:
-        raise RuntimeError("Optimizer did not prove minimum cost")
-    model.add(total_cost == solver.value(total_cost))
+    if minimum_benefit is not None:
+        model.add(total_benefit >= minimum_benefit)
+        model.minimize(total_cost)
+        status = solver.solve(model)
+        if status == cp_model.INFEASIBLE:
+            raise TargetUnreachable("Benefit target cannot be met within the budget")
+        if status != cp_model.OPTIMAL:
+            raise RuntimeError("Optimizer did not prove minimum cost")
+        model.add(total_cost == solver.value(total_cost))
+        model.maximize(total_benefit)
+        if solver.solve(model) != cp_model.OPTIMAL:
+            raise RuntimeError("Optimizer did not prove an optimal selection")
+        model.add(total_benefit == solver.value(total_benefit))
+    else:
+        model.maximize(total_benefit)
+        if solver.solve(model) != cp_model.OPTIMAL:
+            raise RuntimeError("Optimizer did not prove an optimal selection")
+        model.add(total_benefit == solver.value(total_benefit))
+        model.minimize(total_cost)
+        if solver.solve(model) != cp_model.OPTIMAL:
+            raise RuntimeError("Optimizer did not prove minimum cost")
+        model.add(total_cost == solver.value(total_cost))
     model.minimize(sum(choices))
     if solver.solve(model) != cp_model.OPTIMAL:
         raise RuntimeError("Optimizer did not prove minimum action count")

@@ -191,6 +191,20 @@ def test_scenario_api_auth_roles_idempotency_and_pagination() -> None:
                 assert ranking.json()["selected_ids"] == ["reorder-1"]
                 assert ranking.json()["excluded_reasons"]["emergency-1"] == "alternative_selected"
                 assert ranking.json()["run_id"] == run_id
+                targeted = client.post(
+                    f"/v1/runs/{run_id}/mitigations",
+                    json=mitigation | {"minimum_benefit": 10},
+                    headers=bearer("planner"),
+                )
+                assert targeted.status_code == 200
+                assert targeted.json()["selected_ids"] == ["reorder-1"]
+                assert targeted.json()["minimum_benefit"] == 10
+                unreachable = client.post(
+                    f"/v1/runs/{run_id}/mitigations",
+                    json=mitigation | {"minimum_benefit": 11},
+                    headers=bearer("planner"),
+                )
+                assert unreachable.status_code == 409
                 unknown = mitigation | {
                     "candidates": [mitigation["candidates"][0] | {"facility_id": "unknown"}]
                 }

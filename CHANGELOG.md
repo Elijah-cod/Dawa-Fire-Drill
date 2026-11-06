@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Added least-cost optimization for an optional caller-supplied synthetic benefit target.
 - Preserve approved prototype screenshots when running the browser verification script.
 - Added project agent rules, synthetic-data notice, design approval gate, and environment template.
 - Expanded the working agreement and began splitting foundation configuration by service.

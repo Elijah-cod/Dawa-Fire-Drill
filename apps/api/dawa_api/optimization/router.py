@@ -5,19 +5,25 @@ from typing import Annotated, Literal
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Request
-from pydantic import BaseModel, Field, StrictBool
+from pydantic import BaseModel, BeforeValidator, Field, StrictBool
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from dawa_api.auth.service import Principal
 from dawa_api.capture.repository import PostgresExtractionStore
 from dawa_api.explain.service import explain_selection, explain_with_providers
 from dawa_api.jobs.repository import RunRepository
-from dawa_api.optimization.service import Candidate, DuplicateCandidateID, select_actions
+from dawa_api.optimization.service import (
+    Candidate,
+    DuplicateCandidateID,
+    TargetUnreachable,
+    select_actions,
+)
 from dawa_api.scenarios.router import can_create, session_for_request
-from dawa_api.validation import ExplicitTrue, JsonInteger
+from dawa_api.validation import ExplicitTrue, JsonInteger, require_json_number
 
 router = APIRouter(prefix="/optimization", tags=["optimization"])
 run_router = APIRouter(tags=["optimization"])
+BenefitTarget = Annotated[int, Field(ge=0, le=50_000_000), BeforeValidator(require_json_number)]
 
 
 class CandidateInput(BaseModel):
@@ -29,6 +35,7 @@ class CandidateInput(BaseModel):
 class RankRequest(BaseModel):
     synthetic_attested: ExplicitTrue
     budget: JsonInteger = Field(ge=0, le=1_000_000_000)
+    minimum_benefit: BenefitTarget | None = None
     candidates: list[CandidateInput] = Field(max_length=50)
     include_llm_explanation: StrictBool = False
 
@@ -36,6 +43,7 @@ class RankRequest(BaseModel):
 class RankResponse(BaseModel):
     synthetic: bool = True
     notice: str = "Illustrative and unvalidated; benefits are supplied assumptions"
+    minimum_benefit: int | None = None
     selected_ids: tuple[str, ...]
     selected_reasons: dict[str, str]
     excluded_reasons: dict[str, str]
@@ -54,6 +62,7 @@ class RunCandidate(CandidateInput):
 class RunRankRequest(BaseModel):
     synthetic_attested: ExplicitTrue
     budget: JsonInteger = Field(ge=0, le=1_000_000_000)
+    minimum_benefit: BenefitTarget | None = None
     candidates: list[RunCandidate] = Field(max_length=50)
     include_llm_explanation: StrictBool = False
 
@@ -87,6 +96,7 @@ async def rank_run(
         RankRequest(
             synthetic_attested=True,
             budget=data.budget,
+            minimum_benefit=data.minimum_benefit,
             candidates=data.candidates,
             include_llm_explanation=data.include_llm_explanation,
         ),
@@ -100,7 +110,7 @@ async def rank_run(
     "/rank",
     response_model=RankResponse,
     responses={
-        409: {"description": "Candidate identifiers conflict"},
+        409: {"description": "Candidate identifiers conflict or benefit target is unreachable"},
         503: {"description": "Optimizer could not prove an optimal result"},
     },
 )
@@ -123,8 +133,9 @@ async def rank(
                 for item in data.candidates
             ],
             budget=data.budget,
+            minimum_benefit=data.minimum_benefit,
         )
-    except DuplicateCandidateID as exc:
+    except (DuplicateCandidateID, TargetUnreachable) as exc:
         raise HTTPException(status_code=409, detail=str(exc)) from exc
     except ValueError as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
@@ -144,6 +155,7 @@ async def rank(
             store=store,
         )
     return RankResponse(
+        minimum_benefit=data.minimum_benefit,
         selected_ids=result.selected_ids,
         selected_reasons={item: "included_in_optimal_set" for item in result.selected_ids},
         excluded_reasons=result.excluded_reasons,

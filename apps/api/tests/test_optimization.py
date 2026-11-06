@@ -1,7 +1,8 @@
+import pytest
 from hypothesis import given
 from hypothesis import strategies as st
 
-from dawa_api.optimization.service import Candidate, select_actions
+from dawa_api.optimization.service import Candidate, TargetUnreachable, select_actions
 
 
 def test_optimizer_selects_highest_benefit_within_budget() -> None:
@@ -40,6 +41,25 @@ def test_same_stockout_alternatives_are_not_double_counted() -> None:
     assert result.selected_ids == ("redistribution", "other")
     assert result.total_cost == 5
     assert result.excluded_reasons["emergency"] == "alternative_selected"
+
+
+def test_target_selects_cheapest_set_meeting_assumed_benefit() -> None:
+    result = select_actions(
+        [Candidate("expensive", 8, 10), Candidate("cheap", 3, 5), Candidate("extra", 2, 3)],
+        budget=10,
+        minimum_benefit=5,
+    )
+    assert result.selected_ids == ("cheap",)
+    assert result.total_cost == 3
+
+
+def test_unreachable_target_respects_budget_and_alternative_groups() -> None:
+    with pytest.raises(TargetUnreachable):
+        select_actions(
+            [Candidate("a", 2, 4, ("f", "c")), Candidate("b", 2, 4, ("f", "c"))],
+            budget=5,
+            minimum_benefit=8,
+        )
 
 
 @given(budget=st.integers(min_value=0, max_value=100))

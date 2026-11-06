@@ -61,6 +61,29 @@ def test_optimizer_endpoint_respects_budget_and_roles(monkeypatch: pytest.Monkey
         assert "illustrative and unvalidated" in data["explanation"].lower()
         assert "cheap" in data["explanation"]
 
+        target = client.post(
+            "/v1/optimization/rank",
+            json=body | {"minimum_benefit": 7},
+            headers=bearer("planner"),
+        )
+        assert target.status_code == 200
+        assert target.json()["selected_ids"] == ["cheap"]
+        assert target.json()["minimum_benefit"] == 7
+        impossible = client.post(
+            "/v1/optimization/rank",
+            json=body | {"minimum_benefit": 8},
+            headers=bearer("planner"),
+        )
+        assert impossible.status_code == 409
+        assert (
+            client.post(
+                "/v1/optimization/rank",
+                json=body | {"minimum_benefit": True},
+                headers=bearer("planner"),
+            ).status_code
+            == 422
+        )
+
         async def reserve(*args: object, **kwargs: object) -> bool:
             return True
 
