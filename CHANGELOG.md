@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Add a county overview and Kisumu pilot design addendum, including responsive and failure states.
 - Begin Phase 2b with an official Kenya county and Kisumu sub-county reference directory.
 - Add a public health-sector first-quarter release proxy to synthetic funding records, with scope limitations.
 - Update the synthetic demo to rank replayed emergency-delivery effects.
