@@ -62,7 +62,9 @@ class ModeledResponse(BaseModel):
     )
     run_id: UUID
     selected_ids: tuple[str, ...]
+    selected_reasons: dict[str, str]
     excluded_reasons: dict[str, str]
+    cut_line: int
     total_cost: int
     remaining_budget: int
     minimum_benefit: int | None

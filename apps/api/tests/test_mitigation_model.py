@@ -1,4 +1,6 @@
 import pytest
+from hypothesis import given
+from hypothesis import strategies as st
 
 from dawa_api.optimization.mitigation import (
     donor_safe_capacity,
@@ -8,6 +10,8 @@ from dawa_api.optimization.mitigation import (
 )
 from dawa_api.optimization.modeled_schemas import ModeledRequest
 from dawa_api.scenarios.schemas import ScenarioCreate
+from dawa_api.simulation.scenario import stock_parameters
+from dawa_api.simulation.service import simulate_stock
 
 
 def test_extra_delivery_is_replayed_against_synthetic_shock() -> None:
@@ -204,3 +208,52 @@ def test_redistribution_replay_shares_donor_stock_and_rejects_bad_routes() -> No
     )
     with pytest.raises(ValueError, match="distance"):
         rank_deliveries(scenario, data, recorded, horizon_days=60, request=bad)
+
+
+@given(
+    monthly=st.integers(min_value=0, max_value=300),
+    dispatch=st.integers(min_value=1, max_value=60),
+    reduction=st.integers(min_value=0, max_value=100),
+)
+def test_donor_safe_capacity_never_advances_baseline_stockout(
+    monthly: int,
+    dispatch: int,
+    reduction: int,
+) -> None:
+    scenario = ScenarioCreate(
+        name="synthetic", shock_type="logistics_reduction", magnitude=reduction
+    )
+    data = {
+        "synthetic": True,
+        "country_code": "KE",
+        "facilities": [{"id": "f", "lead_time_days": 24}],
+        "consumption": [
+            {"facility_id": "f", "commodity_id": "c", "month_index": 23, "quantity": monthly}
+        ],
+    }
+    safe = donor_safe_capacity(
+        scenario,
+        data,
+        horizon_days=60,
+        facility_id="f",
+        commodity_id="c",
+        dispatch_day=dispatch,
+        simulation_version=4,
+    )
+    demand, deliveries = stock_parameters(
+        scenario, monthly_demand=monthly, horizon_days=60, simulation_version=4, lead_time_days=24
+    )
+    baseline = simulate_stock(
+        opening_stock=demand * 30, daily_demand=demand, days=60, deliveries=deliveries
+    ).stockout_day
+    stock = demand * 30
+    first = None
+    for day in range(1, 61):
+        stock += deliveries.get(day, 0)
+        if day == dispatch:
+            assert safe * 30 <= stock
+            stock -= safe * 30
+        stock = max(0, stock - demand)
+        if demand and stock == 0 and first is None:
+            first = day
+    assert (first or 61) >= (baseline or 61)

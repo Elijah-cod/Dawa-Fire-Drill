@@ -268,6 +268,10 @@ def test_scenario_api_auth_roles_idempotency_and_pagination() -> None:
                 )
                 assert modeled.status_code == 200, modeled.text
                 assert modeled.json()["selected_ids"] == ["emergency-modeled"]
+                assert modeled.json()["cut_line"] == 1
+                assert modeled.json()["selected_reasons"] == {
+                    "emergency-modeled": "included_in_optimal_set"
+                }
                 effect = modeled.json()["effects"][0]
                 assert effect["baseline_stockout_day"] == stockout["day"]
                 assert effect["deferred_days"] > 0

@@ -128,7 +128,9 @@ async def rank_modeled_deliveries(
     return ModeledResponse(
         run_id=run_id,
         selected_ids=result.selected_ids,
+        selected_reasons={item: "included_in_optimal_set" for item in result.selected_ids},
         excluded_reasons=result.excluded_reasons,
+        cut_line=len(result.selected_ids),
         total_cost=result.total_cost,
         remaining_budget=data.budget - result.total_cost,
         minimum_benefit=data.minimum_benefit,
