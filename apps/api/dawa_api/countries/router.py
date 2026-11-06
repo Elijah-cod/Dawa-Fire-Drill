@@ -7,9 +7,10 @@ from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from dawa_api.auth.service import Principal
+from dawa_api.countries.facility_view import facility_view
 from dawa_api.countries.ke.counties import KENYA_COUNTIES, county_by_code
 from dawa_api.ingestion.county_repository import COUNTY_GENERATOR_VERSION, CountySnapshotRepository
-from dawa_api.scenarios.router import can_plan, session_for_request
+from dawa_api.scenarios.router import can_plan, current_principal, session_for_request
 
 router = APIRouter(prefix="/counties", tags=["counties"])
 Seed = Annotated[int, Query(ge=-(2**63), le=2**63 - 1)]
@@ -96,3 +97,28 @@ async def pilot(
     if snapshot is None:
         raise HTTPException(status_code=404, detail="Synthetic pilot snapshot not found")
     return snapshot.data
+
+
+@router.get("/{county_code}/facilities/{facility_id}")
+async def facility(
+    county_code: str,
+    facility_id: str,
+    principal: Annotated[Principal, Depends(current_principal)],
+    session: Annotated[AsyncSession, Depends(session_for_request)],
+    seed: Seed,
+    version: Annotated[int, Query(ge=1)] = COUNTY_GENERATOR_VERSION,
+) -> dict[str, Any]:
+    _check_county(principal, county_code, planning=False)
+    if county_code != "042":
+        raise HTTPException(status_code=404, detail="Facility pilot is available only in Kisumu")
+    if principal.role == "facility" and principal.facility_id != facility_id:
+        raise HTTPException(status_code=403, detail="Insufficient facility scope")
+    snapshot = await CountySnapshotRepository(
+        session, country_code="KE", county_code=county_code
+    ).get(seed=seed, kind="pilot", version=version)
+    if snapshot is None:
+        raise HTTPException(status_code=404, detail="Synthetic pilot snapshot not found")
+    try:
+        return facility_view(snapshot.data, facility_id=facility_id)
+    except LookupError as exc:
+        raise HTTPException(status_code=404, detail="Synthetic facility not found") from exc

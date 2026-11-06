@@ -75,6 +75,21 @@ def test_county_endpoints_enforce_county_and_role_scopes() -> None:
                     facility_id="SYN-KE-042-F001",
                 )
                 assert client.get("/v1/counties/042/pilot?seed=42").status_code == 403
+                own_facility = client.get("/v1/counties/042/facilities/SYN-KE-042-F001?seed=42")
+                assert own_facility.status_code == 200
+                assert own_facility.json()["facility"]["id"] == "SYN-KE-042-F001"
+                assert all(
+                    item["facility_id"] == "SYN-KE-042-F001"
+                    for item in own_facility.json()["stock"]
+                )
+                assert (
+                    client.get("/v1/counties/042/facilities/SYN-KE-042-F002?seed=42").status_code
+                    == 403
+                )
+                assert (
+                    client.get("/v1/counties/047/facilities/SYN-KE-042-F001?seed=42").status_code
+                    == 403
+                )
         finally:
             await engine.dispose()
             async with admin.begin() as conn:
