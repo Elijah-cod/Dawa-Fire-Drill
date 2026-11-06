@@ -80,6 +80,9 @@ def select_actions(
         # Selected transfers share the smallest selected safe capacity, conservatively.
         for candidate, choice in matching:
             model.add(total_units <= candidate.resource_capacity + max_units * (1 - choice))
+            for recipient, recipient_choice in zip(candidates, choices, strict=True):
+                if recipient.group == resource:
+                    model.add(choice + recipient_choice <= 1)
     solver = cp_model.CpSolver()
     solver.parameters.num_search_workers = 1
     solver.parameters.max_time_in_seconds = SOLVER_TIME_LIMIT_SECONDS
@@ -112,6 +115,7 @@ def select_actions(
     ranked = _rank_selected(selected)
     selected_ids = {c.id for c in selected}
     selected_groups = {c.group for c in selected if c.group is not None}
+    selected_resources = {c.resource for c in selected if c.resource is not None}
     selected_resource_units = {
         resource: sum(item.resource_units for item in selected if item.resource == resource)
         for resource in resources
@@ -127,6 +131,9 @@ def select_actions(
             if c.cost > budget
             else "alternative_selected"
             if c.group is not None and c.group in selected_groups
+            else "donor_recipient_conflict"
+            if (c.resource is not None and c.resource in selected_groups)
+            or (c.group is not None and c.group in selected_resources)
             else "shared_inventory_constraint"
             if c.resource is not None
             and selected_resource_units[c.resource] + c.resource_units

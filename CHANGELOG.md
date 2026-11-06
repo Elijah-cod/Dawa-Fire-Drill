@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Prevent simultaneous modeled donor and recipient actions on the same facility and commodity.
 - Anchor three synthetic malaria tracer need proxies to a public national projection, with explicit scaling limitations.
 - Use synthetic lead-time anchors in simulation version 3 while preserving legacy run replay.
 - Model synthetic redistribution with donor stock preservation, shared inventory, distance, and shelf-life constraints.

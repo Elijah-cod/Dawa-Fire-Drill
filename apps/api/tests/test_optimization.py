@@ -78,6 +78,26 @@ def test_shared_inventory_is_not_double_allocated() -> None:
     assert result.excluded_reasons["b"] == "shared_inventory_constraint"
 
 
+def test_donor_cannot_simultaneously_receive_modeled_mitigation_for_same_stock() -> None:
+    result = select_actions(
+        [
+            Candidate("donor-receives", 1, 10, group=("donor", "commodity")),
+            Candidate(
+                "donor-sends",
+                1,
+                8,
+                group=("recipient", "commodity"),
+                resource=("donor", "commodity"),
+                resource_units=2,
+                resource_capacity=10,
+            ),
+        ],
+        budget=2,
+    )
+    assert result.selected_ids == ("donor-receives",)
+    assert result.excluded_reasons["donor-sends"] == "donor_recipient_conflict"
+
+
 @given(budget=st.integers(min_value=0, max_value=100))
 def test_optimizer_never_exceeds_ceiling(budget: int) -> None:
     result = select_actions([Candidate("a", 8, 10), Candidate("b", 3, 4)], budget=budget)
