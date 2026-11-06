@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Add run-pinned synthetic emergency-delivery replay and solver ranking by modeled first-stockout deferral.
 - Anchor version-2 synthetic facility lead times to published national turnaround aggregates, with explicit provenance and modelling limitations.
 - Added least-cost optimization for an optional caller-supplied synthetic benefit target.
 - Preserve approved prototype screenshots when running the browser verification script.

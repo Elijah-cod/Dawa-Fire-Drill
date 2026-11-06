@@ -205,6 +205,38 @@ def test_scenario_api_auth_roles_idempotency_and_pagination() -> None:
                     headers=bearer("planner"),
                 )
                 assert unreachable.status_code == 409
+                modeled = client.post(
+                    f"/v1/runs/{run_id}/modeled-mitigations",
+                    json={
+                        "synthetic_attested": True,
+                        "budget": 50,
+                        "candidates": [
+                            {
+                                "id": "emergency-modeled",
+                                "facility_id": stockout["facility_id"],
+                                "commodity_id": stockout["commodity_id"],
+                                "cost": 20,
+                                "arrival_day": 1,
+                                "quantity": 100000,
+                            },
+                            {
+                                "id": "late",
+                                "facility_id": stockout["facility_id"],
+                                "commodity_id": stockout["commodity_id"],
+                                "cost": 1,
+                                "arrival_day": stockout["day"] + 1,
+                                "quantity": 100000,
+                            },
+                        ],
+                    },
+                    headers=bearer("planner"),
+                )
+                assert modeled.status_code == 200, modeled.text
+                assert modeled.json()["selected_ids"] == ["emergency-modeled"]
+                effect = modeled.json()["effects"][0]
+                assert effect["baseline_stockout_day"] == stockout["day"]
+                assert effect["deferred_days"] > 0
+                assert modeled.json()["effects"][1]["deferred_days"] == 0
                 unknown = mitigation | {
                     "candidates": [mitigation["candidates"][0] | {"facility_id": "unknown"}]
                 }

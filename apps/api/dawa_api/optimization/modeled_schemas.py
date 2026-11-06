@@ -1,0 +1,46 @@
+"""Contracts for synthetic intervention replay."""
+
+from uuid import UUID
+
+from pydantic import BaseModel, Field
+
+from dawa_api.validation import BenefitTarget, ExplicitTrue, JsonInteger
+
+
+class ModeledDelivery(BaseModel):
+    id: str = Field(min_length=1, max_length=120, pattern=r"^[A-Za-z0-9][A-Za-z0-9_-]*$")
+    facility_id: str = Field(min_length=1, max_length=120)
+    commodity_id: str = Field(min_length=1, max_length=120)
+    cost: JsonInteger = Field(ge=0, le=1_000_000_000)
+    arrival_day: JsonInteger = Field(ge=1, le=365)
+    quantity: JsonInteger = Field(ge=1, le=1_000_000_000)
+
+
+class ModeledRequest(BaseModel):
+    synthetic_attested: ExplicitTrue
+    budget: JsonInteger = Field(ge=0, le=1_000_000_000)
+    minimum_benefit: BenefitTarget | None = None
+    candidates: list[ModeledDelivery] = Field(max_length=50)
+
+
+class ModeledEffect(BaseModel):
+    id: str
+    baseline_stockout_day: int
+    counterfactual_stockout_day: int | None
+    deferred_days: int
+
+
+class ModeledResponse(BaseModel):
+    synthetic: bool = True
+    notice: str = (
+        "Illustrative and unvalidated; delivery timing, quantity and cost "
+        "are supplied assumptions. "
+        "Days deferred measure the model's first stockout within its horizon."
+    )
+    run_id: UUID
+    selected_ids: tuple[str, ...]
+    excluded_reasons: dict[str, str]
+    total_cost: int
+    remaining_budget: int
+    minimum_benefit: int | None
+    effects: list[ModeledEffect]

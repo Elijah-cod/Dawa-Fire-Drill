@@ -32,6 +32,24 @@ class ScenarioResult(TypedDict):
     district_stockouts: NotRequired[list[DistrictStockout]]
 
 
+def stock_parameters(
+    scenario: ScenarioCreate, *, monthly_demand: int, horizon_days: int
+) -> tuple[int, dict[int, int]]:
+    """Reproduce the version 1/2 stock-flow inputs for a single commodity."""
+    if monthly_demand < 0 or not 1 <= horizon_days <= 365:
+        raise ValueError("Invalid demand or simulation horizon")
+    daily_demand = max(1, monthly_demand // 30)
+    deliveries: dict[int, int] = {}
+    for planned_day in range(28, horizon_days + 1, 30):
+        day = planned_day + (scenario.magnitude if scenario.shock_type == "cash_delay" else 0)
+        quantity = daily_demand * 30
+        if scenario.shock_type == "logistics_reduction":
+            quantity = quantity * (100 - scenario.magnitude) // 100
+        if day <= horizon_days:
+            deliveries[day] = deliveries.get(day, 0) + quantity
+    return daily_demand, deliveries
+
+
 def simulate_scenario(
     scenario: ScenarioCreate,
     *,
@@ -59,15 +77,9 @@ def simulate_scenario(
     for item in data["consumption"]:
         if item["month_index"] != 23:
             continue
-        daily_demand = max(1, item["quantity"] // 30)
-        deliveries: dict[int, int] = {}
-        for planned_day in range(28, horizon_days + 1, 30):
-            day = planned_day + (scenario.magnitude if scenario.shock_type == "cash_delay" else 0)
-            quantity = daily_demand * 30
-            if scenario.shock_type == "logistics_reduction":
-                quantity = quantity * (100 - scenario.magnitude) // 100
-            if day <= horizon_days:
-                deliveries[day] = deliveries.get(day, 0) + quantity
+        daily_demand, deliveries = stock_parameters(
+            scenario, monthly_demand=item["quantity"], horizon_days=horizon_days
+        )
         result = simulate_stock(
             opening_stock=daily_demand * 30,
             daily_demand=daily_demand,

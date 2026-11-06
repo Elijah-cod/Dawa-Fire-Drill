@@ -2,7 +2,7 @@
 
 from typing import Annotated, Any, Literal
 
-from pydantic import BeforeValidator
+from pydantic import BeforeValidator, Field
 
 
 def require_true(value: Any) -> Any:
@@ -22,3 +22,4 @@ def require_json_number(value: Any) -> Any:
 
 JsonInteger = Annotated[int, BeforeValidator(require_json_number)]
 JsonNumber = Annotated[float, BeforeValidator(require_json_number)]
+BenefitTarget = Annotated[int, Field(ge=0, le=50_000_000), BeforeValidator(require_json_number)]
