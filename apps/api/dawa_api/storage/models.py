@@ -87,6 +87,26 @@ class SyntheticDataset(Base):
     )
 
 
+class CountySnapshot(Base):
+    __tablename__ = "county_snapshots"
+    __table_args__ = (
+        CheckConstraint("kind IN ('planning', 'pilot')", name="ck_county_snapshot_kind"),
+        CheckConstraint(
+            "kind <> 'pilot' OR (country_code = 'KE' AND county_code = '042')",
+            name="ck_county_snapshot_pilot_scope",
+        ),
+    )
+    country_code: Mapped[str] = mapped_column(String(2), primary_key=True)
+    county_code: Mapped[str] = mapped_column(String(16), primary_key=True)
+    seed: Mapped[int] = mapped_column(BigInteger, primary_key=True)
+    version: Mapped[int] = mapped_column(Integer, primary_key=True)
+    kind: Mapped[str] = mapped_column(String(16), primary_key=True)
+    data: Mapped[dict[str, Any]] = mapped_column(JSON, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=lambda: datetime.now(UTC)
+    )
+
+
 class FundingFlow(Base):
     __tablename__ = "funding_flows"
     __table_args__ = (

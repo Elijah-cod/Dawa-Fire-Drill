@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Persist synthetic county planning and Kisumu pilot snapshots behind a county-scoped repository.
 - Add county-scoped immutable snapshot storage with forced row-level security and a Kisumu-only pilot constraint.
 - Simulate the isolated Kisumu panel with its synthetic opening stock and sub-county stockout roll-ups.
 - Add an isolated synthetic Kisumu facility panel and planted demo inputs, pending scenario integration.
