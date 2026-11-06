@@ -61,6 +61,7 @@ class ModeledResponse(BaseModel):
         "Days deferred measure the model's first stockout within its horizon."
     )
     run_id: UUID
+    explanation: str | None = None
     selected_ids: tuple[str, ...]
     selected_reasons: dict[str, str]
     excluded_reasons: dict[str, str]

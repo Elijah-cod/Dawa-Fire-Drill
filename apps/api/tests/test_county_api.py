@@ -88,6 +88,20 @@ def test_county_endpoints_enforce_county_and_role_scopes() -> None:
                 completed = client.get(f"/v1/counties/042/runs/{run_id}")
                 assert completed.status_code == 200 and completed.json()["status"] == "succeeded"
                 result = completed.json()["result"]
+                forecast = client.get(
+                    f"/v1/counties/042/runs/{run_id}/forecast"
+                    "?facility_id=SYN-KE-042-F001&commodity_id=SYN-C01"
+                )
+                assert forecast.status_code == 200, forecast.text
+                assert forecast.json()["synthetic"] is True
+                assert forecast.json()["stockout_period"] == 0
+                assert (
+                    client.get(
+                        f"/v1/counties/047/runs/{run_id}/forecast"
+                        "?facility_id=SYN-KE-042-F001&commodity_id=SYN-C01"
+                    ).status_code
+                    == 403
+                )
                 assert result["county_code"] == "042"
                 assert any(row["facility_id"] == "SYN-KE-042-F001" for row in result["stockouts"])
                 trace = client.get(
@@ -154,6 +168,8 @@ def test_county_endpoints_enforce_county_and_role_scopes() -> None:
                 assert compared.status_code == 200, compared.text
                 assert compared.json()["selected_ids"] == ["transfer"]
                 assert compared.json()["total_cost"] == 10
+                assert "transfer" in compared.json()["explanation"]
+                assert "50" not in compared.json()["explanation"]
                 forged = candidates[0] | {"available_units": 999999}
                 assert (
                     client.post(

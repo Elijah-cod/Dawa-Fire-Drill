@@ -1,5 +1,7 @@
 # Changelog
 
+- Added a Kisumu run forecast from pinned synthetic inputs and a deterministic explanation of the optimizer result.
+
 - Calibrated version 2 synthetic county budget scales to published county aggregates, retaining invented release shares and immutable older snapshots.
 - Added an integration comparison of synthetic redistribution and emergency-delivery costs in the Kisumu mitigation workflow.
 

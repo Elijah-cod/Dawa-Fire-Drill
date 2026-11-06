@@ -12,8 +12,11 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from dawa_api.auth.service import Principal
 from dawa_api.countries.facility_view import facility_view
 from dawa_api.countries.ke.counties import KENYA_COUNTIES, county_by_code
+from dawa_api.explain.service import explain_selection
 from dawa_api.finance_flow.application import trace_kisumu_case
 from dawa_api.finance_flow.schemas import FundingTraceResponse
+from dawa_api.forecasting.router import ForecastResponse
+from dawa_api.forecasting.service import forecast as baseline_forecast
 from dawa_api.ingestion.county_repository import COUNTY_GENERATOR_VERSION, CountySnapshotRepository
 from dawa_api.jobs.county_repository import CountyRunConflict, CountyRunRepository
 from dawa_api.optimization.kisumu import rank_kisumu
@@ -257,6 +260,7 @@ async def rank_county_run(
         ) from exc
     return ModeledResponse(
         run_id=run_id,
+        explanation=explain_selection(result, budget=data.budget).text,
         selected_ids=result.selected_ids,
         selected_reasons={item: "included_in_optimal_set" for item in result.selected_ids},
         excluded_reasons=result.excluded_reasons,
@@ -265,4 +269,57 @@ async def rank_county_run(
         remaining_budget=data.budget - result.total_cost,
         minimum_benefit=data.minimum_benefit,
         effects=effects,
+    )
+
+
+@router.get("/{county_code}/runs/{run_id}/forecast", response_model=ForecastResponse)
+async def county_forecast(
+    county_code: str,
+    run_id: UUID,
+    facility_id: str,
+    commodity_id: str,
+    principal: Annotated[Principal, Depends(can_plan)],
+    session: Annotated[AsyncSession, Depends(session_for_request)],
+) -> ForecastResponse:
+    _check_county(principal, county_code, planning=False)
+    run = await CountyRunRepository(session, country_code="KE", county_code=county_code).get(run_id)
+    if run is None:
+        raise HTTPException(status_code=404, detail="Synthetic county run not found")
+    if run.status != "succeeded":
+        raise HTTPException(status_code=409, detail="Succeeded county run required")
+    snapshot = await CountySnapshotRepository(
+        session, country_code="KE", county_code=county_code
+    ).get(seed=run.seed, kind="pilot", version=run.snapshot_version)
+    if snapshot is None:
+        raise HTTPException(status_code=409, detail="Pinned synthetic snapshot unavailable")
+    panel = snapshot.data
+    facility = next((item for item in panel["facilities"] if item["id"] == facility_id), None)
+    history = sorted(
+        (
+            item
+            for item in panel["consumption"]
+            if item["facility_id"] == facility_id and item["commodity_id"] == commodity_id
+        ),
+        key=lambda item: item["month_index"],
+    )
+    stock = next(
+        (
+            item
+            for item in panel["stock"]
+            if item["facility_id"] == facility_id and item["commodity_id"] == commodity_id
+        ),
+        None,
+    )
+    if facility is None or not history or stock is None:
+        raise HTTPException(status_code=404, detail="Synthetic facility or commodity not found")
+    result = baseline_forecast(
+        [item["quantity"] for item in history],
+        lead_time_periods=(facility["lead_time_days"] + 29) // 30,
+        safety_periods=0,
+        stock_on_hand=stock["opening_stock"],
+    )
+    return ForecastResponse(
+        average_demand=result.average_demand,
+        reorder_point=result.reorder_point,
+        stockout_period=result.stockout_period,
     )
