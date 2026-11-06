@@ -16,6 +16,7 @@ from alembic import command
 from dawa_api.countries.ke.counties import KENYA_COUNTIES
 from dawa_api.ingestion.county_repository import CountySnapshotRepository
 from dawa_api.ingestion.repository import DatasetRepository
+from dawa_api.ingestion.seed_counties import seed_counties
 from dawa_api.scenarios.schemas import ScenarioCreate
 from dawa_api.simulation.kisumu import simulate_kisumu
 
@@ -42,6 +43,10 @@ def test_seed_snapshot_is_idempotent_and_country_scoped() -> None:
 
                 await conn.run_sync(migrate)
             sessions = async_sessionmaker(engine, expire_on_commit=False)
+            seeded = await seed_counties(sessions, seed=43)
+            assert seeded == {"synthetic": True, "planning_created": 47, "pilot_created": 1}
+            repeated = await seed_counties(sessions, seed=43)
+            assert repeated == {"synthetic": True, "planning_created": 0, "pilot_created": 0}
             async with sessions.begin() as session:
                 repo = DatasetRepository(session, country_code="KE")
                 first, created = await repo.ensure(seed=42)
@@ -74,7 +79,10 @@ def test_seed_snapshot_is_idempotent_and_country_scoped() -> None:
                     ).ensure(seed=42, kind="planning")
                 count = (
                     await session.execute(
-                        text("SELECT count(*) FROM county_snapshots WHERE kind='planning'")
+                        text(
+                            "SELECT count(*) FROM county_snapshots "
+                            "WHERE kind='planning' AND seed=42"
+                        )
                     )
                 ).scalar_one()
                 assert count == 47

@@ -29,6 +29,7 @@ docker compose -f infra/compose.yaml up -d --build
 curl --fail http://localhost:8000/health
 curl --fail http://localhost:8000/ready
 docker compose -f infra/compose.yaml exec -T api python -m dawa_api.ingestion.persist --country KE --seed 42
+docker compose -f infra/compose.yaml exec -T api python -m dawa_api.ingestion.seed_counties --seed 42
 docker compose -f infra/compose.yaml down
 ```
 

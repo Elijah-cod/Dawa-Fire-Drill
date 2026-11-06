@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Add an idempotent CLI to seed all county planning snapshots and the Kisumu pilot.
 - Add a Kisumu facility view that limits facility-role users to their own synthetic records.
 - Expose scoped synthetic county planning and Kisumu pilot snapshots to authorized roles.
 - Validate trusted county and national-planning claims in preparation for county access control.
