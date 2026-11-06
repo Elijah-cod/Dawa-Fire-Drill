@@ -18,7 +18,7 @@ def test_seed_is_reproducible_and_structurally_complete() -> None:
 def test_lead_times_use_separate_public_aggregate_anchors_with_provenance() -> None:
     data = generate_dataset(seed=42)
     calibration = data["calibration"]["delivery_lead_time"]
-    assert GENERATOR_VERSION == 4
+    assert GENERATOR_VERSION == 5
     assert calibration["primary_facility_days"] == 24.2
     assert calibration["hospital_days"] == 19.5
     assert calibration["period"] == "2024/25"
@@ -69,3 +69,12 @@ def test_family_planning_tracers_use_historical_public_sector_aggregate_proxies(
             if row["commodity_id"] == commodity and row["month_index"] < 12
         )
         assert abs(total - annual * 40 / 6304) < annual * 40 / 6304 * 0.05
+
+
+def test_synthetic_funding_scale_has_source_and_preserves_panel_total() -> None:
+    data = generate_dataset(seed=42)
+    source = data["calibration"]["funding_scale"]
+    assert source["national_procurement_kes"] == 31_138_078_092
+    assert source["period"] == "2024/25"
+    assert source["source_url"].startswith("https://www.treasury.go.ke/")
+    assert sum(line["approved"] for line in data["budget_lines"]) == 31_138_078_092 * 40 // 6304

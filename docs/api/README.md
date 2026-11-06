@@ -1,6 +1,6 @@
 # API documentation
 
-All data must be **synthetic**, with calibration to public aggregates as the target. Facility-level mix, lead-time anchors and ten tracer demand proxies are guided by public aggregates; funding values and temporal patterns remain illustrative assumptions. Model outputs are **illustrative and unvalidated**. See [data assumptions](../data-assumptions.md). Do not publish accuracy claims.
+All data must be **synthetic**, with calibration to public aggregates as the target. Facility mix, lead-time anchors, ten tracer demand proxies and an overall funding scale use public aggregates; individual funding stages and temporal patterns remain illustrative assumptions. Model outputs are **illustrative and unvalidated**. See [data assumptions](../data-assumptions.md). Do not publish accuracy claims.
 
 `/health` is public. `/v1/scenarios` supports paginated GET and authenticated POST, and `/v1/scenarios/{id}` supports authenticated GET. POST requires an `Idempotency-Key` header; the same key and payload returns the original record, while a different payload returns 409. Only planner and admin roles can create scenarios. A signed token's trusted `app_metadata` supplies `role` and `country_code`; requests cannot choose a tenant in a header or payload.
 

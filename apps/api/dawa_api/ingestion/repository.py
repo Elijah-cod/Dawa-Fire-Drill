@@ -11,7 +11,7 @@ from dawa_api.ingestion.synthetic import generate_dataset
 from dawa_api.storage.models import SyntheticDataset
 from dawa_api.storage.scenarios import ScenarioRepository
 
-GENERATOR_VERSION = 4
+GENERATOR_VERSION = 5
 
 
 class DatasetRepository:

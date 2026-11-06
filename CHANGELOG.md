@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Anchor the total synthetic funding scale to a published procurement-value proxy while keeping funding stages explicitly assumed.
 - Add public-aggregate proxies for all ten synthetic tracer demand series, with source periods and scaling limitations.
 - Preserve low-volume synthetic monthly demand with fixed-point stock calculations in simulation version 4.
 - Prevent simultaneous modeled donor and recipient actions on the same facility and commodity.

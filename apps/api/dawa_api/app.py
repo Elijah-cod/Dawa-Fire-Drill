@@ -51,7 +51,8 @@ def create_app(settings: Settings | None = None, engine: AsyncEngine | None = No
         title="Dawa Fire Drill API",
         description=(
             "All data is synthetic; facility mix, lead-time anchors, and tracer demand "
-            "proxies use public aggregates. Funding and temporal patterns remain assumptions. "
+            "proxies and a funding scale use public aggregates. Funding stages and temporal "
+            "patterns remain assumptions. "
             "Other quantities are illustrative assumptions. "
             "Model outputs are illustrative and unvalidated."
         ),

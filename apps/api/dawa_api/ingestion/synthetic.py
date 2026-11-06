@@ -32,6 +32,7 @@ FAMILY_PLANNING_NEEDS = {
     "SYN-C09": 165_415,
 }
 PUBLIC_FACILITY_COUNT = 6_304
+NATIONAL_PROCUREMENT_KES = 31_138_078_092
 
 
 class Facility(TypedDict):
@@ -100,9 +101,20 @@ def generate_dataset(*, seed: int) -> dict[str, Any]:
                         "quantity": amounts[(facility["id"], commodity["id"], month)],
                     }
                 )
+    # Annual national procurement value supplies a scale only; it is not an approved budget.
+    panel_total = NATIONAL_PROCUREMENT_KES * len(facilities) // PUBLIC_FACILITY_COUNT
+    budget_weights = [rng.randint(1, 100) for _ in commodities]
+    total_budget_weight = sum(budget_weights)
+    budgets = [panel_total * weight // total_budget_weight for weight in budget_weights]
+    budget_order = sorted(
+        range(len(commodities)),
+        key=lambda i: (-(panel_total * budget_weights[i] % total_budget_weight), i),
+    )
+    for index in budget_order[: panel_total - sum(budgets)]:
+        budgets[index] += 1
     budget_lines: list[BudgetLine] = [
-        {"id": f"SYN-B{index:02d}", "commodity_id": item["id"], "approved": rng.randint(1000, 5000)}
-        for index, item in enumerate(commodities, 1)
+        {"id": f"SYN-B{index:02d}", "commodity_id": item["id"], "approved": amount}
+        for index, (item, amount) in enumerate(zip(commodities, budgets, strict=True), 1)
     ]
     cash_releases = [
         {
@@ -124,8 +136,8 @@ def generate_dataset(*, seed: int) -> dict[str, Any]:
         "synthetic": True,
         "country_code": "KE",
         "seed": seed,
-        "calibration_scope": "facility mix, order turnaround, and ten tracer demand proxies; "
-        "funding and temporal patterns are illustrative assumptions",
+        "calibration_scope": "facility mix, turnaround, tracer demand, and funding scale proxies; "
+        "funding stages and temporal patterns are illustrative assumptions",
         "calibration": {
             "delivery_lead_time": {
                 "primary_facility_days": 24.2,
@@ -162,6 +174,14 @@ def generate_dataset(*, seed: int) -> dict[str, Any]:
                 "national_facility_denominator": PUBLIC_FACILITY_COUNT,
                 "scope": "synthetic equal-share and level-weighted proxy, "
                 "not facility observations",
+            },
+            "funding_scale": {
+                "period": "2024/25",
+                "source_url": TURNAROUND_SOURCE,
+                "national_procurement_kes": NATIONAL_PROCUREMENT_KES,
+                "national_facility_denominator": PUBLIC_FACILITY_COUNT,
+                "scope": "procurement value is only a synthetic approved-budget scale proxy; "
+                "line allocations and cash-flow stages are assumptions",
             },
         },
         "facilities": facilities,
