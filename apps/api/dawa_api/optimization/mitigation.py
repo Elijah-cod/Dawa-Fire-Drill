@@ -33,10 +33,12 @@ def _stock_inputs(
     horizon_days: int,
     facility_id: str,
     commodity_id: str,
+    simulation_version: int,
 ) -> tuple[int, dict[int, int]]:
     if data.get("synthetic") is not True or data.get("country_code") != "KE":
         raise ValueError("A synthetic Kenya snapshot is required")
-    if facility_id not in {item["id"] for item in data["facilities"]}:
+    facilities = [item for item in data["facilities"] if item["id"] == facility_id]
+    if len(facilities) != 1:
         raise ValueError("Unknown synthetic facility")
     history = [
         item
@@ -48,7 +50,11 @@ def _stock_inputs(
     if len(history) != 1:
         raise ValueError("Synthetic facility and commodity history is unavailable")
     return stock_parameters(
-        scenario, monthly_demand=history[0]["quantity"], horizon_days=horizon_days
+        scenario,
+        monthly_demand=history[0]["quantity"],
+        horizon_days=horizon_days,
+        simulation_version=simulation_version,
+        lead_time_days=facilities[0].get("lead_time_days"),
     )
 
 
@@ -74,6 +80,7 @@ def evaluate_delivery(
     commodity_id: str,
     arrival_day: int,
     quantity: int,
+    simulation_version: int = 2,
 ) -> DeliveryEffect:
     """Compare first stockout dates, treating no stockout as horizon plus one."""
     if not 1 <= arrival_day <= horizon_days or not 1 <= quantity <= 1_000_000_000:
@@ -84,6 +91,7 @@ def evaluate_delivery(
         horizon_days=horizon_days,
         facility_id=facility_id,
         commodity_id=commodity_id,
+        simulation_version=simulation_version,
     )
     changed = deliveries.copy()
     changed[arrival_day] = changed.get(arrival_day, 0) + quantity
@@ -99,6 +107,7 @@ def evaluate_reorder(
     commodity_id: str,
     original_day: int,
     arrival_day: int,
+    simulation_version: int = 2,
 ) -> DeliveryEffect:
     """Move an existing modeled replenishment earlier without adding units."""
     demand, deliveries = _stock_inputs(
@@ -107,6 +116,7 @@ def evaluate_reorder(
         horizon_days=horizon_days,
         facility_id=facility_id,
         commodity_id=commodity_id,
+        simulation_version=simulation_version,
     )
     if original_day not in deliveries or not 1 <= arrival_day < original_day:
         raise ValueError("Reorder must advance an existing in-horizon delivery")
@@ -124,6 +134,7 @@ def donor_safe_capacity(
     facility_id: str,
     commodity_id: str,
     dispatch_day: int,
+    simulation_version: int = 2,
 ) -> int:
     """Conservatively avoid advancing the donor's baseline first stockout."""
     if not 1 <= dispatch_day <= horizon_days:
@@ -134,6 +145,7 @@ def donor_safe_capacity(
         horizon_days=horizon_days,
         facility_id=facility_id,
         commodity_id=commodity_id,
+        simulation_version=simulation_version,
     )
     baseline = simulate_stock(
         opening_stock=demand * 30, daily_demand=demand, days=horizon_days, deliveries=deliveries
@@ -157,6 +169,7 @@ def rank_deliveries(
     *,
     horizon_days: int,
     request: ModeledRequest,
+    simulation_version: int = 2,
 ) -> tuple[OptimizationResult, list[ModeledEffect]]:
     stockouts = {(item["facility_id"], item["commodity_id"]): item["day"] for item in recorded}
     effects: list[ModeledEffect] = []
@@ -174,6 +187,7 @@ def rank_deliveries(
                 commodity_id=item.commodity_id,
                 arrival_day=item.arrival_day,
                 quantity=item.quantity,
+                simulation_version=simulation_version,
             )
         elif isinstance(item, ModeledReorder):
             effect = evaluate_reorder(
@@ -184,6 +198,7 @@ def rank_deliveries(
                 commodity_id=item.commodity_id,
                 arrival_day=item.arrival_day,
                 original_day=item.original_day,
+                simulation_version=simulation_version,
             )
         else:
             if (
@@ -201,6 +216,7 @@ def rank_deliveries(
                 commodity_id=item.commodity_id,
                 arrival_day=item.arrival_day,
                 quantity=item.quantity,
+                simulation_version=simulation_version,
             )
         if effect.baseline_stockout_day != stockouts[key]:
             raise RunMismatch("Pinned inputs do not match recorded run")
@@ -222,6 +238,7 @@ def rank_deliveries(
                 facility_id=item.donor_facility_id,
                 commodity_id=item.commodity_id,
                 dispatch_day=item.dispatch_day,
+                simulation_version=simulation_version,
             )
             candidates.append(
                 Candidate(

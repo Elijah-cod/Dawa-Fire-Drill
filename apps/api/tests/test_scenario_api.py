@@ -17,6 +17,7 @@ from sqlalchemy.pool import NullPool
 from alembic import command
 from dawa_api.app import create_app
 from dawa_api.finance_flow.repository import refresh_diagnostics
+from dawa_api.ingestion.synthetic import generate_dataset
 from dawa_api.jobs.worker import process_one
 from dawa_api.settings import Settings
 
@@ -162,6 +163,11 @@ def test_scenario_api_auth_roles_idempotency_and_pagination() -> None:
                     == 403
                 )
                 stockout = result.json()["result"]["stockouts"][0]
+                lead_time = next(
+                    row["lead_time_days"]
+                    for row in generate_dataset(seed=42)["facilities"]
+                    if row["id"] == stockout["facility_id"]
+                )
                 mitigation = {
                     "synthetic_attested": True,
                     "budget": 100,
@@ -233,8 +239,8 @@ def test_scenario_api_auth_roles_idempotency_and_pagination() -> None:
                                 "facility_id": stockout["facility_id"],
                                 "commodity_id": stockout["commodity_id"],
                                 "cost": 10,
-                                "arrival_day": 27,
-                                "original_day": 58,
+                                "arrival_day": 1,
+                                "original_day": 31 + lead_time,
                             },
                             {
                                 "id": "transfer-modeled",

@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Use synthetic lead-time anchors in simulation version 3 while preserving legacy run replay.
 - Model synthetic redistribution with donor stock preservation, shared inventory, distance, and shelf-life constraints.
 - Replay synthetic reorder-timing candidates by advancing an existing replenishment without duplicating stock.
 - Add run-pinned synthetic emergency-delivery replay and solver ranking by modeled first-stockout deferral.

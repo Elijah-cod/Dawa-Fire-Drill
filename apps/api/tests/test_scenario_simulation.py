@@ -14,7 +14,7 @@ def test_scenario_run_is_reproducible_and_ordered() -> None:
     result = simulate_scenario(scenario, seed=42, horizon_days=90)
     assert result == simulate_scenario(scenario, seed=42, horizon_days=90)
     assert result["synthetic"] is True
-    assert result["simulation_version"] == 2
+    assert result["simulation_version"] == 3
     assert result["stockouts"]
     assert all(item["district_id"].startswith("SYN-KE-D") for item in result["stockouts"])
     assert result["district_stockouts"]
@@ -59,3 +59,28 @@ def test_legacy_simulation_version_remains_available() -> None:
     assert all("district_id" not in item for item in result["stockouts"])
     with pytest.raises(ValueError):
         simulate_scenario(scenario, seed=42, horizon_days=90, simulation_version=999)
+
+
+def test_version_three_uses_snapshot_lead_times_for_delivery_schedule() -> None:
+    scenario = ScenarioCreate(name="No delay", shock_type="cash_delay", magnitude=0)
+    data = {
+        "synthetic": True,
+        "country_code": "KE",
+        "seed": 3,
+        "facilities": [{"id": "f", "lead_time_days": 5}],
+        "consumption": [
+            {"facility_id": "f", "commodity_id": "c", "month_index": 23, "quantity": 300}
+        ],
+    }
+    fast = simulate_scenario(scenario, seed=3, horizon_days=60, dataset=data, simulation_version=3)
+    legacy_fast = simulate_scenario(
+        scenario, seed=3, horizon_days=60, dataset=data, simulation_version=2
+    )
+    data["facilities"][0]["lead_time_days"] = 40
+    slow = simulate_scenario(scenario, seed=3, horizon_days=60, dataset=data, simulation_version=3)
+    legacy_slow = simulate_scenario(
+        scenario, seed=3, horizon_days=60, dataset=data, simulation_version=2
+    )
+    assert fast["stockouts"] == []
+    assert slow["stockouts"][0]["day"] == 30
+    assert legacy_fast == legacy_slow

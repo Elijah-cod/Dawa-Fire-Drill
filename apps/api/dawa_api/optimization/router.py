@@ -93,7 +93,7 @@ async def rank_modeled_deliveries(
     run = await RunRepository(session, country_code=principal.country_code).get(run_id)
     if run is None:
         raise HTTPException(status_code=404, detail="Run not found")
-    if run.status != "succeeded" or run.result is None or run.simulation_version not in (1, 2):
+    if run.status != "succeeded" or run.result is None or run.simulation_version not in (1, 2, 3):
         raise HTTPException(status_code=409, detail="Succeeded supported run required")
     snapshot = await DatasetRepository(session, country_code=principal.country_code).get(
         seed=run.seed, version=run.generator_version
@@ -111,6 +111,7 @@ async def rank_modeled_deliveries(
             run.result["stockouts"],
             horizon_days=run.horizon_days,
             request=data,
+            simulation_version=run.simulation_version,
         )
     except (DuplicateCandidateID, TargetUnreachable, RunMismatch) as exc:
         raise HTTPException(status_code=409, detail=str(exc)) from exc

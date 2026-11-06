@@ -6,7 +6,7 @@ from dawa_api.ingestion.synthetic import generate_dataset
 from dawa_api.scenarios.schemas import ScenarioCreate
 from dawa_api.simulation.service import simulate_stock
 
-SIMULATION_VERSION = 2
+SIMULATION_VERSION = 3
 
 
 class Stockout(TypedDict):
@@ -33,14 +33,27 @@ class ScenarioResult(TypedDict):
 
 
 def stock_parameters(
-    scenario: ScenarioCreate, *, monthly_demand: int, horizon_days: int
+    scenario: ScenarioCreate,
+    *,
+    monthly_demand: int,
+    horizon_days: int,
+    simulation_version: int = 2,
+    lead_time_days: int | None = None,
 ) -> tuple[int, dict[int, int]]:
     """Reproduce the version 1/2 stock-flow inputs for a single commodity."""
     if monthly_demand < 0 or not 1 <= horizon_days <= 365:
         raise ValueError("Invalid demand or simulation horizon")
     daily_demand = max(1, monthly_demand // 30)
     deliveries: dict[int, int] = {}
-    for planned_day in range(28, horizon_days + 1, 30):
+    if simulation_version not in (1, 2, 3):
+        raise ValueError("Unsupported simulation version")
+    if simulation_version == 3:
+        if lead_time_days is None or not 1 <= lead_time_days <= 365:
+            raise ValueError("Version 3 requires a valid synthetic lead time")
+        first_day = 1 + lead_time_days
+    else:
+        first_day = 28
+    for planned_day in range(first_day, horizon_days + 1, 30):
         day = planned_day + (scenario.magnitude if scenario.shock_type == "cash_delay" else 0)
         quantity = daily_demand * 30
         if scenario.shock_type == "logistics_reduction":
@@ -58,7 +71,7 @@ def simulate_scenario(
     dataset: dict[str, Any] | None = None,
     simulation_version: int = SIMULATION_VERSION,
 ) -> ScenarioResult:
-    if simulation_version not in (1, SIMULATION_VERSION):
+    if simulation_version not in (1, 2, SIMULATION_VERSION):
         raise ValueError("Unsupported simulation version")
     if not 1 <= horizon_days <= 365:
         raise ValueError("horizon_days must be between 1 and 365")
@@ -74,11 +87,18 @@ def simulate_scenario(
         facility["id"]: f"SYN-KE-D{index // 8 + 1:02d}"
         for index, facility in enumerate(data["facilities"])
     }
+    lead_by_facility = {
+        facility["id"]: facility.get("lead_time_days") for facility in data["facilities"]
+    }
     for item in data["consumption"]:
         if item["month_index"] != 23:
             continue
         daily_demand, deliveries = stock_parameters(
-            scenario, monthly_demand=item["quantity"], horizon_days=horizon_days
+            scenario,
+            monthly_demand=item["quantity"],
+            horizon_days=horizon_days,
+            simulation_version=simulation_version,
+            lead_time_days=lead_by_facility[item["facility_id"]],
         )
         result = simulate_stock(
             opening_stock=daily_demand * 30,
