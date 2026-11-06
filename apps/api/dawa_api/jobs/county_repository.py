@@ -11,7 +11,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from dawa_api.ingestion.county_repository import COUNTY_GENERATOR_VERSION, CountySnapshotRepository
 from dawa_api.storage.models import CountyRun
 
-KISUMU_SIMULATION_VERSION = 1
+KISUMU_SIMULATION_VERSION = 2
 
 
 class CountyRunConflict(ValueError):

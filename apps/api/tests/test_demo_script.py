@@ -17,6 +17,8 @@ case "$*" in
   *"/captures"*) printf '%s' '{"id":"capture-demo"}' ;;
   *"/runs/run-demo"*) printf '%s' '{"status":"succeeded","result":{"stockouts":[
   {"facility_id":"SYN-KE-042-F001","commodity_id":"SYN-C01","day":1}],
+  "pre_shock_stockouts":[{"facility_id":"SYN-KE-042-F001","commodity_id":"SYN-C01","day":1}],
+  "shock_caused_stockouts":[{"facility_id":"SYN-KE-042-F001","commodity_id":"SYN-C02","day":48}],
   "demo_cases":{"near_expiry_transfer":{"donor_facility_id":"SYN-KE-042-F002",
   "facility_id":"SYN-KE-042-F003","commodity_id":"SYN-C01","quantity":100,
   "available_units":600,"dispatch_day":1,"arrival_day":2,"expiry_day":45,

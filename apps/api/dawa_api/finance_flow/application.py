@@ -40,4 +40,4 @@ def trace_kisumu_case(
             "as_of": as_of,
         }
     )
-    return trace_request(request)
+    return trace_request(request).model_copy(update={"currency": "KES"})

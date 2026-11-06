@@ -31,6 +31,7 @@ class BottleneckRead(BaseModel):
 class FundingTraceResponse(BaseModel):
     synthetic: bool = True
     notice: str = "Illustrative and unvalidated"
+    currency: str | None = None
     bottlenecks: list[BottleneckRead]
 
 

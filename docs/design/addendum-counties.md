@@ -1,6 +1,6 @@
 # County and Kisumu pilot design addendum
 
-**Status: design specification, not implemented.** This extends the approved Phase 1 design; it does not approve or implement new frontend code. Show “Synthetic data. Model outputs are illustrative and unvalidated.” on every screen. Administrative names are real reference labels; all displayed operational and funding values are synthetic. Do not claim real Kisumu disease burden, donor dependence, or intervention impact without a cited source.
+**Status: approved design specification.** This extends the approved Phase 1 design. Show “Synthetic data. Model outputs are illustrative and unvalidated.” on every screen. Administrative names are real reference labels; all displayed operational and funding values are synthetic. Do not claim real Kisumu disease burden, donor dependence, or intervention impact without a cited source.
 
 The primary question is: **“What breaks first in Kisumu if donor-funded logistics support drops 40%, and what is the cheapest fix?”** The 40% shock is a planner-selected synthetic scenario, not an assertion about actual funding. The cheapest fix means the lowest modeled cost meeting the planner's explicit synthetic protection target, subject to the model's constraints; show assumptions and distinguish the alternative of maximizing modeled benefit under a budget.
 

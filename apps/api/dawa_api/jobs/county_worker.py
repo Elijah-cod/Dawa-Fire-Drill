@@ -28,11 +28,15 @@ async def process_kisumu_one(sessions: async_sessionmaker[AsyncSession]) -> bool
             snapshot = await CountySnapshotRepository(
                 session, country_code="KE", county_code="042"
             ).get(seed=seed, kind="pilot", version=version)
-            if snapshot is None or simulation_version != KISUMU_SIMULATION_VERSION:
+            if snapshot is None or simulation_version not in (1, KISUMU_SIMULATION_VERSION):
                 raise ValueError("Pinned synthetic run inputs are unavailable")
             data = snapshot.data
         result = await asyncio.to_thread(
-            simulate_kisumu, ScenarioCreate.model_validate(scenario), data, horizon_days=horizon
+            simulate_kisumu,
+            ScenarioCreate.model_validate(scenario),
+            data,
+            horizon_days=horizon,
+            simulation_version=simulation_version,
         )
     except Exception:
         result = None

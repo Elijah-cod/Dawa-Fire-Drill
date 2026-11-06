@@ -111,7 +111,40 @@ def test_county_endpoints_enforce_county_and_role_scopes() -> None:
                 )
                 assert trace.status_code == 200
                 assert trace.json()["synthetic"] is True
+                assert trace.json()["currency"] == "KES"
                 assert trace.json()["bottlenecks"][0]["stage"] == "approved_not_released"
+                first = result["shock_caused_stockouts"][0]
+                fixes = [
+                    {
+                        "id": "first-cheap",
+                        "kind": "emergency_procurement",
+                        "cost": 10,
+                        "facility_id": first["facility_id"],
+                        "commodity_id": first["commodity_id"],
+                        "quantity": 10000,
+                        "arrival_day": first["day"],
+                    },
+                    {
+                        "id": "first-costly",
+                        "kind": "emergency_procurement",
+                        "cost": 50,
+                        "facility_id": first["facility_id"],
+                        "commodity_id": first["commodity_id"],
+                        "quantity": 10000,
+                        "arrival_day": first["day"],
+                    },
+                ]
+                first_rank = client.post(
+                    f"/v1/counties/042/runs/{run_id}/mitigations",
+                    json={
+                        "synthetic_attested": True,
+                        "budget": 100,
+                        "minimum_benefit": 1,
+                        "candidates": fixes,
+                    },
+                )
+                assert first_rank.status_code == 200, first_rank.text
+                assert first_rank.json()["selected_ids"] == ["first-cheap"]
                 assert (
                     client.get(
                         "/v1/counties/047/funding/SYN-042-FLOW-01/trace?seed=42&as_of=2025-04-01"

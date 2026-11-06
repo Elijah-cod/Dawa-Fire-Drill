@@ -1,5 +1,7 @@
 # Changelog
 
+- Distinguished pre-shock shortages and shock-caused stockouts using a no-shock counterfactual, ranked a fix for the first shock-caused event, and labeled the synthetic Kisumu funding trace in KES.
+
 - Documented the fresh-clone county demo, local timing sample, and Checkpoint B limitations; strengthened county-capture row-level security coverage.
 
 - Updated the curl demo to exercise county planning, the Kisumu shock, mitigation explanation and facility capture.

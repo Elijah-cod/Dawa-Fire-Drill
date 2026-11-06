@@ -234,7 +234,7 @@ async def rank_county_run(
     run = await CountyRunRepository(session, country_code="KE", county_code=county_code).get(run_id)
     if run is None:
         raise HTTPException(status_code=404, detail="Synthetic county run not found")
-    if run.status != "succeeded" or run.result is None or run.simulation_version != 1:
+    if run.status != "succeeded" or run.result is None or run.simulation_version not in (1, 2):
         raise HTTPException(status_code=409, detail="Succeeded supported county run required")
     snapshot = await CountySnapshotRepository(
         session, country_code="KE", county_code=county_code

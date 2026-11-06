@@ -9,7 +9,11 @@ from dawa_api.simulation.service import simulate_stock
 
 
 def simulate_kisumu(
-    scenario: ScenarioCreate, data: dict[str, Any], *, horizon_days: int
+    scenario: ScenarioCreate,
+    data: dict[str, Any],
+    *,
+    horizon_days: int,
+    simulation_version: int = 2,
 ) -> dict[str, Any]:
     """Run a synthetic pilot locally; never accept non-Kisumu facility inputs."""
     if (
@@ -20,6 +24,8 @@ def simulate_kisumu(
         raise ValueError("A synthetic Kisumu snapshot is required")
     if not 1 <= horizon_days <= 365:
         raise ValueError("Invalid horizon")
+    if simulation_version not in (1, 2):
+        raise ValueError("Unsupported Kisumu simulation version")
     facilities = {item["id"]: item for item in data["facilities"]}
     if any(
         item["county_code"] != "042" or item["country_code"] != "KE" for item in facilities.values()
@@ -33,6 +39,10 @@ def simulate_kisumu(
         (item["facility_id"], item["commodity_id"]): item["opening_stock"] for item in data["stock"]
     }
     events: list[dict[str, Any]] = []
+    pre_shock: list[dict[str, Any]] = []
+    shock_caused: list[dict[str, Any]] = []
+    baseline_stockouts: list[dict[str, Any]] = []
+    no_shock = scenario.model_copy(update={"magnitude": 0})
     for item in data["consumption"]:
         if item["month_index"] != 23:
             continue
@@ -52,17 +62,37 @@ def simulate_kisumu(
             deliveries=deliveries,
         )
         if result.stockout_day is not None:
-            events.append(
-                {
-                    "facility_id": key[0],
-                    "subcounty_id": facility["subcounty_id"],
-                    "commodity_id": key[1],
-                    "day": result.stockout_day,
-                }
-            )
+            event = {
+                "facility_id": key[0],
+                "subcounty_id": facility["subcounty_id"],
+                "commodity_id": key[1],
+                "day": result.stockout_day,
+            }
+            events.append(event)
+            if simulation_version == 2:
+                _, baseline_deliveries = stock_parameters(
+                    no_shock,
+                    monthly_demand=item["quantity"],
+                    horizon_days=horizon_days,
+                    simulation_version=4,
+                    lead_time_days=facility["lead_time_days"],
+                )
+                baseline = simulate_stock(
+                    opening_stock=stock[key] * 30,
+                    daily_demand=demand,
+                    days=horizon_days,
+                    deliveries=baseline_deliveries,
+                ).stockout_day
+                compared = {**event, "no_shock_stockout_day": baseline}
+                if stock[key] == 0:
+                    pre_shock.append(compared)
+                elif baseline is None or result.stockout_day < baseline:
+                    shock_caused.append(compared)
+                else:
+                    baseline_stockouts.append(compared)
     events.sort(key=lambda item: (item["day"], item["facility_id"], item["commodity_id"]))
     counts = Counter(item["subcounty_id"] for item in events)
-    return {
+    output = {
         "synthetic": True,
         "country_code": "KE",
         "county_code": "042",
@@ -75,3 +105,12 @@ def simulate_kisumu(
         ],
         "demo_cases": data["demo_cases"],
     }
+    if simulation_version == 2:
+        for group in (pre_shock, shock_caused, baseline_stockouts):
+            group.sort(key=lambda item: (item["day"], item["facility_id"], item["commodity_id"]))
+        output.update(
+            pre_shock_stockouts=pre_shock,
+            shock_caused_stockouts=shock_caused,
+            baseline_stockouts=baseline_stockouts,
+        )
+    return output

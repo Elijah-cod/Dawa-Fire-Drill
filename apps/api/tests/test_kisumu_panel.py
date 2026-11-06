@@ -42,6 +42,15 @@ def test_planted_cases_appear_in_40_percent_kisumu_scenario() -> None:
     result = simulate_kisumu(scenario, data, horizon_days=90)
     assert result["synthetic"] is True
     assert result["county_code"] == "042"
+    assert result["pre_shock_stockouts"][0]["facility_id"] == "SYN-KE-042-F001"
+    assert result["pre_shock_stockouts"][0]["commodity_id"] == "SYN-C01"
+    first_shock = result["shock_caused_stockouts"][0]
+    assert (first_shock["facility_id"], first_shock["commodity_id"], first_shock["day"]) == (
+        "SYN-KE-042-F001",
+        "SYN-C02",
+        48,
+    )
+    assert first_shock["no_shock_stockout_day"] is None
     cases = data["demo_cases"]
     for case in (cases["chronic_stockout"], cases["near_expiry_transfer"]):
         assert any(
@@ -66,6 +75,16 @@ def test_kisumu_simulator_rejects_foreign_county_facility() -> None:
     data["consumption"][0]["county_code"] = "047"
     with pytest.raises(ValueError, match="Kisumu"):
         simulate_kisumu(scenario, data, horizon_days=90)
+
+
+def test_zero_shock_has_no_shock_caused_events_and_version_one_stays_compatible() -> None:
+    data = generate_kisumu_panel(seed=42)
+    scenario = ScenarioCreate(name="synthetic", shock_type="logistics_reduction", magnitude=0)
+    current = simulate_kisumu(scenario, data, horizon_days=90)
+    assert current["shock_caused_stockouts"] == []
+    legacy = simulate_kisumu(scenario, data, horizon_days=90, simulation_version=1)
+    assert "shock_caused_stockouts" not in legacy
+    assert legacy["stockouts"] == current["stockouts"]
 
 
 @given(seed=st.integers(min_value=0, max_value=1000), magnitude=st.integers(0, 100))

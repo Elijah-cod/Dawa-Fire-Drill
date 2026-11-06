@@ -29,14 +29,19 @@ for ((attempt=0; attempt<60; attempt++)); do
   sleep 1
 done
 [[ "$status" == succeeded ]] || { printf '%s\n' 'Synthetic run timed out.' >&2; exit 1; }
-printf '%s\n' 'First-stockout order:'
-python3 -c 'import json,sys; print(json.dumps(json.load(sys.stdin)["result"]["stockouts"]))' <<< "$run"
+printf '%s\n' 'Pre-shock shortages:'
+python3 -c 'import json,sys; print(json.dumps(json.load(sys.stdin)["result"]["pre_shock_stockouts"]))' <<< "$run"
+printf '%s\n' 'Shock-caused first-stockout order versus no-shock baseline:'
+python3 -c 'import json,sys; print(json.dumps(json.load(sys.stdin)["result"]["shock_caused_stockouts"]))' <<< "$run"
+first_fix="$(python3 -c 'import json,sys; t=json.load(sys.stdin)["result"]["shock_caused_stockouts"][0]; cs=[{"id":name,"kind":"emergency_procurement","cost":cost,"facility_id":t["facility_id"],"commodity_id":t["commodity_id"],"arrival_day":t["day"],"quantity":10000} for name,cost in [("first-cheap",10),("first-costly",50)]]; print(json.dumps({"synthetic_attested":True,"budget":100,"minimum_benefit":1,"candidates":cs}))' <<< "$run")"
+printf '%s\n' 'Cheapest supplied fix for the first shock-caused stockout:'
+call -H 'X-Demo-Role: planner' -H 'Content-Type: application/json' -d "$first_fix" "$base/v1/counties/042/runs/$run_id/mitigations"; printf '\n'
 printf '%s\n' 'Monthly baseline forecast:'
 call -H 'X-Demo-Role: planner' "$base/v1/counties/042/runs/$run_id/forecast?facility_id=SYN-KE-042-F001&commodity_id=SYN-C01"; printf '\n'
 printf '%s\n' 'Stalled cash release:'
 call -H 'X-Demo-Role: planner' "$base/v1/counties/042/funding/SYN-042-FLOW-01/trace?seed=$seed&as_of=2025-04-01"; printf '\n'
 mitigation="$(python3 -c 'import json,sys; t=json.load(sys.stdin)["result"]["demo_cases"]["near_expiry_transfer"]; x={"id":"transfer","kind":"redistribution","cost":10,"facility_id":t["facility_id"],"donor_facility_id":t["donor_facility_id"],"commodity_id":t["commodity_id"],"quantity":t["quantity"],"available_units":t["available_units"],"dispatch_day":t["dispatch_day"],"arrival_day":t["arrival_day"],"expiry_day":t["expiry_day"],"minimum_shelf_days":t["minimum_shelf_days"],"distance_km":t["distance_km"],"max_distance_km":t["maximum_distance_km"]}; y={"id":"emergency","kind":"emergency_procurement","cost":50,"facility_id":t["facility_id"],"commodity_id":t["commodity_id"],"quantity":t["quantity"],"arrival_day":t["arrival_day"]}; print(json.dumps({"synthetic_attested":True,"budget":100,"minimum_benefit":1,"candidates":[x,y]}))' <<< "$run")"
-printf '%s\n' 'Ranked mitigations and optimizer explanation:'
+printf '%s\n' 'Separate planted redistribution example and optimizer explanation:'
 call -H 'X-Demo-Role: planner' -H 'Content-Type: application/json' -d "$mitigation" "$base/v1/counties/042/runs/$run_id/mitigations"; printf '\n'
 python3 -c 'import struct,zlib,sys; chunk=lambda k,v:struct.pack("!I",len(v))+k+v+struct.pack("!I",zlib.crc32(k+v)); open(sys.argv[1],"wb").write(b"\x89PNG\r\n\x1a\n"+chunk(b"IHDR",struct.pack("!IIBBBBB",4,4,8,2,0,0,0))+chunk(b"IDAT",zlib.compress((b"\0"+b"\xff"*12)*4))+chunk(b"IEND",b""))' "$scratch/synthetic.png"
 capture_base="$base/v1/counties/042/facilities/SYN-KE-042-F001/captures"
