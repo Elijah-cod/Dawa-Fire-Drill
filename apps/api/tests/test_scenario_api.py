@@ -227,6 +227,15 @@ def test_scenario_api_auth_roles_idempotency_and_pagination() -> None:
                                 "arrival_day": stockout["day"] + 1,
                                 "quantity": 100000,
                             },
+                            {
+                                "id": "reorder-modeled",
+                                "kind": "reorder_timing",
+                                "facility_id": stockout["facility_id"],
+                                "commodity_id": stockout["commodity_id"],
+                                "cost": 10,
+                                "arrival_day": 27,
+                                "original_day": 58,
+                            },
                         ],
                     },
                     headers=bearer("planner"),
@@ -237,6 +246,7 @@ def test_scenario_api_auth_roles_idempotency_and_pagination() -> None:
                 assert effect["baseline_stockout_day"] == stockout["day"]
                 assert effect["deferred_days"] > 0
                 assert modeled.json()["effects"][1]["deferred_days"] == 0
+                assert modeled.json()["effects"][2]["id"] == "reorder-modeled"
                 unknown = mitigation | {
                     "candidates": [mitigation["candidates"][0] | {"facility_id": "unknown"}]
                 }

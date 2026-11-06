@@ -1,26 +1,37 @@
 """Contracts for synthetic intervention replay."""
 
+from typing import Literal
 from uuid import UUID
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from dawa_api.validation import BenefitTarget, ExplicitTrue, JsonInteger
 
 
-class ModeledDelivery(BaseModel):
+class CandidateBase(BaseModel):
+    model_config = ConfigDict(extra="forbid")
     id: str = Field(min_length=1, max_length=120, pattern=r"^[A-Za-z0-9][A-Za-z0-9_-]*$")
     facility_id: str = Field(min_length=1, max_length=120)
     commodity_id: str = Field(min_length=1, max_length=120)
     cost: JsonInteger = Field(ge=0, le=1_000_000_000)
     arrival_day: JsonInteger = Field(ge=1, le=365)
+
+
+class ModeledDelivery(CandidateBase):
+    kind: Literal["emergency_procurement"] = "emergency_procurement"
     quantity: JsonInteger = Field(ge=1, le=1_000_000_000)
+
+
+class ModeledReorder(CandidateBase):
+    kind: Literal["reorder_timing"]
+    original_day: JsonInteger = Field(ge=1, le=365)
 
 
 class ModeledRequest(BaseModel):
     synthetic_attested: ExplicitTrue
     budget: JsonInteger = Field(ge=0, le=1_000_000_000)
     minimum_benefit: BenefitTarget | None = None
-    candidates: list[ModeledDelivery] = Field(max_length=50)
+    candidates: list[ModeledDelivery | ModeledReorder] = Field(max_length=50)
 
 
 class ModeledEffect(BaseModel):
