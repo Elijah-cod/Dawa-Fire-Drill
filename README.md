@@ -18,6 +18,8 @@ flowchart LR
 
 The backend is under development and is not deployed. The design was approved; frontend implementation remains for a later phase.
 
+Phase 2b is extending planning to Kenya's 47 counties, with Kisumu as the only facility-level pilot; see [Phase 2b notes](docs/phases/2b.md) for progress and limitations.
+
 ## Local quickstart
 
 Requirements: Docker with Compose. From the repository root:
