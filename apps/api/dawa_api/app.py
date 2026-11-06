@@ -11,6 +11,7 @@ from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncEngine, async_sessionmaker, create_async_engine
 
 from dawa_api.auth.jwks import JwksCache
+from dawa_api.capture.county_router import router as county_capture_router
 from dawa_api.capture.limits import CaptureBodyLimit
 from dawa_api.capture.providers import configured_providers
 from dawa_api.capture.router import router as capture_router
@@ -72,6 +73,7 @@ def create_app(settings: Settings | None = None, engine: AsyncEngine | None = No
     app.include_router(optimization_router, prefix=prefix)
     app.include_router(mitigation_router, prefix=prefix)
     app.include_router(capture_router, prefix=prefix)
+    app.include_router(county_capture_router, prefix=prefix)
     app.include_router(catalog_router, prefix=prefix)
     app.include_router(county_router, prefix=prefix)
     app.include_router(funding_router, prefix=prefix)

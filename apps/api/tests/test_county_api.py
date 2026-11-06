@@ -2,11 +2,13 @@
 
 import asyncio
 import os
+from io import BytesIO
 from pathlib import Path
 from uuid import uuid4
 
 from alembic.config import Config
 from fastapi.testclient import TestClient
+from PIL import Image
 from sqlalchemy import text
 from sqlalchemy.engine import Connection
 from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
@@ -239,6 +241,97 @@ def test_county_endpoints_enforce_county_and_role_scopes() -> None:
                 own_facility = client.get("/v1/counties/042/facilities/SYN-KE-042-F001?seed=42")
                 assert own_facility.status_code == 200
                 assert own_facility.json()["facility"]["id"] == "SYN-KE-042-F001"
+                image = BytesIO()
+                Image.new("RGB", (4, 4), "white").save(image, format="PNG")
+                upload = {"file": ("synthetic.png", image.getvalue(), "image/png")}
+                capture_url = "/v1/counties/042/facilities/SYN-KE-042-F001/captures?seed=42"
+                capture = client.post(
+                    capture_url,
+                    files=upload,
+                    data={"synthetic_attested": "true"},
+                    headers={"Idempotency-Key": "county-capture"},
+                )
+                assert capture.status_code == 201, capture.text
+                capture_id = capture.json()["id"]
+                fields = {
+                    "commodity_name": "Synthetic tracer",
+                    "opening_balance": 5,
+                    "closing_balance": 3,
+                    "record_date": "2026-01-01",
+                }
+                confirm = client.post(
+                    f"{capture_url.split('?')[0]}/{capture_id}/confirm",
+                    json={"reviewed": True, "fields": fields},
+                )
+                assert confirm.status_code == 201, confirm.text
+                assert (
+                    client.post(
+                        f"{capture_url.split('?')[0]}/{capture_id}/confirm",
+                        json={"reviewed": True, "fields": fields},
+                    ).status_code
+                    == 200
+                )
+                other = capture_url.replace("F001", "F002")
+                assert (
+                    client.post(
+                        other,
+                        files=upload,
+                        data={"synthetic_attested": "true"},
+                        headers={"Idempotency-Key": "other"},
+                    ).status_code
+                    == 403
+                )
+                principal = Principal(
+                    subject="other",
+                    role="facility",
+                    country_code="KE",
+                    county_code="042",
+                    facility_id="SYN-KE-042-F002",
+                )
+                assert (
+                    client.post(
+                        f"{other.split('?')[0]}/{capture_id}/confirm",
+                        json={"reviewed": True, "fields": fields},
+                    ).status_code
+                    == 404
+                )
+                principal = Principal(
+                    subject="other",
+                    role="facility",
+                    country_code="KE",
+                    county_code="047",
+                    facility_id="SYN-KE-042-F001",
+                )
+                assert (
+                    client.post(
+                        f"{capture_url.split('?')[0]}/{capture_id}/confirm",
+                        json={"reviewed": True, "fields": fields},
+                    ).status_code
+                    == 403
+                )
+                principal = Principal(
+                    subject="synthetic",
+                    role="facility",
+                    country_code="KE",
+                    county_code="042",
+                    facility_id="SYN-KE-042-F001",
+                )
+                assert (
+                    client.post(
+                        capture_url.replace("/042/", "/047/"),
+                        files=upload,
+                        data={"synthetic_attested": "true"},
+                        headers={"Idempotency-Key": "other"},
+                    ).status_code
+                    == 403
+                )
+                assert (
+                    client.post(
+                        f"{other.split('?')[0]}/{capture_id}/confirm",
+                        json={"reviewed": True, "fields": fields},
+                    ).status_code
+                    == 403
+                )
                 assert all(
                     item["facility_id"] == "SYN-KE-042-F001"
                     for item in own_facility.json()["stock"]

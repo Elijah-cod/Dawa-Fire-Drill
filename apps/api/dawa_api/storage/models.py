@@ -149,6 +149,26 @@ class CountyRun(Base):
     )
 
 
+class CountyCapture(Base):
+    __tablename__ = "county_captures"
+    __table_args__ = (UniqueConstraint("country_code", "county_code", "idempotency_key"),)
+    id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid4)
+    country_code: Mapped[str] = mapped_column(String(2), nullable=False)
+    county_code: Mapped[str] = mapped_column(String(16), nullable=False)
+    facility_id: Mapped[str] = mapped_column(String(64), nullable=False)
+    idempotency_key: Mapped[str] = mapped_column(String(128), nullable=False)
+    created_by: Mapped[str] = mapped_column(String(200), nullable=False)
+    image_hash: Mapped[str] = mapped_column(String(64), nullable=False)
+    fields: Mapped[dict[str, Any]] = mapped_column(JSON, nullable=False)
+    provider_status: Mapped[str] = mapped_column(String(32), nullable=False)
+    status: Mapped[str] = mapped_column(String(16), nullable=False)
+    confirmed_fields: Mapped[dict[str, Any] | None] = mapped_column(JSON, nullable=True)
+    confirmed_by: Mapped[str | None] = mapped_column(String(200), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=lambda: datetime.now(UTC)
+    )
+
+
 class FundingFlow(Base):
     __tablename__ = "funding_flows"
     __table_args__ = (

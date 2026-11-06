@@ -1,5 +1,7 @@
 # Changelog
 
+- Added a separate county-scoped Kisumu facility bin-card capture and human-confirmation workflow.
+
 - Added an opt-in administrator-only demo role switcher for local or staging environments, refused in production.
 
 - Added a Kisumu run forecast from pinned synthetic inputs and a deterministic explanation of the optimizer result.
