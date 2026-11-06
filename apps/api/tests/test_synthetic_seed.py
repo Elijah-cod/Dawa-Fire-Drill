@@ -1,3 +1,4 @@
+from dawa_api.ingestion.repository import GENERATOR_VERSION
 from dawa_api.ingestion.synthetic import generate_dataset
 
 
@@ -12,3 +13,16 @@ def test_seed_is_reproducible_and_structurally_complete() -> None:
     assert len(first["consumption"]) == 40 * 10 * 24
     assert first["budget_lines"] and first["procurement_orders"] and first["cash_releases"]
     assert all(row["quantity"] >= 0 for row in first["consumption"])
+
+
+def test_lead_times_use_separate_public_aggregate_anchors_with_provenance() -> None:
+    data = generate_dataset(seed=42)
+    calibration = data["calibration"]["delivery_lead_time"]
+    assert GENERATOR_VERSION == 2
+    assert calibration["primary_facility_days"] == 24.2
+    assert calibration["hospital_days"] == 19.5
+    assert calibration["period"] == "2024/25"
+    assert calibration["source_url"].startswith("https://www.treasury.go.ke/")
+    for facility in data["facilities"]:
+        center = 24 if facility["level"] in (2, 3) else 20
+        assert center - 5 <= facility["lead_time_days"] <= center + 5

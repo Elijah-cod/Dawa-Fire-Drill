@@ -2,7 +2,7 @@
 
 A supply chain stress-test simulator for essential medicines in Kenya, designed to support more countries. The Phase 2 backend runs synthetic shock scenarios, reports illustrative stockout sequences, and ranks assumed mitigation candidates within a budget ceiling.
 
-**Data policy:** All project data is synthetic. The target is calibration to public aggregates; currently only the synthetic facility-level mix is guided by a public aggregate, while other quantities are illustrative assumptions. Model outputs are illustrative and have not been validated. Do not use them for operational decisions. See [data assumptions](docs/data-assumptions.md).
+**Data policy:** All project data is synthetic. Facility-level mix and lead-time anchors are guided by public aggregates; other quantities remain illustrative assumptions. Model outputs are illustrative and have not been validated. Do not use them for operational decisions. See [data assumptions](docs/data-assumptions.md).
 
 ## Architecture
 

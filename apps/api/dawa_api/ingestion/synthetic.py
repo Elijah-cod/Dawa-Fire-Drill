@@ -9,6 +9,9 @@ from typing import Any, TypedDict
 # Approximate 2022 Kenya public-facility mix, with rare higher levels oversampled.
 FACILITY_LEVELS = (2,) * 29 + (3,) * 7 + (4,) * 3 + (5,)
 SEASONAL_INDEX = (90, 92, 96, 100, 105, 110, 112, 108, 103, 100, 96, 92)
+TURNAROUND_SOURCE = (
+    "https://www.treasury.go.ke/sites/default/files/NEW/Draft-Health-Sector-Report-11.11.2025.pdf"
+)
 
 
 class Facility(TypedDict):
@@ -36,7 +39,8 @@ def generate_dataset(*, seed: int) -> dict[str, Any]:
             "country_code": "KE",
             "county": "Synthetic County",
             "level": level,
-            "lead_time_days": rng.randint(7, 42),
+            # Rounded national turnaround anchors; dispersion is an invented demo assumption.
+            "lead_time_days": (24 if level in (2, 3) else 20) + rng.randint(-5, 5),
         }
         for index, level in enumerate(levels, 1)
     ]
@@ -84,8 +88,17 @@ def generate_dataset(*, seed: int) -> dict[str, Any]:
         "synthetic": True,
         "country_code": "KE",
         "seed": seed,
-        "calibration_scope": "facility level mix only; other quantities are illustrative "
-        "assumptions",
+        "calibration_scope": "facility level mix and order turnaround anchors only; "
+        "other quantities are illustrative assumptions",
+        "calibration": {
+            "delivery_lead_time": {
+                "primary_facility_days": 24.2,
+                "hospital_days": 19.5,
+                "period": "2024/25",
+                "source_url": TURNAROUND_SOURCE,
+                "dispersion": "synthetic assumption; not measured by source",
+            }
+        },
         "facilities": facilities,
         "commodities": commodities,
         "consumption": consumption,
