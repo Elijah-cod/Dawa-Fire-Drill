@@ -94,7 +94,9 @@ def evaluate_delivery(
         simulation_version=simulation_version,
     )
     changed = deliveries.copy()
-    changed[arrival_day] = changed.get(arrival_day, 0) + quantity
+    changed[arrival_day] = changed.get(arrival_day, 0) + quantity * (
+        30 if simulation_version == 4 else 1
+    )
     return _compare(demand, deliveries, changed, horizon_days)
 
 
@@ -154,12 +156,12 @@ def donor_safe_capacity(
     if dispatch_day > last_day:
         return 0
     stock = demand * 30
-    capacity = 1_000_000_000
+    capacity = 30_000_000_000 if simulation_version == 4 else 1_000_000_000
     for day in range(1, last_day + 1):
         stock = max(0, stock + deliveries.get(day, 0) - demand)
         if day >= dispatch_day:
             capacity = min(capacity, max(0, stock - 1))
-    return capacity
+    return capacity // 30 if simulation_version == 4 else capacity
 
 
 def rank_deliveries(

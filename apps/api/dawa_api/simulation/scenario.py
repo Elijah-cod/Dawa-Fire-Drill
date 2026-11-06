@@ -6,7 +6,7 @@ from dawa_api.ingestion.synthetic import generate_dataset
 from dawa_api.scenarios.schemas import ScenarioCreate
 from dawa_api.simulation.service import simulate_stock
 
-SIMULATION_VERSION = 3
+SIMULATION_VERSION = 4
 
 
 class Stockout(TypedDict):
@@ -40,14 +40,14 @@ def stock_parameters(
     simulation_version: int = 2,
     lead_time_days: int | None = None,
 ) -> tuple[int, dict[int, int]]:
-    """Reproduce the version 1/2 stock-flow inputs for a single commodity."""
+    """Build version-pinned stock-flow inputs for a single commodity."""
     if monthly_demand < 0 or not 1 <= horizon_days <= 365:
         raise ValueError("Invalid demand or simulation horizon")
-    daily_demand = max(1, monthly_demand // 30)
+    daily_demand = monthly_demand if simulation_version == 4 else max(1, monthly_demand // 30)
     deliveries: dict[int, int] = {}
-    if simulation_version not in (1, 2, 3):
+    if simulation_version not in (1, 2, 3, 4):
         raise ValueError("Unsupported simulation version")
-    if simulation_version == 3:
+    if simulation_version in (3, 4):
         if lead_time_days is None or not 1 <= lead_time_days <= 365:
             raise ValueError("Version 3 requires a valid synthetic lead time")
         first_day = 1 + lead_time_days
@@ -71,7 +71,7 @@ def simulate_scenario(
     dataset: dict[str, Any] | None = None,
     simulation_version: int = SIMULATION_VERSION,
 ) -> ScenarioResult:
-    if simulation_version not in (1, 2, SIMULATION_VERSION):
+    if simulation_version not in (1, 2, 3, SIMULATION_VERSION):
         raise ValueError("Unsupported simulation version")
     if not 1 <= horizon_days <= 365:
         raise ValueError("horizon_days must be between 1 and 365")

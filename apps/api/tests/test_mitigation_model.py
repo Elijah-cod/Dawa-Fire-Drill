@@ -45,6 +45,30 @@ def test_extra_delivery_is_replayed_against_synthetic_shock() -> None:
     assert late.deferred_days == 0
 
 
+def test_fractional_daily_demand_preserves_one_month_of_extra_stock() -> None:
+    scenario = ScenarioCreate(name="Synthetic delay", shock_type="cash_delay", magnitude=90)
+    data = {
+        "synthetic": True,
+        "country_code": "KE",
+        "facilities": [{"id": "f", "lead_time_days": 20}],
+        "consumption": [
+            {"facility_id": "f", "commodity_id": "c", "month_index": 23, "quantity": 1}
+        ],
+    }
+    effect = evaluate_delivery(
+        scenario,
+        data,
+        horizon_days=90,
+        facility_id="f",
+        commodity_id="c",
+        arrival_day=1,
+        quantity=1,
+        simulation_version=4,
+    )
+    assert effect.baseline_stockout_day == 30
+    assert effect.counterfactual_stockout_day == 60
+
+
 def test_delivery_requires_existing_facility_commodity_and_valid_timing() -> None:
     scenario = ScenarioCreate(name="delay", shock_type="cash_delay", magnitude=45)
     data = {"synthetic": True, "country_code": "KE", "seed": 1, "facilities": [], "consumption": []}

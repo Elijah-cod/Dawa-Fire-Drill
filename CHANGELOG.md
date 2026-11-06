@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Preserve low-volume synthetic monthly demand with fixed-point stock calculations in simulation version 4.
 - Prevent simultaneous modeled donor and recipient actions on the same facility and commodity.
 - Anchor three synthetic malaria tracer need proxies to a public national projection, with explicit scaling limitations.
 - Use synthetic lead-time anchors in simulation version 3 while preserving legacy run replay.

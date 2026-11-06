@@ -14,7 +14,7 @@ def test_scenario_run_is_reproducible_and_ordered() -> None:
     result = simulate_scenario(scenario, seed=42, horizon_days=90)
     assert result == simulate_scenario(scenario, seed=42, horizon_days=90)
     assert result["synthetic"] is True
-    assert result["simulation_version"] == 3
+    assert result["simulation_version"] == 4
     assert result["stockouts"]
     assert all(item["district_id"].startswith("SYN-KE-D") for item in result["stockouts"])
     assert result["district_stockouts"]
