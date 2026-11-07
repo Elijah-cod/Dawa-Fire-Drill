@@ -184,6 +184,36 @@ def test_demo_capability_reports_server_switcher_state_for_admin(
             }
 
 
+def test_demo_session_returns_only_authenticated_scope(monkeypatch: pytest.MonkeyPatch) -> None:
+    async def allow_request(*args: object, **kwargs: object) -> bool:
+        return True
+
+    monkeypatch.setattr("dawa_api.scenarios.router.reserve_request", allow_request)
+    settings = Settings(
+        DATABASE_URL="postgresql+asyncpg://postgres:postgres@localhost:5432/dawa",
+        supabase_url="https://example.invalid",
+        supabase_jwt_secret=TEST_SIGNING_MATERIAL,
+    )
+    metadata = {
+        "role": "facility",
+        "country_code": "KE",
+        "county_code": "042",
+        "facility_id": "SYN-KE-042-F001",
+    }
+    headers = {"Authorization": f"Bearer {token(metadata=metadata)}"}
+    with TestClient(create_app(settings=settings)) as client:
+        assert client.get("/v1/demo/session").status_code == 401
+        response = client.get("/v1/demo/session", headers=headers)
+        assert response.status_code == 200
+        assert response.json() == {
+            "role": "facility",
+            "country_code": "KE",
+            "county_code": "042",
+            "facility_id": "SYN-KE-042-F001",
+            "national_planning": False,
+        }
+
+
 @pytest.mark.parametrize(
     "encoded",
     [
