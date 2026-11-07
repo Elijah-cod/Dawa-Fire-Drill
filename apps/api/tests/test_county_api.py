@@ -18,10 +18,12 @@ from alembic import command
 from dawa_api.app import create_app
 from dawa_api.auth.service import Principal
 from dawa_api.ingestion.county_repository import CountySnapshotRepository
+from dawa_api.ingestion.kisumu import generate_kisumu_panel
 from dawa_api.jobs.county_repository import CountyRunRepository
 from dawa_api.jobs.county_worker import process_kisumu_one
 from dawa_api.scenarios.router import current_principal
 from dawa_api.settings import Settings
+from dawa_api.storage.models import CountySnapshot
 
 
 def test_county_endpoints_enforce_county_and_role_scopes() -> None:
@@ -53,6 +55,16 @@ def test_county_endpoints_enforce_county_and_role_scopes() -> None:
                 await CountySnapshotRepository(
                     session, country_code="KE", county_code="042"
                 ).ensure(seed=42, kind="pilot")
+                session.add(
+                    CountySnapshot(
+                        country_code="KE",
+                        county_code="042",
+                        seed=42,
+                        version=2,
+                        kind="pilot",
+                        data=generate_kisumu_panel(seed=42, version=2),
+                    )
+                )
             app = create_app(settings=Settings(DATABASE_URL=url), engine=engine)
             principal = Principal(
                 subject="synthetic", role="planner", country_code="KE", county_code="042"
@@ -62,7 +74,14 @@ def test_county_endpoints_enforce_county_and_role_scopes() -> None:
                 own = client.get("/v1/counties/042/planning?seed=42")
                 assert own.status_code == 200 and own.json()["county_code"] == "042"
                 assert client.get("/v1/counties/047/planning?seed=42").status_code == 403
-                assert client.get("/v1/counties/042/pilot?seed=42").status_code == 200
+                pilot = client.get("/v1/counties/042/pilot?seed=42")
+                assert pilot.status_code == 200
+                assert all(
+                    item["coordinates_synthetic"] is True for item in pilot.json()["facilities"]
+                )
+                old_pilot = client.get("/v1/counties/042/pilot?seed=42&version=2")
+                assert old_pilot.status_code == 200
+                assert all("latitude" not in item for item in old_pilot.json()["facilities"])
                 request_body = {
                     "name": "Synthetic donor shock",
                     "shock_type": "logistics_reduction",

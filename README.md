@@ -20,6 +20,8 @@ The backend is under development and is not deployed. The approved frontend is i
 
 Phase 2b covers synthetic planning records for Kenya's 47 counties, with Kisumu as the only facility-level pilot; see [Phase 2 notes](docs/phases/2.md) for the demo evidence and limitations, including legacy country-only paths and the missing map.
 
+Kisumu generator version 3 includes invented facility coordinates; they are not real sites or verified administrative locations. Older snapshots have no coordinates. See [data assumptions](docs/data-assumptions.md).
+
 ## Local quickstart
 
 Requirements: Docker with Compose. From the repository root:

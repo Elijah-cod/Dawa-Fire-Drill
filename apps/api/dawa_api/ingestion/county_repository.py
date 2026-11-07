@@ -12,7 +12,7 @@ from dawa_api.ingestion.county_planning import generate_county_planning
 from dawa_api.ingestion.kisumu import generate_kisumu_panel
 from dawa_api.storage.models import CountySnapshot
 
-COUNTY_GENERATOR_VERSION = 2
+COUNTY_GENERATOR_VERSION = 3
 SnapshotKind = Literal["planning", "pilot"]
 
 
@@ -54,7 +54,9 @@ class CountySnapshotRepository:
         if existing is not None:
             return existing, False
         if kind == "pilot":
-            data = await asyncio.to_thread(generate_kisumu_panel, seed=seed)
+            data = await asyncio.to_thread(
+                generate_kisumu_panel, seed=seed, version=COUNTY_GENERATOR_VERSION
+            )
         else:
             national = await asyncio.to_thread(generate_county_planning, seed=seed)
             record = next(

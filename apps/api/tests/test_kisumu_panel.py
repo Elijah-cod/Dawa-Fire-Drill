@@ -1,3 +1,5 @@
+from math import asin, cos, radians, sin, sqrt
+
 import pytest
 from hypothesis import given, settings
 from hypothesis import strategies as st
@@ -20,6 +22,45 @@ def test_kisumu_panel_is_deterministic_and_has_only_kisumu_facilities() -> None:
     assert all(facility["county_code"] == "042" for facility in data["facilities"])
     assert {c["category"] for c in data["commodities"]} >= {"antiretroviral", "antimalarial"}
     assert len(data["commodities"]) == 10
+
+
+@given(seed=st.integers(min_value=0, max_value=2**31 - 1))
+@settings(max_examples=20, deadline=None)
+def test_synthetic_coordinates_are_reproducible_clustered_and_match_planted_route(
+    seed: int,
+) -> None:
+    data = generate_kisumu_panel(seed=seed, version=3)
+    facilities = data["facilities"]
+    assert facilities == generate_kisumu_panel(seed=seed, version=3)["facilities"]
+    assert facilities != generate_kisumu_panel(seed=seed + 1, version=3)["facilities"]
+    points = [(f["latitude"], f["longitude"]) for f in facilities]
+    assert len(set(points)) == 40
+    assert all(-0.35 <= lat <= 0.10 and 34.4 <= lon <= 35.2 for lat, lon in points)
+    assert all(f["coordinates_synthetic"] is True for f in facilities)
+
+    def distance(a: tuple[float, float], b: tuple[float, float]) -> float:
+        lat1, lon1, lat2, lon2 = map(radians, (*a, *b))
+        arc = sin((lat2 - lat1) / 2) ** 2 + cos(lat1) * cos(lat2) * sin((lon2 - lon1) / 2) ** 2
+        return 2 * 6371 * asin(sqrt(arc))
+
+    for group in data["subcounties"]:
+        group_points = [
+            (f["latitude"], f["longitude"]) for f in facilities if f["subcounty_id"] == group["id"]
+        ]
+        assert max(distance(a, b) for a in group_points for b in group_points) < 2
+    route = data["demo_cases"]["near_expiry_transfer"]
+    indexed = {f["id"]: (f["latitude"], f["longitude"]) for f in facilities}
+    assert (
+        abs(
+            distance(indexed[route["donor_facility_id"]], indexed[route["facility_id"]])
+            - route["distance_km"]
+        )
+        < 1
+    )
+    old = generate_kisumu_panel(seed=seed, version=2)
+    assert all(
+        "latitude" not in facility and "longitude" not in facility for facility in old["facilities"]
+    )
 
 
 def test_planted_kisumu_cases_have_consistent_synthetic_records() -> None:

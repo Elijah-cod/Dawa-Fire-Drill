@@ -1,5 +1,6 @@
 """Reproducible synthetic Kisumu pilot inputs; no real facility records are used."""
 
+import random
 from typing import Any
 
 from dawa_api.countries.ke.counties import KISUMU_SUBCOUNTIES
@@ -9,8 +10,10 @@ HIV_CONTEXT = "https://analytics.nsdcc.go.ke/estimates/PROGRESS-REPORT-2024.pdf"
 KISUMU_HIV_ESTIMATE_2023 = 135_550
 
 
-def generate_kisumu_panel(*, seed: int) -> dict[str, Any]:
+def generate_kisumu_panel(*, seed: int, version: int = 3) -> dict[str, Any]:
     """Create one invented panel with explicit planted examples, never actual observations."""
+    if version not in (1, 2, 3):
+        raise ValueError("Unsupported county generator version")
     source = generate_dataset(seed=seed)
     subcounties = [
         {"id": f"SYN-042-S{index:02d}", "country_code": "KE", "county_code": "042", "name": name}
@@ -33,6 +36,39 @@ def generate_kisumu_panel(*, seed: int) -> dict[str, Any]:
         }
         for index, facility in enumerate(source["facilities"])
     ]
+    if version >= 3:
+        # Invented cluster centers, not actual sub-county centroids or facility locations.
+        centers = (
+            (-0.120, 34.720),
+            (-0.100, 34.780),
+            (-0.100, 34.888),
+            (-0.180, 34.700),
+            (-0.200, 34.840),
+            (-0.240, 34.930),
+            (-0.055, 34.940),
+        )
+        # Reproducible synthetic points do not need cryptographic randomness.
+        rng = random.Random(seed ^ 0x4B4953554D55)  # nosec B311
+        pair_jitter = (rng.randint(-300, 300), rng.randint(-300, 300))
+        used: set[tuple[float, float]] = set()
+        for index, facility in enumerate(facilities):
+            center = centers[index % len(centers)]
+            while True:
+                offsets = (
+                    pair_jitter
+                    if index in (1, 2)
+                    else (rng.randint(-300, 300), rng.randint(-300, 300))
+                )
+                point = (
+                    round(center[0] + offsets[0] / 100000, 5),
+                    round(center[1] + offsets[1] / 100000, 5),
+                )
+                if point not in used:
+                    break
+                if index in (1, 2):
+                    raise RuntimeError("Synthetic route points unexpectedly collide")
+            used.add(point)
+            facility.update(latitude=point[0], longitude=point[1], coordinates_synthetic=True)
     categories = (
         "antimalarial",
         "malaria_diagnostic",
