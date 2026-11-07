@@ -34,11 +34,34 @@ export function createMockClient(role: Role) {
         county_code: "042",
         seed: 42,
         horizon_days: 90,
-        snapshot_version: 2,
+        snapshot_version: 3,
         simulation_version: 2,
         status: "succeeded",
         result: fixture.run,
         synthetic: true,
+      };
+    },
+    async pilot() {
+      if (role === "facility") throw new Error("Forbidden");
+      return (await import("../fixtures/kisumu.json")).default.pilot;
+    },
+    async facility(facilityId: string) {
+      if (role === "facility" && facilityId !== "SYN-KE-042-F001")
+        throw new Error("Forbidden");
+      const panel = (await import("../fixtures/kisumu.json")).default.pilot;
+      const facility = panel.facilities.find((item) => item.id === facilityId);
+      if (!facility) throw new Error("Not found");
+      return {
+        synthetic: true,
+        notice: "Illustrative synthetic facility data; not real records",
+        country_code: "KE",
+        county_code: "042",
+        facility,
+        stock: panel.stock.filter((item) => item.facility_id === facilityId),
+        consumption: panel.consumption.filter(
+          (item) => item.facility_id === facilityId,
+        ),
+        commodities: panel.commodities,
       };
     },
   };

@@ -31,6 +31,19 @@ describe("OpenAPI-typed synthetic mock", () => {
       "Forbidden",
     );
   });
+  it("limits a facility fixture to its own synthetic facility", async () => {
+    const facility = createMockClient("facility");
+    expect((await facility.facility("SYN-KE-042-F001")).facility.id).toBe(
+      "SYN-KE-042-F001",
+    );
+    await expect(facility.facility("SYN-KE-042-F002")).rejects.toThrow(
+      "Forbidden",
+    );
+    await expect(facility.pilot()).rejects.toThrow("Forbidden");
+    expect((await createMockClient("pharmacist").pilot()).county_code).toBe(
+      "042",
+    );
+  });
   it("refuses mock data in production", () => {
     vi.stubEnv("NODE_ENV", "production");
     expect(() => createMockClient("planner")).toThrow("disabled in production");

@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { AppShell } from "../components/app-shell";
 import { PreferencesProvider } from "../preferences/preferences";
+import "maplibre-gl/dist/maplibre-gl.css";
 import "./globals.css";
 
 export const metadata = { title: "Dawa Fire Drill" };

@@ -1,5 +1,7 @@
 # Changelog
 
+- Added shared illustrative facility-risk thresholds and a synthetic-coordinate MapLibre component with a no-coordinate fallback.
+
 - Added version 3 synthetic Kisumu facility coordinates with clustered seeded locations and a route-distance consistency check; older snapshots remain unchanged.
 
 - Added a mobile schematic map sheet and synchronized county list, with keyboard focus return and background scroll locking.

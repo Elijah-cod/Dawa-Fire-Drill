@@ -171,6 +171,34 @@ input {
   overflow-wrap: anywhere;
   cursor: pointer;
 }
+.facility-map {
+  width: 100%;
+  height: clamp(20rem, 50vh, 34rem);
+  border: 1px solid var(--border);
+  border-radius: 0.75rem;
+}
+.facility-marker {
+  min-width: 44px;
+  min-height: 44px;
+  border: 2px solid var(--surface);
+  border-radius: 50%;
+  color: #fff;
+  font-weight: 800;
+  font-size: 1.15rem;
+  cursor: pointer;
+}
+.facility-marker--critical {
+  background: #9b2c2c;
+}
+.facility-marker--watch {
+  background: #7a4a00;
+}
+.facility-marker--stable {
+  background: #1f6b4a;
+}
+.facility-marker--unknown {
+  background: #344a52;
+}
 .mobile-map-toggle {
   min-height: 44px;
   margin-block: 1rem;
