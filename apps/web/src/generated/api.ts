@@ -39,6 +39,23 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/v1/demo/session": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Session */
+    get: operations["session_v1_demo_session_get"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   "/v1/demo/capabilities": {
     parameters: {
       query?: never;
@@ -819,6 +836,22 @@ export interface components {
     DemoCapabilities: {
       /** Role Switcher */
       role_switcher: boolean;
+    };
+    /** DemoSession */
+    DemoSession: {
+      /**
+       * Role
+       * @enum {string}
+       */
+      role: "planner" | "pharmacist" | "facility" | "admin";
+      /** Country Code */
+      country_code: string;
+      /** County Code */
+      county_code: string | null;
+      /** Facility Id */
+      facility_id: string | null;
+      /** National Planning */
+      national_planning: boolean;
     };
     /** FacilityRead */
     FacilityRead: {
@@ -1700,6 +1733,54 @@ export interface operations {
         content: {
           "application/json": components["schemas"]["HTTPValidationError"];
         };
+      };
+      /** @description Authenticated request limit exceeded */
+      429: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  session_v1_demo_session_get: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["DemoSession"];
+        };
+      };
+      /** @description Malformed request */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Authentication required or invalid */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Insufficient role or scope */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
       };
       /** @description Authenticated request limit exceeded */
       429: {

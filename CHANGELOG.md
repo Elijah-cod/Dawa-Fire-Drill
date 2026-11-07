@@ -1,5 +1,7 @@
 # Changelog
 
+- Added typed same-origin demo-session, capability and national overview reads using the updated OpenAPI schema.
+
 - Exposed the authenticated demo session's trusted role and scope without returning credentials.
 
 - Added an initial server-only local demo proxy, session abstraction, synthetic role fixtures, and national-view scaffold. The frontend remains incomplete.
