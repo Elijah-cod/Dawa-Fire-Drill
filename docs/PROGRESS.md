@@ -1,5 +1,13 @@
 # Progress
 
+## Current status
+
+Phase 3 is underway on `phase/3-frontend`; Checkpoint C has not been reached. The national and Kisumu views are incomplete. Ranked fixes, funding trace, guided demo, forecast, capture, screenshots and the full phase gate remain. Keep commits local; no push or PR without production authorization. All data is synthetic and results are illustrative and unvalidated.
+
+Gitleaks v8.30.1 via Docker scanned 113 commits across all refs and a copy of tracked and non-ignored working-tree files: no leaks. Ignored build artifacts and dependencies were excluded from the working-tree copy.
+
+## Phase 3: Frontend — current
+
 - Phase 3 in progress: connected the Kisumu pilot and facility-scoped reads to a scenario-driven facility map, with shared risk cutoffs and explicit missing shock details. The frontend unit suite passed 61 tests; lint, formatting, type-check and production build passed; the existing local-backend Playwright suite passed 32 checks across four viewports, including keyboard marker activation, role isolation, token exposure and axe. The backend suite passed 135 tests with one existing warning, and npm audit found no vulnerabilities. The `gitleaks` executable was unavailable on PATH, and the complete phase gate and screenshot comparisons remain outstanding. Next: finish the Kisumu results, funding trace, forecast and capture flows and their screen-by-screen reviews.
 
 - Phase 3: added shared user-approved 7/30-day illustrative risk thresholds, worst-tracer/driver calculations, and a MapLibre facility-map component with synthetic-only coordinate validation, OSM attribution, risk symbols, legend and version-2 map-unavailable fallback. The map is not yet connected to a screen. Web lint, typecheck, formatting, Webpack build and 53 Vitest tests passed, including boundary values and old-coordinate fallback. Next: connect the selected scenario and pilot views, then run real-browser marker, keyboard and accessibility checks.
@@ -22,7 +30,11 @@
 
 - Phase 3: recorded the user's schematic-grid direction and exact geoBoundaries metadata; no boundary geometry was downloaded because its license source is unclear. Added pinned frontend dependencies, OpenAPI-generated TypeScript definitions, and an initial 47-county button grid with a component test using the backend county directory. Web lint, strict typecheck, Vitest (1 test), formatting, npm audit, and the approved prototype checks (66 screen/width combinations and two dark checks) passed; Chromium required sandbox escalation. This is a component foundation, not a finished screen. Next: integrate the grid into the national view and verify four screenshot widths, no overlaps, and keyboard behavior.
 
+## Step 0: Demo story
+
 - Step 0: approved design addendum recorded; Kisumu simulation version 2 compares each stockout with the no-shock baseline and separates opening shortages, shock-caused events, and unchanged baseline events while retaining version 1. The seed-42 demo ranks a fix for the first shock-caused event (F001/C02, day 48), and the synthetic stalled-release trace reports KES. The full backend suite passed 132 tests with one existing Starlette warning; Ruff, mypy, Bandit, gitleaks and pip-audit passed. Next: Phase 3 frontend from the approved design and licensed boundaries.
+
+## Phase 2b: Counties and Checkpoint B — approved
 
 - Phase 2b Checkpoint B: a fresh local clone and isolated Compose stack completed the full synthetic county demo, including 47 seeded planning records, Kisumu run, forecast, funding trace, ranked mitigation explanation and manually reviewed capture. The first synthetic stockout was F001/C01 on day 1; the planted transfer addressed F003/C01 on day 6. Five overview requests took 0.5443, 0.0380, 0.0343, 0.0359 and 0.0336 seconds; one 90-day queued run completed in 1.1424 seconds with 50 ms polling. The full suite passed 131 tests with one existing Starlette deprecation warning; Ruff, mypy and Bandit passed; gitleaks found no leaks in 100 commits or the working tree; pip-audit found no known vulnerabilities. Final limitations, including legacy country-only paths and the missing geographic map, are in `docs/phases/2.md`. Next: user review at Checkpoint B; no push.
 
@@ -38,52 +50,8 @@
 
 - Phase 2b: calibrated synthetic county budget scales against the Controller of Budget's county-level all-sector totals, preserving immutable version 1 snapshots and inventing release shares. The sandbox blocked PostgreSQL connections on the first run; with local database access the full suite passed 129 tests with one existing warning, and Ruff, mypy, and Bandit passed. Next: address legacy repository county isolation and verify the complete county demo.
 
-## Phase 0: Foundations — in progress
+## Phase 2: Backend — historical log
 
-### Completed locally
-
-- Recorded the full project rules in `AGENTS.md`, including the design gate and no agent contributor credit.
-- Split the original root environment template by reader into `apps/api/.env.example` and `apps/web/.env.example`.
-- Added the monorepo directories and secret-file ignore rules.
-- Added the Python 3.12 API package, dependency lockfile, and typed settings. `DATABASE_URL` is required and its validation error names the environment variable.
-- Added `/health`, Docker Compose for API/Postgres/Neo4j, a Python Dockerfile, web tooling configuration and lockfile, pre-commit hooks, and PR CI jobs. No frontend product screens were implemented.
-
-### Verification and blockers
-
-- Environment inspection: Python 3.12.14 is available through `uv`; Node 24.21.0 and Docker CLI 29.8.2 are installed. The Docker daemon is not running. `gh` is not installed.
-- API result after the health endpoint: `6 passed` on Python 3.12.14, with one upstream Starlette deprecation warning; `ruff check .`, `mypy dawa_api`, Bandit, and pre-commit hooks passed. Current API module coverage was 100% in this narrow test run.
-- `docker compose -f infra/compose.yaml config --quiet` passed. The Docker daemon was initially unavailable.
-- Docker Desktop started. `docker compose -f infra/compose.yaml up -d --build` completed, Postgres became healthy, and `curl --fail http://localhost:8000/health` returned the documented synthetic-data notice. The test containers were stopped with `docker compose down`.
-- Web tooling: after adding active TypeScript ESLint rules and a patched `minimatch` override, `npm run lint`, `npm run typecheck`, `npm test`, and `npm run format:check` exited 0. Vitest found no tests because frontend implementation is gated. `npm audit --audit-level=low` found zero vulnerabilities.
-- Python security: Bandit passed. `pip-audit` found a vulnerable pytest 8.4.2, so the lockfile was updated to pytest 9.2.0. A fresh `pip-audit` found no known vulnerabilities; it skipped the local `dawa-api` package because it is not published to PyPI.
-- A local pre-commit run passed both Ruff and mypy hooks. GitHub Actions CI has not run.
-- The user has directed that nothing be pushed until they are ready for production. Do not push, open a PR, or merge without explicit authorization. Earlier GitHub host resolution failures no longer block local work.
-- The local Phase 0 checks passed. The publication gate (PR and CI) remains pending by user choice.
-
-### Next
-
-1. Continue Phase 1 design locally on its own phase branch, respecting the design review checkpoint.
-2. Keep commits local. When the user explicitly authorizes publication for production, push phase branches, open PRs, and verify every CI job before merge.
-
-## Phase 1: Design — approved; native Figma canvas incomplete
-
-### Completed locally
-
-- Created local branch `phase/1-design` from the Phase 0 foundation.
-- Wrote roles/jobs, information architecture and flows, exact screen copy with empty/loading/error/offline/partial states, design tokens, components, responsive behavior, string plan, and Figma checklist in `docs/design/`.
-- Checked proposed light and dark text/color pairs against WCAG contrast calculations; all listed primary text pairs exceed 4.5:1.
-- Created the Figma file and its Foundations, Components, Screens, and Prototype pages. Figma AI reached the team's daily credit limit. Its generated frames contained unsourced quantities and costs; those frames were removed rather than presented as calibrated data. Native Figma frames and prototype connections remain missing. No billing or plan setting was changed.
-- Built a static HTML/CSS review prototype for all ten key screens and the mobile map sheet in `docs/design/prototype/`, with placeholders instead of invented domain figures. It is design material only; no frontend product code exists.
-
-### Verification and next
-
-- Local verification after the documentation batch: `git diff --check` and a design-file/state checklist passed; API `6 passed` with the known upstream warning, Ruff and mypy passed; web lint, typecheck, Vitest tooling command, and Prettier passed. Vitest has no product tests because there is no frontend product code.
-- Prototype responsive check passed 66 view/width combinations at 360, 390, 768, 1024, 1280, and 1536px, including no horizontal overflow, visible synthetic banner, one heading per view, labeled controls, and navigation mode. Two dark-theme checks passed. Overview, Results, and Capture screenshots were generated at the four required test widths and visually inspected at mobile and desktop. The Checkpoint A checklist is in `docs/design/REVIEW.md`.
-- Final local checks after the prototype: API 6 passed with the known upstream warning, Ruff and mypy passed; web ESLint, TypeScript, Vitest tooling command, and Prettier passed. `git diff --check` and internal prototype link checks passed. CI has not run because the user has withheld publication.
-- On 2026-11-05 the user replied `DESIGN APPROVED`; the reviewed artifacts and remaining Figma limitation are recorded in `docs/design/APPROVAL.md`.
-- Continue with Phase 2 backend work on a local phase branch. Stop at Checkpoint B for backend review.
-
-## Phase 2: Backend — in progress
 
 - Added initial deterministic daily stock-flow and OR-Tools budget-constrained selection primitives, with example and property tests. These are illustrative and unvalidated, and do not yet provide the required persisted scenario runs or ranked mitigation API.
 - Final local Python check for this unit: 10 tests passed with one upstream Starlette warning; Ruff and mypy passed.
@@ -170,3 +138,52 @@
 - Phase 2b: added reversible county-run storage with county RLS, idempotent asynchronous Kisumu runs, lease-fenced worker execution, and pinned-snapshot mitigation ranking. Tests exercise the 40% scenario, planted stockouts and transfer, forged batch rejection, county isolation, migration up/down, and stale-lease fencing. The full suite passed 127 tests with one existing warning; Ruff, mypy, and Bandit passed. Legacy country-only endpoints still need isolation, and the planted funding case is not yet integrated into a county funding repository. Next: close those gaps and verify the demo end to end.
 - Phase 2b: added a county-scoped trace of the planted stalled-release case from the immutable Kisumu snapshot. API tests verify the finding and cross-county denial. The full suite passed 127 tests with one existing warning; Ruff, mypy, and Bandit passed. This is a single demo case, not a general county funding ledger. Next: address legacy country-only access and verify the complete county demo.
 - Phase 2b: blocked county-scoped and national-planning identities from legacy country-only scenario, run, catalog, funding and capture endpoints. Tests cover all four roles and the national flag. The full suite passed 128 tests with one existing warning; Ruff, mypy, and Bandit passed. Legacy unscoped identities and repositories remain country-only, so this is a protective guard, not completion of the requested full county migration. Next: migrate legacy paths or clearly retain that outstanding limitation, then verify the demo.
+
+
+## Phase 1: Design — approved
+
+
+### Completed locally
+
+- Created local branch `phase/1-design` from the Phase 0 foundation.
+- Wrote roles/jobs, information architecture and flows, exact screen copy with empty/loading/error/offline/partial states, design tokens, components, responsive behavior, string plan, and Figma checklist in `docs/design/`.
+- Checked proposed light and dark text/color pairs against WCAG contrast calculations; all listed primary text pairs exceed 4.5:1.
+- Created the Figma file and its Foundations, Components, Screens, and Prototype pages. Figma AI reached the team's daily credit limit. Its generated frames contained unsourced quantities and costs; those frames were removed rather than presented as calibrated data. Native Figma frames and prototype connections remain missing. No billing or plan setting was changed.
+- Built a static HTML/CSS review prototype for all ten key screens and the mobile map sheet in `docs/design/prototype/`, with placeholders instead of invented domain figures. It is design material only; no frontend product code exists.
+
+### Verification and next
+
+- Local verification after the documentation batch: `git diff --check` and a design-file/state checklist passed; API `6 passed` with the known upstream warning, Ruff and mypy passed; web lint, typecheck, Vitest tooling command, and Prettier passed. Vitest has no product tests because there is no frontend product code.
+- Prototype responsive check passed 66 view/width combinations at 360, 390, 768, 1024, 1280, and 1536px, including no horizontal overflow, visible synthetic banner, one heading per view, labeled controls, and navigation mode. Two dark-theme checks passed. Overview, Results, and Capture screenshots were generated at the four required test widths and visually inspected at mobile and desktop. The Checkpoint A checklist is in `docs/design/REVIEW.md`.
+- Final local checks after the prototype: API 6 passed with the known upstream warning, Ruff and mypy passed; web ESLint, TypeScript, Vitest tooling command, and Prettier passed. `git diff --check` and internal prototype link checks passed. CI has not run because the user has withheld publication.
+- On 2026-11-05 the user replied `DESIGN APPROVED`; the reviewed artifacts and remaining Figma limitation are recorded in `docs/design/APPROVAL.md`.
+- Checkpoint B was subsequently approved; see Phase 2 below.
+
+
+
+## Phase 0: Foundations — historical log
+
+
+### Completed locally
+
+- Recorded the full project rules in `AGENTS.md`, including the design gate and no agent contributor credit.
+- Split the original root environment template by reader into `apps/api/.env.example` and `apps/web/.env.example`.
+- Added the monorepo directories and secret-file ignore rules.
+- Added the Python 3.12 API package, dependency lockfile, and typed settings. `DATABASE_URL` is required and its validation error names the environment variable.
+- Added `/health`, Docker Compose for API/Postgres/Neo4j, a Python Dockerfile, web tooling configuration and lockfile, pre-commit hooks, and PR CI jobs. No frontend product screens were implemented.
+
+### Verification and blockers
+
+- Environment inspection: Python 3.12.14 is available through `uv`; Node 24.21.0 and Docker CLI 29.8.2 are installed. The Docker daemon is not running. `gh` is not installed.
+- API result after the health endpoint: `6 passed` on Python 3.12.14, with one upstream Starlette deprecation warning; `ruff check .`, `mypy dawa_api`, Bandit, and pre-commit hooks passed. Current API module coverage was 100% in this narrow test run.
+- `docker compose -f infra/compose.yaml config --quiet` passed. The Docker daemon was initially unavailable.
+- Docker Desktop started. `docker compose -f infra/compose.yaml up -d --build` completed, Postgres became healthy, and `curl --fail http://localhost:8000/health` returned the documented synthetic-data notice. The test containers were stopped with `docker compose down`.
+- Web tooling: after adding active TypeScript ESLint rules and a patched `minimatch` override, `npm run lint`, `npm run typecheck`, `npm test`, and `npm run format:check` exited 0. Vitest found no tests because frontend implementation is gated. `npm audit --audit-level=low` found zero vulnerabilities.
+- Python security: Bandit passed. `pip-audit` found a vulnerable pytest 8.4.2, so the lockfile was updated to pytest 9.2.0. A fresh `pip-audit` found no known vulnerabilities; it skipped the local `dawa-api` package because it is not published to PyPI.
+- A local pre-commit run passed both Ruff and mypy hooks. GitHub Actions CI has not run.
+- The user has directed that nothing be pushed until they are ready for production. Do not push, open a PR, or merge without explicit authorization. Earlier GitHub host resolution failures no longer block local work.
+- The local Phase 0 checks passed. The publication gate (PR and CI) remains pending by user choice.
+
+### Historical next steps
+
+- Publication remains deferred until explicitly authorized.
