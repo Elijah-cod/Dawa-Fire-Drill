@@ -14,5 +14,6 @@ coverage/
 .coverage
 **/.coverage
 .next/
+*.tsbuildinfo
 playwright-report/
 test-results/

@@ -16,7 +16,7 @@ flowchart LR
   API --> Country[Country adapters]
 ```
 
-The backend is under development and is not deployed. The design was approved; frontend implementation remains for a later phase.
+The backend is under development and is not deployed. The approved frontend is in progress; its national screen is currently an incomplete scaffold, not an operational application.
 
 Phase 2b covers synthetic planning records for Kenya's 47 counties, with Kisumu as the only facility-level pilot; see [Phase 2 notes](docs/phases/2.md) for the demo evidence and limitations, including legacy country-only paths and the missing map.
 

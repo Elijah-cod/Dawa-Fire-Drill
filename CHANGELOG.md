@@ -1,5 +1,7 @@
 # Changelog
 
+- Added an initial server-only local demo proxy, session abstraction, synthetic role fixtures, and national-view scaffold. The frontend remains incomplete.
+
 - Added an authenticated demo-capability endpoint so the server proxy can determine whether role switching is enabled.
 
 - Began the Phase 3 frontend with a testable schematic county grid and documented boundary-license uncertainty.

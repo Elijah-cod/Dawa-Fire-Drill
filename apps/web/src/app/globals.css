@@ -1,0 +1,178 @@
+@import "tailwindcss";
+
+:root {
+  color-scheme: light dark;
+  --canvas: #f7f8f4;
+  --surface: #ffffff;
+  --ink: #14212b;
+  --muted: #344a52;
+  --primary: #155e63;
+  --border: #b4c3c4;
+  --soft: #e9f0ed;
+  font-family: system-ui, "Noto Sans", sans-serif;
+  line-height: 1.5;
+}
+* {
+  box-sizing: border-box;
+}
+body {
+  margin: 0;
+  background: var(--canvas);
+  color: var(--ink);
+}
+a {
+  color: var(--primary);
+}
+button,
+input {
+  font: inherit;
+}
+button:focus-visible,
+input:focus-visible,
+a:focus-visible {
+  outline: 3px solid var(--primary);
+  outline-offset: 2px;
+}
+.skip {
+  position: absolute;
+  left: 1rem;
+  top: -4rem;
+  z-index: 10;
+  background: var(--surface);
+  padding: 0.75rem;
+}
+.skip:focus {
+  top: 1rem;
+}
+.shell {
+  min-height: 100vh;
+}
+.sidebar {
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  padding: 1rem;
+}
+.sidebar p {
+  display: none;
+}
+.brand {
+  font-weight: 800;
+  text-decoration: none;
+}
+.sidebar nav a {
+  display: inline-flex;
+  min-height: 44px;
+  align-items: center;
+  margin-left: 1rem;
+}
+.topbar {
+  padding: 0.75rem 1rem;
+  color: var(--muted);
+}
+.synthetic-banner {
+  background: var(--soft);
+  padding: 0.75rem 1rem;
+  border-block: 1px solid var(--border);
+}
+main {
+  padding: 1rem;
+  max-width: 1200px;
+}
+h1 {
+  font-size: clamp(1.875rem, 2.8vw, 2.5rem);
+  line-height: 1.12;
+  margin: 0.5rem 0 1rem;
+}
+h2 {
+  font-size: 1.25rem;
+  font-weight: 700;
+}
+p {
+  color: var(--muted);
+}
+.eyebrow {
+  color: var(--muted);
+  font-size: 0.875rem;
+}
+.lead {
+  max-width: 65ch;
+  margin-bottom: 1.5rem;
+}
+.panel {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 0.75rem;
+  padding: 1rem;
+  margin-bottom: 1rem;
+}
+label {
+  display: block;
+  font-weight: 600;
+}
+input {
+  width: min(100%, 24rem);
+  min-height: 44px;
+  border: 1px solid var(--border);
+  border-radius: 0.5rem;
+  padding: 0.5rem;
+  background: var(--surface);
+}
+.county-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 8rem), 1fr));
+  gap: 0.5rem;
+}
+.county-grid button {
+  min-width: 0;
+  min-height: 44px;
+  padding: 0.5rem;
+  border: 1px solid var(--border);
+  border-radius: 0.5rem;
+  background: var(--soft);
+  color: var(--ink);
+  overflow-wrap: anywhere;
+  cursor: pointer;
+}
+@media (min-width: 1024px) {
+  .shell {
+    display: grid;
+    grid-template-columns: 240px minmax(0, 1fr);
+  }
+  .sidebar {
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    border-right: 1px solid var(--border);
+    border-bottom: 0;
+    padding: 1.5rem 1rem;
+  }
+  .sidebar nav a {
+    margin: 1rem 0;
+  }
+  .sidebar p {
+    display: block;
+  }
+  main {
+    padding: 2rem;
+  }
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --canvas: #0f1b22;
+    --surface: #172a32;
+    --ink: #f6f7f2;
+    --muted: #a7c7c4;
+    --primary: #8ad5cf;
+    --border: #4c666b;
+    --soft: #233b40;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation: none !important;
+    transition: none !important;
+  }
+}
