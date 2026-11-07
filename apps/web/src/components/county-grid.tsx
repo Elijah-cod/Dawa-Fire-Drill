@@ -1,6 +1,7 @@
 "use client";
 
 import { usePreferences } from "../preferences/preferences";
+import { useId } from "react";
 
 export type County = { code: string; name: string };
 
@@ -12,9 +13,10 @@ export function CountyGrid({
   onSelect: (code: string) => void;
 }) {
   const { t } = usePreferences();
+  const titleId = useId();
   return (
-    <section aria-labelledby="county-grid-title">
-      <h2 id="county-grid-title">{t("gridTitle")}</h2>
+    <section aria-labelledby={titleId}>
+      <h2 id={titleId}>{t("gridTitle")}</h2>
       <p>{t("gridDescription")}</p>
       <div className="county-grid" aria-label={t("gridLabel")}>
         {counties.map((county) => (

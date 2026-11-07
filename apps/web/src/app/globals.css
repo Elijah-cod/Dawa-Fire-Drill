@@ -171,6 +171,80 @@ input {
   overflow-wrap: anywhere;
   cursor: pointer;
 }
+.mobile-map-toggle {
+  min-height: 44px;
+  margin-block: 1rem;
+  border: 1px solid var(--primary);
+  border-radius: 0.5rem;
+  padding: 0.5rem 1rem;
+  color: var(--primary);
+}
+.desktop-grid {
+  display: none;
+}
+.county-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 12rem), 1fr));
+  gap: 0.5rem;
+  list-style: none;
+  padding: 0;
+}
+.county-list button {
+  width: 100%;
+  min-height: 44px;
+  text-align: left;
+  border: 1px solid var(--border);
+  border-radius: 0.5rem;
+  padding: 0.5rem;
+  background: var(--surface);
+  color: var(--ink);
+}
+.map-sheet {
+  position: fixed;
+  inset: 0;
+  margin: 0;
+  width: 100%;
+  height: 100dvh;
+  max-width: none;
+  max-height: none;
+  border: 0;
+  padding: 1rem 1rem 6rem;
+  background: var(--canvas);
+  color: var(--ink);
+}
+.map-sheet::backdrop {
+  background: rgba(20, 33, 43, 0.65);
+}
+.map-sheet-header {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.5rem;
+}
+.map-sheet-header button {
+  min-height: 44px;
+  border: 1px solid var(--border);
+  border-radius: 0.5rem;
+  padding: 0.5rem 1rem;
+}
+.map-drawer {
+  position: sticky;
+  bottom: 0;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 1rem;
+  padding: 1rem;
+  margin-top: 1rem;
+}
+@media (min-width: 768px) {
+  .mobile-map-toggle {
+    display: none;
+  }
+  .desktop-grid {
+    display: block;
+  }
+}
 @media (min-width: 1024px) {
   .shell {
     display: grid;

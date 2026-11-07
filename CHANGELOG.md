@@ -1,5 +1,7 @@
 # Changelog
 
+- Added a mobile schematic map sheet and synchronized county list, with keyboard focus return and background scroll locking.
+
 - Added English and Swahili copy and light, dark, and system theme controls to the in-progress national view.
 
 - Connected the in-progress national overview to typed synthetic planning data and verified demo role changes against the backend capability.

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useSyncExternalStore } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import counties from "../data/counties.json";
 import type { components } from "../generated/api";
 import { usePreferences } from "../preferences/preferences";
@@ -23,6 +23,16 @@ export function NationalOverview({
   loadOverview: () => Promise<Overview>;
 }) {
   const { t, locale } = usePreferences();
+  const mapDialog = useRef<HTMLDialogElement>(null);
+  const [sheetOpen, setSheetOpen] = useState(false);
+  useEffect(() => {
+    if (!sheetOpen) return;
+    const previous = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = previous;
+    };
+  }, [sheetOpen]);
   const [selected, setSelected] = useState<string | null>(null);
   const [query, setQuery] = useState("");
   const [data, setData] = useState<Overview | null>(null);
@@ -89,7 +99,56 @@ export function NationalOverview({
           onChange={(event) => setQuery(event.target.value)}
         />
         {visible.length ? (
-          <CountyGrid counties={visible} onSelect={setSelected} />
+          <>
+            <button
+              className="mobile-map-toggle"
+              type="button"
+              onClick={() => {
+                mapDialog.current?.showModal();
+                setSheetOpen(true);
+              }}
+            >
+              {t("openMap")}
+            </button>
+            <div className="desktop-grid">
+              <CountyGrid counties={visible} onSelect={setSelected} />
+            </div>
+            <dialog
+              ref={mapDialog}
+              className="map-sheet"
+              aria-label={t("mapTitle")}
+              onClose={() => setSheetOpen(false)}
+            >
+              <div className="map-sheet-header">
+                <h2>{t("mapTitle")}</h2>
+                <button
+                  type="button"
+                  onClick={() => mapDialog.current?.close()}
+                >
+                  {t("closeMap")}
+                </button>
+              </div>
+              <CountyGrid counties={visible} onSelect={setSelected} />
+              <div className="map-drawer" aria-live="polite">
+                {county ? `${county.name} · ${county.code}` : t("selectCounty")}
+              </div>
+            </dialog>
+            <section aria-label={t("countyList")}>
+              <h2>{t("countyList")}</h2>
+              <ul className="county-list">
+                {visible.map((item) => (
+                  <li key={item.code}>
+                    <button
+                      type="button"
+                      onClick={() => setSelected(item.code)}
+                    >
+                      {item.name} · {item.code}
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          </>
         ) : (
           <p>{t("empty")}</p>
         )}

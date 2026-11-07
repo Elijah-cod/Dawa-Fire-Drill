@@ -1,5 +1,11 @@
 // @vitest-environment jsdom
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import {
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+  within,
+} from "@testing-library/react";
 import { afterEach, expect, it, vi } from "vitest";
 import { NationalOverview } from "./national-overview";
 
@@ -21,7 +27,8 @@ it("selects a county and identifies planning-only access", async () => {
     ],
   });
   render(<NationalOverview loadOverview={load} />);
-  fireEvent.click(await screen.findByRole("button", { name: /Nairobi.*047/i }));
+  const list = await screen.findByRole("region", { name: "County list" });
+  fireEvent.click(within(list).getByRole("button", { name: /Nairobi.*047/i }));
   expect(screen.getByRole("heading", { name: /Nairobi.*047/i })).toBeTruthy();
   expect(screen.getByText(/planning overview only/i)).toBeTruthy();
   expect(await screen.findByText(/100/)).toBeTruthy();
@@ -37,7 +44,12 @@ it("shows partial inputs without treating missing data as zero", async () => {
   expect(
     await screen.findByText(/some county planning inputs are unavailable/i),
   ).toBeTruthy();
-  fireEvent.click(screen.getByRole("button", { name: /Nairobi.*047/i }));
+  fireEvent.click(
+    within(screen.getByRole("region", { name: "County list" })).getByRole(
+      "button",
+      { name: /Nairobi.*047/i },
+    ),
+  );
   expect(screen.getByText(/county planning data is unavailable/i)).toBeTruthy();
 });
 
@@ -65,5 +77,10 @@ it("identifies offline mode while retaining the county list", async () => {
     />,
   );
   expect(await screen.findByText(/offline/i)).toBeTruthy();
-  expect(screen.getByRole("button", { name: /Kisumu.*042/i })).toBeTruthy();
+  expect(
+    within(screen.getByRole("region", { name: "County list" })).getByRole(
+      "button",
+      { name: /Kisumu.*042/i },
+    ),
+  ).toBeTruthy();
 });
