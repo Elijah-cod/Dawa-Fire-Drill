@@ -1,5 +1,7 @@
 # Changelog
 
+- Connected the in-progress Kisumu facility view to scoped synthetic panel data and selected scenario runs, with role-restricted facility access and explicit partial-data messaging.
+
 - Added shared illustrative facility-risk thresholds and a synthetic-coordinate MapLibre component with a no-coordinate fallback.
 
 - Added version 3 synthetic Kisumu facility coordinates with clustered seeded locations and a route-distance consistency check; older snapshots remain unchanged.

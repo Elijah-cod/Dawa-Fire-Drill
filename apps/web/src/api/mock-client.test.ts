@@ -44,6 +44,24 @@ describe("OpenAPI-typed synthetic mock", () => {
       "042",
     );
   });
+  it("returns distinct backend-generated baseline and shock fixtures", async () => {
+    const mock = createMockClient("planner");
+    const base = {
+      name: "Synthetic",
+      shock_type: "logistics_reduction" as const,
+      seed: 42,
+      horizon_days: 90,
+    };
+    const baseline = await mock.submitRun({ ...base, magnitude: 0 });
+    const shock = await mock.submitRun({ ...base, magnitude: 40 });
+    expect(baseline.result?.shock_caused_stockouts).toEqual([]);
+    expect(
+      (shock.result?.shock_caused_stockouts as unknown[]).length,
+    ).toBeGreaterThan(0);
+    await expect(mock.submitRun({ ...base, magnitude: 20 })).rejects.toThrow(
+      "fixture unavailable",
+    );
+  });
   it("refuses mock data in production", () => {
     vi.stubEnv("NODE_ENV", "production");
     expect(() => createMockClient("planner")).toThrow("disabled in production");

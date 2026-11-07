@@ -17,6 +17,8 @@ export function createDemoAdapter(
           role: session.role,
           canSwitchRoles: capability.role_switcher,
           nationalPlanning: session.national_planning,
+          countyCode: session.county_code,
+          facilityId: session.facility_id,
         };
       } catch (error) {
         if (error instanceof ApiError && error.status === 401)

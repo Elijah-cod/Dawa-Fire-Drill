@@ -41,6 +41,35 @@ export function createMockClient(role: Role) {
         synthetic: true,
       };
     },
+    async submitRun(
+      request: components["schemas"]["CountyRunCreate"],
+    ): Promise<CountyRun> {
+      if (role !== "planner" && role !== "admin") throw new Error("Forbidden");
+      if (
+        request.seed !== 42 ||
+        request.horizon_days !== 90 ||
+        request.shock_type !== "logistics_reduction" ||
+        ![0, 40].includes(request.magnitude)
+      ) {
+        throw new Error("Synthetic fixture unavailable for these inputs");
+      }
+      const fixture = (await import("../fixtures/kisumu.json")).default;
+      return {
+        id:
+          request.magnitude === 0
+            ? "00000000-0000-4000-8000-000000000040"
+            : "00000000-0000-4000-8000-000000000042",
+        country_code: "KE",
+        county_code: "042",
+        seed: 42,
+        horizon_days: 90,
+        snapshot_version: 3,
+        simulation_version: 2,
+        status: "succeeded",
+        result: request.magnitude === 0 ? fixture.baseline : fixture.run,
+        synthetic: true,
+      };
+    },
     async pilot() {
       if (role === "facility") throw new Error("Forbidden");
       return (await import("../fixtures/kisumu.json")).default.pilot;

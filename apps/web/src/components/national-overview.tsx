@@ -160,6 +160,9 @@ export function NationalOverview({
               {county.name} · {county.code}
             </h2>
             <p>{county.code === "042" ? t("pilot") : t("planningOnly")}</p>
+            {county.code === "042" && (
+              <a href="/kisumu">{t("exploreKisumu")}</a>
+            )}
             {planning &&
             typeof planning.approved === "number" &&
             typeof planning.released === "number" ? (

@@ -15,6 +15,15 @@ export type PilotPanel = Omit<GeneratedPilot, "facilities"> & {
       >
     >)[];
 };
+export type FacilityView = {
+  synthetic: boolean;
+  country_code: string;
+  county_code: string;
+  facility: PilotPanel["facilities"][number];
+  stock: PilotPanel["stock"];
+  consumption: PilotPanel["consumption"];
+  commodities: PilotPanel["commodities"];
+};
 
 export class ApiError extends Error {
   constructor(public readonly status: number) {
@@ -26,6 +35,27 @@ async function get<T>(path: string, role?: DemoRole): Promise<T> {
   const headers = new Headers();
   if (role) headers.set("X-Demo-Role", role);
   const response = await fetch(`/api${path}`, { headers, cache: "no-store" });
+  if (!response.ok) throw new ApiError(response.status);
+  return (await response.json()) as T;
+}
+
+async function post<T>(
+  path: string,
+  body: unknown,
+  key: string,
+  role?: DemoRole,
+): Promise<T> {
+  const headers = new Headers({
+    "Content-Type": "application/json",
+    "Idempotency-Key": key,
+  });
+  if (role) headers.set("X-Demo-Role", role);
+  const response = await fetch(`/api${path}`, {
+    method: "POST",
+    headers,
+    body: JSON.stringify(body),
+    cache: "no-store",
+  });
   if (!response.ok) throw new ApiError(response.status);
   return (await response.json()) as T;
 }
@@ -52,11 +82,46 @@ export function createApiClient() {
         result.synthetic !== true ||
         result.county_code !== "042" ||
         !Array.isArray(result.facilities) ||
-        !Array.isArray(result.subcounties)
+        !Array.isArray(result.subcounties) ||
+        !Array.isArray(result.commodities) ||
+        !Array.isArray(result.stock) ||
+        !Array.isArray(result.consumption)
       ) {
         throw new Error("Invalid synthetic pilot");
       }
       return result;
     },
+    facility: async (id: string, seed: number, role?: DemoRole) => {
+      const result = await get<FacilityView>(
+        `/counties/042/facilities/${encodeURIComponent(id)}?seed=${encodeURIComponent(seed)}`,
+        role,
+      );
+      if (
+        !result ||
+        result.synthetic !== true ||
+        result.county_code !== "042" ||
+        result.facility?.id !== id ||
+        !Array.isArray(result.stock) ||
+        !Array.isArray(result.consumption)
+      )
+        throw new Error("Invalid synthetic facility");
+      return result;
+    },
+    submitRun: (
+      body: components["schemas"]["CountyRunCreate"],
+      key: string,
+      role?: DemoRole,
+    ) =>
+      post<components["schemas"]["CountyRunRead"]>(
+        "/counties/042/runs",
+        body,
+        key,
+        role,
+      ),
+    run: (id: string, role?: DemoRole) =>
+      get<components["schemas"]["CountyRunRead"]>(
+        `/counties/042/runs/${encodeURIComponent(id)}`,
+        role,
+      ),
   };
 }

@@ -18,6 +18,8 @@ it("returns the verified role and role-switcher capability", async () => {
     role: "planner",
     canSwitchRoles: true,
     nationalPlanning: false,
+    countyCode: "042",
+    facilityId: null,
   });
 });
 

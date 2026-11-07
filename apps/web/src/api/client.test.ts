@@ -36,6 +36,9 @@ it("requests the Kisumu pilot through the county-scoped proxy", async () => {
       county_code: "042",
       facilities: [],
       subcounties: [],
+      commodities: [],
+      stock: [],
+      consumption: [],
     }),
   );
   vi.stubGlobal("fetch", send);
@@ -70,4 +73,40 @@ it("rejects an incomplete pilot payload", async () => {
   await expect(createApiClient().pilot(42, "planner")).rejects.toThrow(
     "Invalid synthetic pilot",
   );
+});
+
+it("submits an idempotent county-scoped scenario without a browser token", async () => {
+  const send = vi
+    .fn()
+    .mockResolvedValue(Response.json({ id: "run", status: "queued" }));
+  vi.stubGlobal("fetch", send);
+  const request = {
+    name: "Synthetic shock",
+    shock_type: "logistics_reduction" as const,
+    magnitude: 40,
+    seed: 42,
+    horizon_days: 90,
+  };
+  await createApiClient().submitRun(request, "request-1", "planner");
+  expect(send.mock.calls[0][0]).toBe("/api/counties/042/runs");
+  const init = send.mock.calls[0][1] as RequestInit;
+  expect(init.method).toBe("POST");
+  expect((init.headers as Headers).get("Idempotency-Key")).toBe("request-1");
+  expect((init.headers as Headers).get("Authorization")).toBeNull();
+});
+
+it("rejects a facility response that does not match the requested facility", async () => {
+  vi.stubGlobal(
+    "fetch",
+    vi.fn().mockResolvedValue(
+      Response.json({
+        synthetic: true,
+        county_code: "042",
+        facility: { id: "OTHER" },
+      }),
+    ),
+  );
+  await expect(
+    createApiClient().facility("SYN-KE-042-F001", 42, "facility"),
+  ).rejects.toThrow("Invalid synthetic facility");
 });

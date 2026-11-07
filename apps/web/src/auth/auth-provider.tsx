@@ -17,6 +17,8 @@ export type AuthState =
       role: Role;
       canSwitchRoles?: boolean;
       nationalPlanning?: boolean;
+      countyCode?: string | null;
+      facilityId?: string | null;
     };
 export type AuthAdapter = { load: () => Promise<AuthState> };
 
