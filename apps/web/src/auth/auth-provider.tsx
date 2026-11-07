@@ -11,18 +11,46 @@ import {
 export type Role = "planner" | "pharmacist" | "facility" | "admin";
 export type Session = { role: Role; expiresAt: number };
 export type AuthState =
-  { status: "missing" | "expired" } | { status: "authenticated"; role: Role };
+  | { status: "loading" | "missing" | "expired" | "error" }
+  | {
+      status: "authenticated";
+      role: Role;
+      canSwitchRoles?: boolean;
+      nationalPlanning?: boolean;
+    };
+export type AuthAdapter = { load: () => Promise<AuthState> };
 
 const AuthContext = createContext<AuthState>({ status: "missing" });
 
 export function AuthProvider({
   session,
+  adapter,
   children,
 }: {
-  session: Session | null;
+  session?: Session | null;
+  adapter?: AuthAdapter;
   children: ReactNode;
 }) {
   const [now, setNow] = useState(() => Date.now());
+  const [remote, setRemote] = useState<{
+    adapter: AuthAdapter;
+    value: AuthState;
+  } | null>(null);
+  useEffect(() => {
+    if (!adapter) return;
+    let active = true;
+    adapter.load().then(
+      (value) => {
+        if (active) setRemote({ adapter, value });
+      },
+      () => {
+        if (active) setRemote({ adapter, value: { status: "error" } });
+      },
+    );
+    return () => {
+      active = false;
+    };
+  }, [adapter]);
   useEffect(() => {
     if (!session || session.expiresAt <= Date.now()) return;
     const timer = setTimeout(
@@ -31,11 +59,15 @@ export function AuthProvider({
     );
     return () => clearTimeout(timer);
   }, [session]);
-  const value: AuthState = !session
-    ? { status: "missing" }
-    : session.expiresAt <= now
-      ? { status: "expired" }
-      : { status: "authenticated", role: session.role };
+  const value: AuthState = adapter
+    ? remote?.adapter === adapter
+      ? remote.value
+      : { status: "loading" }
+    : !session
+      ? { status: "missing" }
+      : session.expiresAt <= now
+        ? { status: "expired" }
+        : { status: "authenticated", role: session.role };
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 

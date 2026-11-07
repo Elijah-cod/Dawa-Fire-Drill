@@ -1,5 +1,7 @@
 # Changelog
 
+- Connected the in-progress national overview to typed synthetic planning data and verified demo role changes against the backend capability.
+
 - Added typed same-origin demo-session, capability and national overview reads using the updated OpenAPI schema.
 
 - Exposed the authenticated demo session's trusted role and scope without returning credentials.

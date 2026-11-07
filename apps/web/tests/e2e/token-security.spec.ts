@@ -2,7 +2,7 @@ import { expect, test } from "@playwright/test";
 import { readdir, readFile } from "node:fs/promises";
 import path from "node:path";
 
-const canary = "synthetic-build-canary-token";
+const canary = process.env.E2E_DEMO_TOKEN;
 
 async function files(directory: string): Promise<string[]> {
   const entries = await readdir(directory, { withFileTypes: true });
@@ -19,6 +19,10 @@ async function files(directory: string): Promise<string[]> {
 test("the synthetic server token stays out of client assets, storage and responses", async ({
   page,
 }) => {
+  if (!canary)
+    throw new Error(
+      "E2E_DEMO_TOKEN must match the server-only synthetic demo token",
+    );
   for (const file of await files(path.join(process.cwd(), ".next", "static"))) {
     expect((await readFile(file)).includes(canary)).toBe(false);
   }

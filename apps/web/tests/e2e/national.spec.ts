@@ -43,6 +43,26 @@ test("schematic grid has 47 accessible, non-overlapping counties", async ({
   await expect(
     page.getByRole("heading", { name: /Kisumu.*042/ }),
   ).toBeVisible();
+  await expect(
+    page.getByText(/Synthetic approved all-sector budget/i),
+  ).toBeVisible();
+});
+
+test("demo role switching enforces the county overview boundary", async ({
+  page,
+}) => {
+  await page.goto("http://localhost:3300/");
+  const switcher = page.getByLabel("Demo role");
+  await expect(switcher).toBeVisible();
+  await switcher.selectOption("facility");
+  await expect(
+    page.getByText(/do not have access to this county overview/i),
+  ).toBeVisible();
+  await expect(page.getByRole("button", { name: /Kisumu.*042/ })).toHaveCount(
+    0,
+  );
+  await switcher.selectOption("national");
+  await expect(page.getByRole("button", { name: /Kisumu.*042/ })).toBeVisible();
 });
 
 test("schematic grid is usable at 360px", async ({ page }) => {

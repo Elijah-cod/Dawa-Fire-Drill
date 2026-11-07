@@ -1,5 +1,7 @@
 # Progress
 
+- Phase 3: wired the incomplete national overview to a session adapter and the typed demo proxy or development fixtures. The role switcher appears only when the backend reports permission; changing roles hides the previous role's data while the new scope loads. Added loading, retry, partial and offline notices. Web lint, typecheck, formatting and 32 Vitest tests passed, and a Webpack build passed. Real-backend Playwright tests passed 16 checks at four viewport projects after raising the request limit only in the isolated test stack (the initial parallel run hit its 60/minute default). The screen still needs bilingual/theme controls, mobile navigation and sheet, full states and screenshot review. Next: complete those national-view requirements.
+
 - Phase 3: regenerated OpenAPI types after the backend session endpoint and added a typed same-origin client for session, capability and overview reads; tests verify that the browser client does not add an Authorization header and preserves unauthorized status. Web lint, typecheck, formatting and 20 Vitest tests passed. Next: connect the session-aware provider and national overview.
 
 - Phase 3: added a backend demo-session endpoint exposing validated role and scope without credentials, to support the server-only proxy and missing/expired-session handling. Full backend suite passed 134 tests with one existing warning; Ruff, mypy and Bandit passed. Next: connect the session and national overview through the AuthProvider and typed client.

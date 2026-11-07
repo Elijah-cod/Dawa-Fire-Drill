@@ -19,7 +19,8 @@ async function get<T>(path: string, role?: DemoRole): Promise<T> {
 /** Response types are generated from the backend OpenAPI schema. */
 export function createApiClient() {
   return {
-    session: () => get<components["schemas"]["DemoSession"]>("/demo/session"),
+    session: (role?: DemoRole) =>
+      get<components["schemas"]["DemoSession"]>("/demo/session", role),
     capabilities: () =>
       get<components["schemas"]["DemoCapabilities"]>("/demo/capabilities"),
     overview: (seed: number, role?: DemoRole) =>
