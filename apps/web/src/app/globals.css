@@ -24,8 +24,46 @@ a {
   color: var(--primary);
 }
 button,
-input {
+input,
+select {
   font: inherit;
+}
+button,
+select {
+  min-height: 44px;
+}
+.topbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+.preferences {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+.preferences label {
+  font-size: 0.875rem;
+}
+.preferences select {
+  display: block;
+  min-height: 44px;
+  color: var(--ink);
+}
+:root[data-theme="light"] {
+  color-scheme: light;
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --canvas: #0f1b22;
+  --surface: #172a32;
+  --ink: #f6f7f2;
+  --muted: #a7c7c4;
+  --primary: #8ad5cf;
+  --border: #4c666b;
+  --soft: #233b40;
 }
 button:focus-visible,
 input:focus-visible,
@@ -157,7 +195,7 @@ input {
   }
 }
 @media (prefers-color-scheme: dark) {
-  :root {
+  :root:not([data-theme="light"]):not([data-theme="dark"]) {
     --canvas: #0f1b22;
     --surface: #172a32;
     --ink: #f6f7f2;

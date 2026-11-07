@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import AxeBuilder from "@axe-core/playwright";
 
 test("schematic grid has 47 accessible, non-overlapping counties", async ({
   page,
@@ -65,6 +66,26 @@ test("demo role switching enforces the county overview boundary", async ({
   await expect(page.getByRole("button", { name: /Kisumu.*042/ })).toBeVisible();
 });
 
+test("language and theme controls preserve the synthetic notice", async ({
+  page,
+}) => {
+  await page.goto("http://localhost:3300/");
+  await page.getByLabel("Language / Lugha").selectOption("sw");
+  await expect(
+    page.getByRole("heading", { name: "Ungechukua hatua wapi kwanza?" }),
+  ).toBeVisible();
+  await expect(page.getByRole("note")).toContainText(
+    "Data za majaribio zilizobuniwa",
+  );
+  await page.getByLabel("Theme / Mandhari").selectOption("dark");
+  await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
+  expect(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth <= innerWidth,
+    ),
+  ).toBe(true);
+});
+
 test("schematic grid is usable at 360px", async ({ page }) => {
   await page.setViewportSize({ width: 360, height: 800 });
   await page.goto("http://localhost:3300/");
@@ -74,4 +95,17 @@ test("schematic grid is usable at 360px", async ({ page }) => {
       () => document.documentElement.scrollWidth <= innerWidth,
     ),
   ).toBe(true);
+});
+
+test("national scaffold has no serious or critical axe violations", async ({
+  page,
+}) => {
+  await page.goto("http://localhost:3300/");
+  await expect(page.getByRole("button", { name: /Kisumu.*042/ })).toBeVisible();
+  const results = await new AxeBuilder({ page }).analyze();
+  expect(
+    results.violations.filter((violation) =>
+      ["serious", "critical"].includes(violation.impact ?? ""),
+    ),
+  ).toEqual([]);
 });

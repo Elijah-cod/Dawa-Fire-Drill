@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test";
+import { expect, test, type Request } from "@playwright/test";
 import { readdir, readFile } from "node:fs/promises";
 import path from "node:path";
 
@@ -27,13 +27,14 @@ test("the synthetic server token stays out of client assets, storage and respons
     expect((await readFile(file)).includes(canary)).toBe(false);
   }
   const bodies: Promise<string>[] = [];
-  page.on("requestfinished", (request) => {
+  const onFinished = (request: Request) => {
     if (request.url().startsWith("http://localhost:3300/")) {
       bodies.push(
         request.response().then((response) => response?.text() ?? ""),
       );
     }
-  });
+  };
+  page.on("requestfinished", onFinished);
   await page.goto("http://localhost:3300/");
   const proxyStatus = await page.evaluate(async () => {
     const response = await fetch("/api/counties/overview?seed=42");
@@ -41,6 +42,8 @@ test("the synthetic server token stays out of client assets, storage and respons
     return response.status;
   });
   expect(proxyStatus).not.toBe(503);
+  await page.waitForLoadState("networkidle");
+  page.off("requestfinished", onFinished);
   for (const body of await Promise.all(bodies))
     expect(body).not.toContain(canary);
   const storage = await page.evaluate(() =>

@@ -6,6 +6,7 @@ import { createMockClient } from "../api/mock-client";
 import { AuthProvider, useAuth, type AuthAdapter } from "../auth/auth-provider";
 import { createDemoAdapter } from "../auth/demo-adapter";
 import { RoleSwitcher } from "../auth/role-switcher";
+import { usePreferences } from "../preferences/preferences";
 import { NationalOverview } from "./national-overview";
 
 type Mode = "mock" | "demo" | "none";
@@ -21,6 +22,7 @@ function NationalContent({
   setRole: (role: DemoRole) => void;
 }) {
   const auth = useAuth();
+  const { t } = usePreferences();
   const loadOverview = useCallback(() => {
     if (mode === "mock") return createMockClient("planner").overview();
     return api.overview(
@@ -33,12 +35,12 @@ function NationalContent({
     );
   }, [mode, role, auth]);
   if (auth.status === "loading")
-    return <p role="status">Loading your overview…</p>;
+    return <p role="status">{t("overviewLoading")}</p>;
   if (auth.status === "missing")
-    return <p role="status">Session unavailable.</p>;
-  if (auth.status === "expired") return <p role="status">Session expired.</p>;
-  if (auth.status === "error")
-    return <p role="status">Overview unavailable. Try again.</p>;
+    return <p role="status">{t("sessionMissing")}</p>;
+  if (auth.status === "expired")
+    return <p role="status">{t("sessionExpired")}</p>;
+  if (auth.status === "error") return <p role="status">{t("overviewError")}</p>;
   if (auth.status !== "authenticated") return null;
   return (
     <>
@@ -52,7 +54,7 @@ function NationalContent({
       (auth.canSwitchRoles && role === "national") ? (
         <NationalOverview loadOverview={loadOverview} />
       ) : (
-        <p>You do not have access to this county overview.</p>
+        <p>{t("accessDenied")}</p>
       )}
     </>
   );

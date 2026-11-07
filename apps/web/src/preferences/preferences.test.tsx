@@ -1,0 +1,59 @@
+// @vitest-environment jsdom
+import {
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+} from "@testing-library/react";
+import { afterEach, expect, it } from "vitest";
+import {
+  PreferencesProvider,
+  PreferenceControls,
+  usePreferences,
+} from "./preferences";
+import { AppShell } from "../components/app-shell";
+
+afterEach(cleanup);
+
+function ReadCopy() {
+  const { t } = usePreferences();
+  return <p>{t("overviewTitle")}</p>;
+}
+
+it("switches the language and dark theme", async () => {
+  render(
+    <PreferencesProvider>
+      <PreferenceControls />
+      <ReadCopy />
+    </PreferencesProvider>,
+  );
+  fireEvent.change(screen.getByLabelText(/language/i), {
+    target: { value: "sw" },
+  });
+  expect(screen.getByText("Ungechukua hatua wapi kwanza?")).toBeTruthy();
+  await waitFor(() => expect(document.documentElement.lang).toBe("sw"));
+  fireEvent.change(screen.getByLabelText(/theme/i), {
+    target: { value: "dark" },
+  });
+  await waitFor(() =>
+    expect(document.documentElement.dataset.theme).toBe("dark"),
+  );
+});
+
+it("keeps the synthetic notice visible after switching language", () => {
+  render(
+    <PreferencesProvider>
+      <AppShell>
+        <p>Test</p>
+      </AppShell>
+    </PreferencesProvider>,
+  );
+  expect(screen.getByRole("note").textContent).toContain("Synthetic demo data");
+  fireEvent.change(screen.getByLabelText(/language/i), {
+    target: { value: "sw" },
+  });
+  expect(screen.getByRole("note").textContent).toContain(
+    "Data za majaribio zilizobuniwa",
+  );
+});

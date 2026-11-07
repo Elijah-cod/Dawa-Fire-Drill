@@ -1,6 +1,7 @@
 "use client";
 
 import type { DemoRole } from "../api/client";
+import { usePreferences } from "../preferences/preferences";
 
 export function RoleSwitcher({
   enabled,
@@ -11,18 +12,19 @@ export function RoleSwitcher({
   value: DemoRole;
   onChange: (value: DemoRole) => void;
 }) {
+  const { t } = usePreferences();
   if (!enabled) return null;
   return (
     <label>
-      Demo role
+      {t("demoRole")}
       <select
         value={value}
         onChange={(event) => onChange(event.target.value as DemoRole)}
       >
-        <option value="national">National planner</option>
-        <option value="planner">Kisumu planner</option>
-        <option value="pharmacist">Pharmacist</option>
-        <option value="facility">Facility</option>
+        <option value="national">{t("nationalPlanner")}</option>
+        <option value="planner">{t("kisumuPlanner")}</option>
+        <option value="pharmacist">{t("pharmacist")}</option>
+        <option value="facility">{t("facility")}</option>
       </select>
     </label>
   );

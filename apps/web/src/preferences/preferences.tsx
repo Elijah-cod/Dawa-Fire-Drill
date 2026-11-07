@@ -1,0 +1,168 @@
+"use client";
+
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useState,
+  type ReactNode,
+} from "react";
+
+const strings = {
+  en: {
+    overviewTitle: "Where would you act first?",
+    overviewLead: "Rehearse a supply shock using synthetic examples.",
+    overview: "Overview",
+    kenya: "Kenya · County planning workspace",
+    banner:
+      "Synthetic demo data · Calibrated to public aggregates · Results are illustrative, not validated.",
+    syntheticNote: "Synthetic examples only. Illustrative and unvalidated.",
+    gridTitle: "Kenya counties",
+    gridDescription:
+      "Schematic, not to scale. Select a county for planning information.",
+    gridLabel: "Schematic county grid",
+    planningOverview: "County planning overview",
+    county: "county",
+    search: "Search counties",
+    empty: "No counties match these filters.",
+    selectCounty:
+      "Select a county to inspect its synthetic planning information.",
+    pilot: "Kisumu is the synthetic facility pilot.",
+    planningOnly:
+      "Planning overview only; facility simulation is not available.",
+    unavailable: "County planning data is unavailable.",
+    partial: "Some county planning inputs are unavailable.",
+    loading: "Loading synthetic county planning data…",
+    offline:
+      "Offline. County names remain available; planning data may be unavailable.",
+    retry: "Retry",
+    approved: "Synthetic approved all-sector budget",
+    released: "Synthetic release proxy",
+    demoRole: "Demo role",
+    nationalPlanner: "National planner",
+    kisumuPlanner: "Kisumu planner",
+    pharmacist: "Pharmacist",
+    facility: "Facility",
+    accessDenied: "You do not have access to this county overview.",
+    sessionMissing: "Session unavailable.",
+    sessionExpired: "Session expired.",
+    overviewLoading: "Loading your overview…",
+    overviewError: "Overview unavailable. Try again.",
+    skip: "Skip to content",
+  },
+  sw: {
+    overviewTitle: "Ungechukua hatua wapi kwanza?",
+    overviewLead:
+      "Fanya mazoezi ya mshtuko wa usambazaji kwa mifano iliyobuniwa.",
+    overview: "Muhtasari",
+    kenya: "Kenya · Eneo la kupanga la kaunti",
+    banner:
+      "Data za majaribio zilizobuniwa · Zimepimwa kwa takwimu za jumla za umma · Matokeo ni ya mfano na hayajathibitishwa.",
+    syntheticNote:
+      "Mifano iliyobuniwa pekee. Matokeo ni ya mfano na hayajathibitishwa.",
+    gridTitle: "Kaunti za Kenya",
+    gridDescription:
+      "Mchoro wa mfano, si kwa kipimo halisi. Chagua kaunti kuona taarifa za mipango.",
+    gridLabel: "Mchoro wa kaunti",
+    planningOverview: "Muhtasari wa mipango ya kaunti",
+    county: "kaunti",
+    search: "Tafuta kaunti",
+    empty: "Hakuna kaunti zinazolingana na vichujio hivi.",
+    selectCounty: "Chagua kaunti kuona taarifa zake za mipango zilizobuniwa.",
+    pilot: "Kisumu ni eneo la majaribio ya vituo vilivyobuniwa.",
+    planningOnly: "Muhtasari wa mipango pekee; uigaji wa vituo haupatikani.",
+    unavailable: "Data za mipango ya kaunti hazipatikani.",
+    partial: "Baadhi ya data za mipango ya kaunti hazipatikani.",
+    loading: "Inapakia data za mipango ya kaunti zilizobuniwa…",
+    offline:
+      "Hakuna mtandao. Majina ya kaunti yanapatikana; data za mipango huenda zisipatikane.",
+    retry: "Jaribu tena",
+    approved: "Bajeti iliyoidhinishwa iliyobuniwa kwa sekta zote",
+    released: "Makadirio yaliyobuniwa ya fedha zilizotolewa",
+    demoRole: "Jukumu la majaribio",
+    nationalPlanner: "Mpangaji wa kitaifa",
+    kisumuPlanner: "Mpangaji wa Kisumu",
+    pharmacist: "Mfamasia",
+    facility: "Kituo",
+    accessDenied: "Huna ruhusa ya kuona muhtasari huu wa kaunti.",
+    sessionMissing: "Kipindi hakipatikani.",
+    sessionExpired: "Kipindi kimeisha.",
+    overviewLoading: "Inapakia muhtasari wako…",
+    overviewError: "Muhtasari haupatikani. Jaribu tena.",
+    skip: "Nenda kwenye maudhui",
+  },
+} as const;
+
+type Key = keyof typeof strings.en;
+type Locale = "en" | "sw";
+type Theme = "system" | "light" | "dark";
+type Preferences = {
+  locale: Locale;
+  theme: Theme;
+  setLocale: (value: Locale) => void;
+  setTheme: (value: Theme) => void;
+  t: (key: Key) => string;
+};
+const defaults: Preferences = {
+  locale: "en",
+  theme: "system",
+  setLocale: () => {},
+  setTheme: () => {},
+  t: (key) => strings.en[key],
+};
+const Context = createContext<Preferences>(defaults);
+
+export function PreferencesProvider({ children }: { children: ReactNode }) {
+  const [locale, setLocale] = useState<Locale>("en");
+  const [theme, setTheme] = useState<Theme>("system");
+  useEffect(() => {
+    document.documentElement.lang = locale;
+    document.documentElement.dataset.theme = theme;
+  }, [locale, theme]);
+  return (
+    <Context.Provider
+      value={{
+        locale,
+        theme,
+        setLocale,
+        setTheme,
+        t: (key) => strings[locale][key],
+      }}
+    >
+      {children}
+    </Context.Provider>
+  );
+}
+
+export function usePreferences() {
+  return useContext(Context);
+}
+
+export function PreferenceControls() {
+  const { locale, theme, setLocale, setTheme } = usePreferences();
+  return (
+    <div className="preferences">
+      <label>
+        Language / Lugha
+        <select
+          value={locale}
+          onChange={(event) => setLocale(event.target.value as Locale)}
+        >
+          <option value="en">English</option>
+          <option value="sw">Kiswahili</option>
+        </select>
+      </label>
+      <label>
+        Theme / Mandhari
+        <select
+          value={theme}
+          onChange={(event) => setTheme(event.target.value as Theme)}
+        >
+          <option value="system">System / Mfumo</option>
+          <option value="light">Light / Mwangaza</option>
+          <option value="dark">Dark / Giza</option>
+        </select>
+      </label>
+    </div>
+  );
+}

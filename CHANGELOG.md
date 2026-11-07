@@ -1,5 +1,7 @@
 # Changelog
 
+- Added English and Swahili copy and light, dark, and system theme controls to the in-progress national view.
+
 - Connected the in-progress national overview to typed synthetic planning data and verified demo role changes against the backend capability.
 
 - Added typed same-origin demo-session, capability and national overview reads using the updated OpenAPI schema.

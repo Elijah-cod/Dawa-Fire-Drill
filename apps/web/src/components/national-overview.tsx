@@ -3,6 +3,7 @@
 import { useEffect, useState, useSyncExternalStore } from "react";
 import counties from "../data/counties.json";
 import type { components } from "../generated/api";
+import { usePreferences } from "../preferences/preferences";
 import { CountyGrid } from "./county-grid";
 
 type Overview = components["schemas"]["CountyOverview"];
@@ -21,6 +22,7 @@ export function NationalOverview({
 }: {
   loadOverview: () => Promise<Overview>;
 }) {
+  const { t, locale } = usePreferences();
   const [selected, setSelected] = useState<string | null>(null);
   const [query, setQuery] = useState("");
   const [data, setData] = useState<Overview | null>(null);
@@ -60,25 +62,26 @@ export function NationalOverview({
   );
   return (
     <>
-      <div className="eyebrow">Overview / Kenya</div>
-      <h1>Where would you act first?</h1>
-      <p className="lead">Rehearse a supply shock using synthetic examples.</p>
+      <div className="eyebrow">{t("overview")} / Kenya</div>
+      <h1>{t("overviewTitle")}</h1>
+      <p className="lead">{t("overviewLead")}</p>
       <div role="status" aria-live="polite">
-        {!online &&
-          "Offline. County names remain available; planning data may be unavailable."}
-        {status === "loading" && "Loading synthetic county planning data…"}
+        {!online && t("offline")}
+        {status === "loading" && t("loading")}
         {status === "error" && online && (
           <p>
-            County planning data is unavailable.{" "}
-            <button onClick={() => setAttempt(attempt + 1)}>Retry</button>
+            {t("unavailable")}{" "}
+            <button onClick={() => setAttempt(attempt + 1)}>
+              {t("retry")}
+            </button>
           </p>
         )}
         {status === "ready" &&
           data?.items.some((item) => item.planning === null) &&
-          "Some county planning inputs are unavailable."}
+          t("partial")}
       </div>
-      <section className="panel" aria-label="County planning overview">
-        <label htmlFor="county-search">Search counties</label>
+      <section className="panel" aria-label={t("planningOverview")}>
+        <label htmlFor="county-search">{t("search")}</label>
         <input
           id="county-search"
           type="search"
@@ -88,7 +91,7 @@ export function NationalOverview({
         {visible.length ? (
           <CountyGrid counties={visible} onSelect={setSelected} />
         ) : (
-          <p>No counties match these filters.</p>
+          <p>{t("empty")}</p>
         )}
       </section>
       <section className="panel" aria-live="polite">
@@ -97,26 +100,32 @@ export function NationalOverview({
             <h2>
               {county.name} · {county.code}
             </h2>
-            <p>
-              {county.code === "042"
-                ? "Kisumu is the synthetic facility pilot."
-                : "Planning overview only; facility simulation is not available."}
-            </p>
+            <p>{county.code === "042" ? t("pilot") : t("planningOnly")}</p>
             {planning &&
             typeof planning.approved === "number" &&
             typeof planning.released === "number" ? (
               <dl>
-                <dt>Synthetic approved all-sector budget</dt>
-                <dd>KES {planning.approved.toLocaleString("en-KE")}</dd>
-                <dt>Synthetic release proxy</dt>
-                <dd>KES {planning.released.toLocaleString("en-KE")}</dd>
+                <dt>{t("approved")}</dt>
+                <dd>
+                  KES{" "}
+                  {planning.approved.toLocaleString(
+                    locale === "sw" ? "sw-KE" : "en-KE",
+                  )}
+                </dd>
+                <dt>{t("released")}</dt>
+                <dd>
+                  KES{" "}
+                  {planning.released.toLocaleString(
+                    locale === "sw" ? "sw-KE" : "en-KE",
+                  )}
+                </dd>
               </dl>
             ) : (
-              <p>County planning data is unavailable.</p>
+              <p>{t("unavailable")}</p>
             )}
           </>
         ) : (
-          <p>Select a county to inspect its synthetic planning information.</p>
+          <p>{t("selectCounty")}</p>
         )}
       </section>
     </>
