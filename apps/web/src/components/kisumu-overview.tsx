@@ -48,6 +48,14 @@ function validEvents(value: unknown): value is Event[] {
     )
   );
 }
+/** Events that also happen without the shock: pre-shock gaps plus baseline stockouts. */
+function noShockCount(run: ScenarioRun | null) {
+  const pre = run?.result?.pre_shock_stockouts;
+  const baseline = run?.result?.baseline_stockouts;
+  return Array.isArray(pre) && Array.isArray(baseline)
+    ? pre.length + baseline.length
+    : undefined;
+}
 function evidence(run: ScenarioRun | null) {
   if (
     !run?.result ||
@@ -233,7 +241,16 @@ export function KisumuOverview({
           ) : !validEvents(shockEvents) ? (
             <p>{t("shockDetailsUnavailable")}</p>
           ) : shockEvents.length ? (
-            <StockoutOrder events={shockEvents} />
+            <StockoutOrder
+              events={shockEvents}
+              magnitude={magnitude}
+              total={
+                Array.isArray(run?.result?.stockouts)
+                  ? run.result.stockouts.length
+                  : undefined
+              }
+              noShock={noShockCount(run)}
+            />
           ) : (
             <p>{t("noShockStockouts")}</p>
           )}

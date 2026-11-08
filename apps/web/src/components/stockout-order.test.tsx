@@ -7,50 +7,57 @@ import {
   within,
 } from "@testing-library/react";
 import { afterEach, expect, it } from "vitest";
-import { StockoutOrder } from "./stockout-order";
+import { peakWindow, StockoutOrder } from "./stockout-order";
 afterEach(cleanup);
-it("shows the first stockouts and retains the remaining order in a disclosure", async () => {
-  const events = Array.from({ length: 7 }, (_, i) => ({
-    facility_id: `F${i}`,
-    commodity_id: "C1",
-    day: i,
-  }));
-  render(<StockoutOrder events={events} />);
-  expect(screen.getByText(/F0.*C1/)).toBeTruthy();
-  const details = screen
-    .getByText(/show remaining 2 stockouts/i)
-    .closest("details");
-  expect(details?.open).toBe(false);
-  expect(screen.queryByText(/F6.*C1/)).toBeNull();
-  fireEvent.click(screen.getByText(/show remaining 2 stockouts/i));
-  expect(await within(details!).findByText(/F6.*C1/)).toBeTruthy();
-});
 
-it("lists other commodities at the first facility that run out on the same day", () => {
+const events = [
+  { facility_id: "F031", commodity_id: "C04", day: 41 },
+  { facility_id: "F019", commodity_id: "C03", day: 43 },
+  { facility_id: "F004", commodity_id: "C04", day: 72 },
+  { facility_id: "F005", commodity_id: "C01", day: 74 },
+  { facility_id: "F006", commodity_id: "C02", day: 76 },
+  { facility_id: "F007", commodity_id: "C02", day: 80 },
+];
+
+it("summarizes counts against no shock, the first stockout and the busiest week", () => {
   render(
-    <StockoutOrder
-      events={[
-        { facility_id: "F001", commodity_id: "C02", day: 48 },
-        { facility_id: "F001", commodity_id: "C03", day: 48 },
-        { facility_id: "F002", commodity_id: "C02", day: 48 },
-        { facility_id: "F001", commodity_id: "C04", day: 48 },
-        { facility_id: "F001", commodity_id: "C05", day: 50 },
-      ]}
-    />,
+    <StockoutOrder events={events} magnitude={40} total={8} noShock={2} />,
   );
-  expect(
-    screen.getByText(/same day at F001 · 48 days to stockout: C03, C04$/i),
-  ).toBeTruthy();
-});
-
-it("omits the same-day line when the first stockout stands alone", () => {
-  render(
-    <StockoutOrder
-      events={[
-        { facility_id: "F001", commodity_id: "C02", day: 48 },
-        { facility_id: "F001", commodity_id: "C03", day: 49 },
-      ]}
-    />,
+  expect(document.querySelector(".stockout-summary")?.textContent).toBe(
+    "40% shock: 8 stockouts vs 2 with no shock · 6 caused by the shock. First: F031 · C04 on day 41. Most: days 71–77 (3).",
   );
   expect(screen.queryByText(/same day/i)).toBeNull();
+});
+
+it("keeps the full order behind a disclosure", async () => {
+  render(<StockoutOrder events={events} magnitude={40} />);
+  expect(screen.queryByText(/F007 · C02/)).toBeNull();
+  const details = screen
+    .getByText("Show all 6 shock-caused stockouts in order")
+    .closest("details")!;
+  expect(details.open).toBe(false);
+  fireEvent.click(screen.getByText(/show all 6/i));
+  const items = await within(details).findAllByRole("listitem");
+  expect(items.map((item) => item.textContent)).toEqual(
+    events.map(
+      (e) => `${e.facility_id} · ${e.commodity_id} · ${e.day} days to stockout`,
+    ),
+  );
+});
+
+it("omits the comparison when no-shock counts are unavailable", () => {
+  render(<StockoutOrder events={events.slice(0, 1)} magnitude={25} />);
+  expect(document.querySelector(".stockout-summary")?.textContent).toBe(
+    "25% shock: 1 caused by the shock. First: F031 · C04 on day 41. Most: days 36–42 (1).",
+  );
+});
+
+it("picks the earliest of equally busy weeks", () => {
+  expect(
+    peakWindow([
+      { facility_id: "A", commodity_id: "C", day: 15 },
+      { facility_id: "B", commodity_id: "C", day: 1 },
+    ]),
+  ).toEqual({ start: 1, end: 7, count: 1 });
+  expect(peakWindow([])).toBeNull();
 });
