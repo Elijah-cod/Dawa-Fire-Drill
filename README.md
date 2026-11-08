@@ -28,14 +28,16 @@ All screens show synthetic data; every number is illustrative and unvalidated.
 
 | | |
 | --- | --- |
-| ![National overview with the guided demo open](docs/screenshots/readme-overview-tour-1280.png) | ![Ranked fixes: funded transfers above the budget cut line, unfunded actions below it](docs/screenshots/readme-ranked-fix-1280.png) |
-| National overview with the guided demo (1280 px) | Ranked fixes at 30 units: three transfers funded, the fourth cut by the remaining budget |
-| ![Funding trace with the stalled stage marked](docs/screenshots/readme-funding-trace-1280.png) | ![Shock card with the stockout summary](docs/screenshots/readme-first-stockout-1280.png) |
-| Funding trace: stage bar stalled at Released; 100,000 KES approved, not released, 90 days | Shock summary at 40%: first stockout and busiest week |
-| ![Facility map at a 40% shock with clusters and counts](docs/screenshots/readme-map-40-1280.png) | ![Kisumu on a phone with the bottom navigation bar](docs/screenshots/readme-mobile-nav-390.png) |
-| Facility map at 40%: each cluster shows its status mix; the counts line gives 10 Critical, 18 Watch, 12 Stable | Kisumu at 390 px with the bottom navigation bar |
-| ![Guided demo on a phone](docs/screenshots/readme-tour-mobile-390.png) | ![Bin-card capture awaiting human confirmation](docs/screenshots/readme-capture-confirm-390.png) |
-| Guided demo at 390 px, above the bottom bar | Bin-card capture: nothing is saved until “Confirm and save” |
+| ![Kisumu verdict: what breaks first, how far the fixes reach and the cheapest fix](docs/screenshots/readme-verdict-1280.png) | ![Cheapest fixes: budget slider, cut line and paired options](docs/screenshots/readme-ranked-fix-1280.png) |
+| Kisumu at 40%: the verdict, scenario presets and tabs (1280 px) | Cheapest fixes at 30 units: three transfers funded, the fourth cut by what is left of the budget |
+| ![Where it breaks: timeline and schematic area map at day 45](docs/screenshots/readme-timeline-1280.png) | ![Funding trace with the stalled stage marked](docs/screenshots/readme-funding-trace-1280.png) |
+| Where it breaks at day 45: week steps, play and facilities out per area (positions invented) | Funding trace: stage bar stalled at Released; 100,000 KES approved, not released, 90 days |
+| ![Facility map at a 40% shock with clusters and counts](docs/screenshots/readme-map-40-1280.png) | ![National overview with the guided demo open](docs/screenshots/readme-overview-tour-1280.png) |
+| Facilities tab, facility map at 40%: clusters show their status mix; 10 Critical, 18 Watch, 12 Stable | National overview with the guided demo (1280 px) |
+| ![Kisumu on a phone: verdict first, Change scenario on the first screen](docs/screenshots/readme-mobile-nav-390.png) | ![Guided demo on a phone at the shock step](docs/screenshots/readme-tour-mobile-390.png) |
+| Kisumu at 390 px: the verdict first, Change scenario on the first screen, bottom navigation bar | Guided demo at 390 px: the shock step opens the scenario presets |
+| ![Bin-card capture awaiting human confirmation](docs/screenshots/readme-capture-confirm-390.png) | |
+| Bin-card capture: nothing is saved until “Confirm and save” | |
 
 ## Local quickstart
 
@@ -94,7 +96,7 @@ See [agent rules](AGENTS.md), [current progress](docs/PROGRESS.md), [design appr
 - **Risk cutoffs are tuned, not a standard.** Map labels use Critical within 45 days, Watch 46–52 and Stable beyond 52. These cutoffs were tuned to make this synthetic scenario readable, are relative to the 90-day simulation horizon, and are not a standard. A facility takes the status of its worst commodity.
 - **Map clusters show a mix of statuses.** The invented facilities sit in clusters of five or six within about 300 m of each other, so at county zoom their markers would stack. The map therefore groups them into one cluster labeled with its size and status mix (for example “6 · 2 Crit · 2 Watch · 2 Stable”) and the worst-status symbol. Groups merge until no two labels overlap, so on a phone most of the county is one cluster; Enter or a click zooms in step by step until facilities separate. The counts line under the legend always gives the full split.
 - **Four mobile destinations, not five.** The phone bottom bar links Overview, Kisumu, Funding trace and Bin-card capture. The approved design's five destinations include Scenarios, Actions and Stock, which are not built yet.
-- **Kisumu page-load performance is below budget.** Lighthouse page load scores 1.00 on `/` but 0.73–0.74 on `/kisumu` (accessibility and best practices 1.00, layout shift 0, total blocking time about 150 ms), under the 0.80 budget. The cause is Largest Contentful Paint (about 9.9 s under Lighthouse's simulated throttling; about 2 s in an unthrottled browser): the page's largest text is the data-driven verdict, which can only appear once the backend scenario run completes (session, pilot panel, run submission and polling, in sequence). The page shows the title and the framing question at full size immediately and reserves the verdict's space, but the browser still counts the verdict text as the largest paint when it replaces the framing. Faster runs need backend changes (for example reusing a completed run for the same inputs), which were out of scope for the redesign. Interactive use is not affected: moving the budget and the timeline scores 1.00 with layout shift 0.000. The flow is not in CI. See [progress](docs/PROGRESS.md) and [Phase 3 notes](docs/phases/3.md).
+- **Kisumu page-load performance is below budget.** Lighthouse page load scores 1.00 on `/` but 0.73–0.75 on `/kisumu` (accessibility and best practices 1.00, layout shift 0, total blocking time 90–150 ms), under the 0.80 budget. The cause is Largest Contentful Paint (about 9.9 s under Lighthouse's simulated throttling; about 2 s in an unthrottled browser): the page's largest text is the data-driven verdict, which can only appear once the backend scenario run completes (session, pilot panel, run submission and polling, in sequence). The page shows the title and the framing question at full size immediately and reserves the verdict's space, but the browser still counts the verdict text as the largest paint when it replaces the framing. Faster runs need backend changes (for example reusing a completed run for the same inputs), which were out of scope for the redesign. Interactive use is not affected: moving the budget and the timeline scores 1.00 with layout shift 0.000. The flow is not in CI. See [progress](docs/PROGRESS.md) and [Phase 3 notes](docs/phases/3.md).
 
 ## Next steps
 
