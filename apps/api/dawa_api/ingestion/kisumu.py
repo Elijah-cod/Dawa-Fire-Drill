@@ -15,6 +15,17 @@ KISUMU_HIV_ESTIMATE_2023 = 135_550
 V5_EXTRA_COVER_DAYS = (4, 40)
 # Version 5 plants one transfer route for each of this many earliest 40% shock events.
 V5_PLANTED_ROUTES = 1
+# Version 5 invented cluster centers, moved inland. Every point of each center's jitter box
+# (±0.003 degrees) was checked against OpenStreetMap tiles on 2026-11-08: none fell on water.
+V5_CENTERS = (
+    (-0.075, 34.760),
+    (-0.060, 34.850),
+    (-0.040, 34.660),
+    (-0.150, 35.150),
+    (-0.185, 34.940),
+    (-0.340, 35.020),
+    (-0.090, 34.540),
+)
 
 
 def _distance_km(a: dict[str, Any], b: dict[str, Any]) -> int:
@@ -54,13 +65,17 @@ def generate_kisumu_panel(*, seed: int, version: int = 4) -> dict[str, Any]:
     if version >= 3:
         # Invented cluster centers, not actual sub-county centroids or facility locations.
         centers = (
-            (-0.120, 34.720),
-            (-0.100, 34.780),
-            (-0.100, 34.888),
-            (-0.180, 34.700),
-            (-0.200, 34.840),
-            (-0.240, 34.930),
-            (-0.055, 34.940),
+            (
+                (-0.120, 34.720),
+                (-0.100, 34.780),
+                (-0.100, 34.888),
+                (-0.180, 34.700),
+                (-0.200, 34.840),
+                (-0.240, 34.930),
+                (-0.055, 34.940),
+            )
+            if version < 5
+            else V5_CENTERS
         )
         # Reproducible synthetic points do not need cryptographic randomness.
         rng = random.Random(seed ^ 0x4B4953554D55)  # nosec B311

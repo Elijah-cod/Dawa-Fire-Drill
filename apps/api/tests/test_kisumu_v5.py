@@ -124,3 +124,37 @@ def test_v5_is_reproducible_and_plants_the_first_event_for_any_seed(seed: int) -
         first["facility_id"],
         first["commodity_id"],
     )
+
+
+@given(seed=st.integers(min_value=0, max_value=2**31 - 1))
+@settings(max_examples=20, deadline=None)
+def test_v5_points_stay_in_their_land_checked_boxes_and_routes_match(seed: int) -> None:
+    from math import asin, cos, radians, sin, sqrt
+
+    from dawa_api.ingestion.kisumu import V5_CENTERS
+
+    data = generate_kisumu_panel(seed=seed, version=5)
+    facilities = {f["id"]: f for f in data["facilities"]}
+    for index, facility in enumerate(data["facilities"]):
+        lat, lon = V5_CENTERS[index % len(V5_CENTERS)]
+        assert abs(facility["latitude"] - lat) <= 0.003 + 1e-9
+        assert abs(facility["longitude"] - lon) <= 0.003 + 1e-9
+        assert facility["coordinates_synthetic"] is True
+    assert len({(f["latitude"], f["longitude"]) for f in facilities.values()}) == 40
+
+    def km(a: dict, b: dict) -> float:
+        lat1, lon1, lat2, lon2 = map(
+            radians, (a["latitude"], a["longitude"], b["latitude"], b["longitude"])
+        )
+        arc = sin((lat2 - lat1) / 2) ** 2 + cos(lat1) * cos(lat2) * sin((lon2 - lon1) / 2) ** 2
+        return 2 * 6371 * asin(sqrt(arc))
+
+    routes = data["demo_cases"]["transfer_routes"]
+    assert [(d["source"], d["target"], d["distance_km"]) for d in data["distances"]] == [
+        (r["donor_facility_id"], r["facility_id"], r["distance_km"]) for r in routes
+    ]
+    for route in routes:
+        donor, recipient = facilities[route["donor_facility_id"]], facilities[route["facility_id"]]
+        assert abs(km(donor, recipient) - route["distance_km"]) < 1
+        assert 0 < route["distance_km"] <= route["maximum_distance_km"]
+        assert donor["subcounty_id"] != recipient["subcounty_id"]
