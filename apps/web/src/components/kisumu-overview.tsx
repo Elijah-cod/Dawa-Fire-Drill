@@ -110,6 +110,8 @@ export function KisumuOverview({
   useEffect(() => {
     // The guided demo shows the 40% shock; the user can still pick another.
     if (canRun && step && SHOCK_STEPS.includes(step)) choose(40, "shock");
+    // On phones the presets sit behind "Change scenario"; the shock step shows them.
+    if (step === "shock") setControlsOpen(true);
   }, [step, canRun]);
   const [subcounty, setSubcounty] = useState("all");
   const [selected, setSelected] = useState<string | null>(null);

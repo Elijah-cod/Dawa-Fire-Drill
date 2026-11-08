@@ -78,7 +78,8 @@ test("Kisumu leads with what breaks first and the cheapest fix, from the backend
     );
     const [lastBottom, barTop] = await page.evaluate(() => {
       const last = [...document.querySelectorAll("main *")]
-        .filter((element) => (element as HTMLElement).offsetParent)
+        // Closed disclosures keep a box for their hidden content; skip anything not visible.
+        .filter((element) => element.checkVisibility())
         .reduce(
           (bottom, element) =>
             Math.max(bottom, element.getBoundingClientRect().bottom),

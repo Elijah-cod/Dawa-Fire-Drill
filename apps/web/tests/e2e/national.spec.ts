@@ -82,7 +82,7 @@ test("language and theme controls preserve the synthetic notice", async ({
     page.getByRole("heading", { name: "Ungechukua hatua wapi kwanza?" }),
   ).toBeVisible();
   await expect(page.getByRole("note")).toContainText(
-    "Data za majaribio zilizobuniwa",
+    "Vituo, majina, maeneo na gharama ni vya kubuni.",
   );
   await page.getByLabel("Theme / Mandhari").selectOption("dark");
   await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");

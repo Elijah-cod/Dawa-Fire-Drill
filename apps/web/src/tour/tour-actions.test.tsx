@@ -47,6 +47,9 @@ it("applies the 40% shock during the demo's shock steps", async () => {
     ),
   ).toBe("true");
   expect(screen.getAllByText("40% logistics cut").length).toBeGreaterThan(0);
+  expect(
+    screen.getByRole("complementary", { name: "Scenario" }).dataset.open,
+  ).toBe("true");
   await vi.waitFor(() =>
     expect(scenario.submit).toHaveBeenCalledWith(40, expect.any(String)),
   );
