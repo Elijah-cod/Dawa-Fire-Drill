@@ -1,5 +1,7 @@
 # Changelog
 
+- Added an immutable version 4 synthetic Kisumu panel whose planted transfer targets the first shock-caused demo stockout; retained prior versions.
+
 - Began an optimizer-backed first-stockout action panel with a budget ceiling, exclusion reasons, synthetic assumptions, and a recorded development fixture; screen review and performance gate remain open.
 
 - Connected the in-progress Kisumu facility view to scoped synthetic panel data and selected scenario runs, with role-restricted facility access and explicit partial-data messaging.

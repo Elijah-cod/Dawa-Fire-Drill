@@ -1,6 +1,7 @@
 """Reproducible synthetic Kisumu pilot inputs; no real facility records are used."""
 
 import random
+from math import asin, cos, radians, sin, sqrt
 from typing import Any
 
 from dawa_api.countries.ke.counties import KISUMU_SUBCOUNTIES
@@ -10,9 +11,9 @@ HIV_CONTEXT = "https://analytics.nsdcc.go.ke/estimates/PROGRESS-REPORT-2024.pdf"
 KISUMU_HIV_ESTIMATE_2023 = 135_550
 
 
-def generate_kisumu_panel(*, seed: int, version: int = 3) -> dict[str, Any]:
+def generate_kisumu_panel(*, seed: int, version: int = 4) -> dict[str, Any]:
     """Create one invented panel with explicit planted examples, never actual observations."""
-    if version not in (1, 2, 3):
+    if version not in (1, 2, 3, 4):
         raise ValueError("Unsupported county generator version")
     source = generate_dataset(seed=seed)
     subcounties = [
@@ -151,6 +152,33 @@ def generate_kisumu_panel(*, seed: int, version: int = 3) -> dict[str, Any]:
         "maximum_distance_km": 30,
         "synthetic": True,
     }
+    if version >= 4:
+        # A new invented batch protects the first 40% shock event. Older snapshots
+        # retain their original F002-to-F003 C01 route and input records.
+        for item in stock:
+            if item["commodity_id"] == "SYN-C02" and item["facility_id"] == donor_id:
+                item["opening_stock"] = int(item["opening_stock"]) + 600
+        source_point = facilities[1]
+        target_point = facilities[0]
+        lat1, lon1, lat2, lon2 = map(
+            radians,
+            (
+                source_point["latitude"],
+                source_point["longitude"],
+                target_point["latitude"],
+                target_point["longitude"],
+            ),
+        )
+        arc = sin((lat2 - lat1) / 2) ** 2 + cos(lat1) * cos(lat2) * sin((lon2 - lon1) / 2) ** 2
+        distance = round(2 * 6371 * asin(sqrt(arc)))
+        transfer.update(
+            facility_id=chronic_id,
+            commodity_id="SYN-C02",
+            dispatch_day=45,
+            arrival_day=46,
+            expiry_day=90,
+            distance_km=distance,
+        )
     stalled = {
         "id": "SYN-042-FLOW-01",
         "approved": 100_000,
@@ -176,7 +204,12 @@ def generate_kisumu_panel(*, seed: int, version: int = 3) -> dict[str, Any]:
         "consumption": consumption,
         "stock": stock,
         "distances": [
-            {"source": donor_id, "target": neighbor_id, "distance_km": 12, "synthetic": True}
+            {
+                "source": donor_id,
+                "target": transfer["facility_id"],
+                "distance_km": transfer["distance_km"],
+                "synthetic": True,
+            }
         ],
         "demo_cases": {
             "chronic_stockout": chronic,

@@ -20,9 +20,9 @@ case "$*" in
   "pre_shock_stockouts":[{"facility_id":"SYN-KE-042-F001","commodity_id":"SYN-C01","day":1}],
   "shock_caused_stockouts":[{"facility_id":"SYN-KE-042-F001","commodity_id":"SYN-C02","day":48}],
   "demo_cases":{"near_expiry_transfer":{"donor_facility_id":"SYN-KE-042-F002",
-  "facility_id":"SYN-KE-042-F003","commodity_id":"SYN-C01","quantity":100,
-  "available_units":600,"dispatch_day":1,"arrival_day":2,"expiry_day":45,
-  "minimum_shelf_days":7,"distance_km":12,"maximum_distance_km":30}}}}' ;;
+  "facility_id":"SYN-KE-042-F001","commodity_id":"SYN-C02","quantity":100,
+  "available_units":600,"dispatch_day":45,"arrival_day":46,"expiry_day":90,
+  "minimum_shelf_days":7,"distance_km":7,"maximum_distance_km":30}}}}' ;;
   *"/runs"*) printf '%s' '{"id":"run-demo"}' ;;
   *) exit 1 ;;
 esac
@@ -44,5 +44,6 @@ esac
         check=True,
     )
     assert '"selected_ids"' in result.stdout
+    assert "Transfer versus emergency for the first shock-caused stockout" in result.stdout
     assert "capture-demo" in result.stdout
     assert env["API_TOKEN"] not in result.stdout + result.stderr

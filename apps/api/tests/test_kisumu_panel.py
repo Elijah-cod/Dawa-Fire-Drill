@@ -24,15 +24,17 @@ def test_kisumu_panel_is_deterministic_and_has_only_kisumu_facilities() -> None:
     assert len(data["commodities"]) == 10
 
 
+@pytest.mark.parametrize("version", [3, 4])
 @given(seed=st.integers(min_value=0, max_value=2**31 - 1))
 @settings(max_examples=20, deadline=None)
 def test_synthetic_coordinates_are_reproducible_clustered_and_match_planted_route(
     seed: int,
+    version: int,
 ) -> None:
-    data = generate_kisumu_panel(seed=seed, version=3)
+    data = generate_kisumu_panel(seed=seed, version=version)
     facilities = data["facilities"]
-    assert facilities == generate_kisumu_panel(seed=seed, version=3)["facilities"]
-    assert facilities != generate_kisumu_panel(seed=seed + 1, version=3)["facilities"]
+    assert facilities == generate_kisumu_panel(seed=seed, version=version)["facilities"]
+    assert facilities != generate_kisumu_panel(seed=seed + 1, version=version)["facilities"]
     points = [(f["latitude"], f["longitude"]) for f in facilities]
     assert len(set(points)) == 40
     assert all(-0.35 <= lat <= 0.10 and 34.4 <= lon <= 35.2 for lat, lon in points)
@@ -188,3 +190,68 @@ def test_planted_transfer_is_ranked_against_emergency_procurement() -> None:
     assert ranked.selected_ids == ("transfer",)
     assert ranked.total_cost == 10
     assert effects[0].deferred_days >= 1
+
+
+def test_v4_planted_transfer_targets_the_first_shock_and_is_ranked() -> None:
+    from dawa_api.optimization.kisumu import rank_kisumu
+
+    old = generate_kisumu_panel(seed=42, version=3)
+    assert (
+        old["demo_cases"]["near_expiry_transfer"]["facility_id"],
+        old["demo_cases"]["near_expiry_transfer"]["commodity_id"],
+    ) == ("SYN-KE-042-F003", "SYN-C01")
+    data = generate_kisumu_panel(seed=42, version=4)
+    assert data == generate_kisumu_panel(seed=42, version=4)
+    scenario = ScenarioCreate(
+        name="Synthetic donor shock", shock_type="logistics_reduction", magnitude=40
+    )
+    run = simulate_kisumu(scenario, data, horizon_days=90)
+    first = run["shock_caused_stockouts"][0]
+    route = data["demo_cases"]["near_expiry_transfer"]
+    assert (first["facility_id"], first["commodity_id"], first["day"]) == (
+        "SYN-KE-042-F001",
+        "SYN-C02",
+        48,
+    )
+    assert (route["facility_id"], route["commodity_id"]) == (
+        first["facility_id"],
+        first["commodity_id"],
+    )
+    request = ModeledRequest.model_validate(
+        {
+            "synthetic_attested": True,
+            "budget": 100,
+            "minimum_benefit": 1,
+            "candidates": [
+                {
+                    "id": "transfer",
+                    "kind": "redistribution",
+                    "cost": 10,
+                    "facility_id": route["facility_id"],
+                    "donor_facility_id": route["donor_facility_id"],
+                    "commodity_id": route["commodity_id"],
+                    "quantity": route["quantity"],
+                    "available_units": route["available_units"],
+                    "dispatch_day": route["dispatch_day"],
+                    "arrival_day": route["arrival_day"],
+                    "expiry_day": route["expiry_day"],
+                    "minimum_shelf_days": route["minimum_shelf_days"],
+                    "distance_km": route["distance_km"],
+                    "max_distance_km": route["maximum_distance_km"],
+                },
+                {
+                    "id": "emergency",
+                    "kind": "emergency_procurement",
+                    "cost": 50,
+                    "facility_id": route["facility_id"],
+                    "commodity_id": route["commodity_id"],
+                    "quantity": route["quantity"],
+                    "arrival_day": route["arrival_day"],
+                },
+            ],
+        }
+    )
+    ranked, effects = rank_kisumu(scenario, data, run, request=request, horizon_days=90)
+    assert ranked.selected_ids == ("transfer",)
+    assert ranked.excluded_reasons["emergency"] == "alternative_selected"
+    assert next(effect for effect in effects if effect.id == "transfer").deferred_days >= 1
