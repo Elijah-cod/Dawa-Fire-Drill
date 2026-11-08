@@ -59,3 +59,47 @@ it("updates a facility's risk and driving tracer with the selected scenario", as
     await screen.findByText(/Shock-caused stockout details are unavailable/i),
   ).toBeTruthy();
 });
+
+it("reserves the shock and ranked panels while the shock run is pending", async () => {
+  const panel = {
+    synthetic: true,
+    county_code: "042",
+    country_code: "KE",
+    seed: 42,
+    facilities: [],
+    subcounties: [],
+    commodities: [],
+    consumption: [],
+    stock: [],
+  } as unknown as PilotPanel;
+  const scenario = {
+    submit: vi.fn(async (magnitude: number) =>
+      magnitude
+        ? new Promise<never>(() => {})
+        : {
+            id: "0",
+            status: "succeeded",
+            horizon_days: 90,
+            result: { synthetic: true, county_code: "042", stockouts: [] },
+          },
+    ),
+    read: vi.fn(),
+  };
+  const { container } = render(
+    <KisumuOverview panel={panel} scenario={scenario} rank={vi.fn()} canRun />,
+  );
+  await vi.waitFor(() =>
+    expect(scenario.submit).toHaveBeenCalledWith(0, expect.any(String)),
+  );
+  expect(container.querySelector(".shock-panel")).toBeNull();
+  fireEvent.change(
+    screen.getByLabelText(/donor logistics support reduction/i),
+    { target: { value: "40" } },
+  );
+  expect(
+    container.querySelector(".shock-panel")?.getAttribute("aria-busy"),
+  ).toBe("true");
+  expect(container.querySelector(".rank-placeholder")?.textContent).toMatch(
+    /Do this first.*Ranking feasible actions/,
+  );
+});

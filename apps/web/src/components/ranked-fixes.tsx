@@ -149,7 +149,7 @@ export function RankedFixes({
               : t("rankReasonUnavailable");
   }
   return (
-    <section className="panel" aria-labelledby="ranked-title">
+    <section className="panel rank-panel" aria-labelledby="ranked-title">
       <h2 id="ranked-title">{t("doThisFirst")}</h2>
       <p>{t("rankAssumptions")}</p>
       <p>{t("rankCandidateAssumptions")}</p>
@@ -202,47 +202,49 @@ export function RankedFixes({
       >
         {t("rankAction")}
       </button>
-      {status === "loading" && <p role="status">{t("rankLoading")}</p>}
-      {!online && <p role="status">{t("rankOffline")}</p>}
-      {status === "error" && <p role="alert">{t("rankError")}</p>}
-      {status === "unreachable" && <p role="alert">{t("rankUnreachable")}</p>}
-      {result && (
-        <>
-          <p>
-            {t("rankUsed")}: {result.total_cost} KES · {t("rankRemaining")}:{" "}
-            {result.remaining_budget} KES
-          </p>
-          <p className="rank-cost-note">{t("rankCostNote")}</p>
-          <ol className="rank-selected" aria-label={t("rankAboveCut")}>
-            {result.selected_ids.map((id) => (
-              <li key={id}>
-                {name(id)} · {cost(id)} KES · {deferral(id)} ·{" "}
-                {t("rankSelected")}
-              </li>
-            ))}
-          </ol>
-          <p className="rank-cut">
-            {t("rankCutLine")}: {t("rankCutLineDetail")}
-          </p>
-          <ul className="rank-excluded" aria-label={t("rankBelowCut")}>
-            {candidates
-              .filter((item) => !result.selected_ids.includes(item.id))
-              .map(({ id }) => (
+      <div className="rank-results">
+        {status === "loading" && <p role="status">{t("rankLoading")}</p>}
+        {!online && <p role="status">{t("rankOffline")}</p>}
+        {status === "error" && <p role="alert">{t("rankError")}</p>}
+        {status === "unreachable" && <p role="alert">{t("rankUnreachable")}</p>}
+        {result && (
+          <>
+            <p>
+              {t("rankUsed")}: {result.total_cost} KES · {t("rankRemaining")}:{" "}
+              {result.remaining_budget} KES
+            </p>
+            <p className="rank-cost-note">{t("rankCostNote")}</p>
+            <ol className="rank-selected" aria-label={t("rankAboveCut")}>
+              {result.selected_ids.map((id) => (
                 <li key={id}>
                   {name(id)} · {cost(id)} KES · {deferral(id)} ·{" "}
-                  {reasonText(result.excluded_reasons[id])}
+                  {t("rankSelected")}
                 </li>
               ))}
-          </ul>
-          <h3>{t("rankExplanation")}</h3>
-          {locale === "sw" && result.explanation && (
-            <p>{t("rankEnglishOnly")}</p>
-          )}
-          <p lang={result.explanation ? "en" : undefined}>
-            {result.explanation ?? t("rankNoExplanation")}
-          </p>
-        </>
-      )}
+            </ol>
+            <p className="rank-cut">
+              {t("rankCutLine")}: {t("rankCutLineDetail")}
+            </p>
+            <ul className="rank-excluded" aria-label={t("rankBelowCut")}>
+              {candidates
+                .filter((item) => !result.selected_ids.includes(item.id))
+                .map(({ id }) => (
+                  <li key={id}>
+                    {name(id)} · {cost(id)} KES · {deferral(id)} ·{" "}
+                    {reasonText(result.excluded_reasons[id])}
+                  </li>
+                ))}
+            </ul>
+            <h3>{t("rankExplanation")}</h3>
+            {locale === "sw" && result.explanation && (
+              <p>{t("rankEnglishOnly")}</p>
+            )}
+            <p lang={result.explanation ? "en" : undefined}>
+              {result.explanation ?? t("rankNoExplanation")}
+            </p>
+          </>
+        )}
+      </div>
     </section>
   );
 }

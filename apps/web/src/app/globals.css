@@ -163,6 +163,19 @@ p {
   padding-top: 0.5rem;
   font-weight: 600;
 }
+/* Reserved from measured fixture-run heights so arriving results do not shift the page. */
+.scenario-status {
+  min-height: 1.5em;
+}
+.shock-panel {
+  min-height: 20.5rem;
+}
+.rank-placeholder {
+  min-height: 58rem;
+}
+.rank-results {
+  min-height: 32.5rem;
+}
 .rank-cost-note {
   color: var(--muted);
   font-size: 0.875rem;
@@ -301,6 +314,15 @@ input {
   margin-top: 1rem;
 }
 @media (min-width: 768px) {
+  .shock-panel {
+    min-height: 13rem;
+  }
+  .rank-placeholder {
+    min-height: 37rem;
+  }
+  .rank-results {
+    min-height: 21.75rem;
+  }
   .mobile-map-toggle {
     display: none;
   }
@@ -309,6 +331,12 @@ input {
   }
 }
 @media (min-width: 1024px) {
+  .rank-placeholder {
+    min-height: 34rem;
+  }
+  .rank-results {
+    min-height: 18.75rem;
+  }
   .shell {
     display: grid;
     grid-template-columns: 240px minmax(0, 1fr);

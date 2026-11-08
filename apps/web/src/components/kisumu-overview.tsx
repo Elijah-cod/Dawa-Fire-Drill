@@ -14,9 +14,18 @@ import { FacilityMap } from "./facility-map";
 import { StockoutOrder } from "./stockout-order";
 import type { components } from "../generated/api";
 
-function RankLoading() {
+/** Same footprint as the loaded panel so arriving results do not shift the page. */
+function RankPlaceholder({ message }: { message?: string }) {
   const { t } = usePreferences();
-  return <p role="status">{t("rankLoading")}</p>;
+  return (
+    <section className="panel rank-panel rank-placeholder" aria-busy="true">
+      <h2>{t("doThisFirst")}</h2>
+      <p role="status">{message ?? t("rankLoading")}</p>
+    </section>
+  );
+}
+function RankLoading() {
+  return <RankPlaceholder />;
 }
 const RankedFixes = dynamic(
   () => import("./ranked-fixes").then((module) => module.RankedFixes),
@@ -90,6 +99,7 @@ export function KisumuOverview({
   const facility = panel.facilities.find((item) => item.id === selected);
   const risk = selected ? risks[selected] : undefined;
   const shockEvents = run?.result?.shock_caused_stockouts;
+  const pending = !run || previous;
   const facilitySection = useMemo(
     () => (
       <section className="panel">
@@ -186,7 +196,7 @@ export function KisumuOverview({
           onChange={(event) => setMagnitude(Number(event.target.value))}
         />
         {magnitude === 0 && <p>{t("baseline")}</p>}
-        <p role="status" aria-live="polite">
+        <p className="scenario-status" role="status" aria-live="polite">
           {status === "running"
             ? t("scenarioRunning")
             : status === "error"
@@ -197,10 +207,14 @@ export function KisumuOverview({
         </p>
         {previous && <p>{t("previousRun")}</p>}
       </section>
-      {run && magnitude > 0 && !previous && (
-        <section className="panel">
+      {magnitude > 0 && (
+        <section className="panel shock-panel" aria-busy={pending}>
           <h2>{t("shockFirst")}</h2>
-          {!validEvents(shockEvents) ? (
+          {pending ? (
+            <p>
+              {status === "error" ? t("scenarioError") : t("scenarioRunning")}
+            </p>
+          ) : !validEvents(shockEvents) ? (
             <p>{t("shockDetailsUnavailable")}</p>
           ) : shockEvents.length ? (
             <StockoutOrder events={shockEvents} />
@@ -209,11 +223,16 @@ export function KisumuOverview({
           )}
         </section>
       )}
+      {canRun && rank && magnitude > 0 && pending && (
+        <RankPlaceholder
+          message={status === "error" ? t("scenarioError") : undefined}
+        />
+      )}
       {run &&
         canRun &&
         rank &&
         magnitude > 0 &&
-        !previous &&
+        !pending &&
         validEvents(shockEvents) &&
         shockEvents.length > 0 && (
           <RankedFixes

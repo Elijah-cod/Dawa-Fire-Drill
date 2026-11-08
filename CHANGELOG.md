@@ -1,5 +1,7 @@
 # Changelog
 
+- Reserved space for the shock-order and ranked-fixes panels so arriving synthetic results no longer shift the Kisumu page.
+
 - Ranked fixes now list every synthetic candidate with its cost, modeled deferral and status on either side of an explicit budget cut line, with costs labeled once as an illustrative assumption.
 
 - Added an immutable version 4 synthetic Kisumu panel whose planted transfer targets the first shock-caused demo stockout; retained prior versions.
