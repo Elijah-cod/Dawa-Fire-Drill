@@ -50,6 +50,7 @@
         <div class="about" id="about" hidden>
           <p>This is a stress-test sandbox, not a live monitoring system or a government system. Stock, demand, coordinates, facility names and costs come from a reproducible generator (version 5, seed 42), calibrated only to public aggregates. The optimizer (OR-Tools) ranks the fixes; plain-language explanations only restate its result.</p>
           <p>A stockout is one facility running out of one commodity within the 90-day run.</p>
+          <p>Costs are illustrative and not calibrated to real prices.</p>
         </div>
         <main id="content">
           <p class="crumbs"><a href="#">Kenya</a> / Kisumu</p>
@@ -59,6 +60,7 @@
           </div>
           <section class="verdict" aria-live="polite" aria-label="What breaks first">
             <p class="verdict-line" id="verdict"></p>
+            <p class="verdict-line verdict-scope" id="verdict-scope" hidden></p>
             <p class="verdict-line verdict-fix" id="verdict-fix"></p>
             <ul class="verdict-facts" id="facts"></ul>
           </section>

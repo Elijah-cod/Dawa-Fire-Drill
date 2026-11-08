@@ -1,5 +1,7 @@
 # Changelog
 
+- Kisumu preview: the verdict and fixes header state how many shock-caused stockouts the options address; costs are labelled KES (illustrative); the loading verdict no longer states a result; the budget control stays visible and disabled when there is nothing to rank.
+
 - Kisumu preview: page title, section headings and verdict use self-hosted Source Serif 4 (OFL) with a metric-matched fallback; the verdict and budget status reserve their space so changing the budget no longer moves the page.
 
 - Refreshed README screenshots, demo script and limitations; listed all Swahili strings for review and added a Checkpoint C checklist.

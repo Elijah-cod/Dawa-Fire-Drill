@@ -280,9 +280,12 @@ h1 {
 .verdict-line strong {
   color: var(--primary-strong);
 }
+.verdict-scope {
+  margin-top: var(--space-2);
+}
 .verdict-fix {
   margin-top: var(--space-2);
-  min-height: calc(5 * 1.35em);
+  min-height: calc(7 * 1.35em);
 }
 .verdict-facts {
   display: flex;
@@ -1023,4 +1026,21 @@ h1,
   .verdict-fix {
     min-height: calc(3 * 1.35em);
   }
+}
+.hint {
+  text-wrap: balance;
+}
+/* Chromium balances only up to six lines; pretty avoids a lone last word in the longer verdict at 390 px. */
+.verdict-line {
+  text-wrap: pretty;
+}
+.cost .illus {
+  display: block;
+  font-size: var(--text-xs, 0.75rem);
+  font-weight: 400;
+  color: var(--muted);
+}
+.budget-control input:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
 }

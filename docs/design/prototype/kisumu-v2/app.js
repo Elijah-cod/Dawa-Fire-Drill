@@ -37,6 +37,7 @@ const icon = (id, cls = "icon icon--sm") => `<svg class="${cls}" aria-hidden="tr
 const chip = (s) => `<span class="status status--${s}">${icon(STATUS[s].icon)}${STATUS[s].word}</span>`;
 const place = (f) => `${f.name} (${f.sub})`;
 const plural = (n, one, many = `${one}s`) => `${n} ${n === 1 ? one : many}`;
+const listJoin = (items) => (items.length < 2 ? items.join("") : `${items.slice(0, -1).join(", ")} and ${items.at(-1)}`);
 
 /** The run in view: the selected shock, or the no-shock run when comparing. */
 const shownShock = () => (state.compare === "none" ? 0 : state.shock);
@@ -65,6 +66,19 @@ function facilityView(r) {
 const ranking = (budget = rankedBudget) => run().rankings[budget] ?? null;
 const effectText = (e) => (e.counterfactual === null ? `stocked through day ${H}` : `stockout moves to day ${e.counterfactual}`);
 
+/** How many shock-caused stockouts the ranked options address; "earliest" only when that is true for this run. */
+function coverage(r) {
+  const days = r.candidates
+    .filter((c) => c.kind === "redistribution")
+    .map((c) => r.shockEvents.find(([f, cc]) => f === c.facility_id && cc === c.commodity_id)[2])
+    .sort((a, b) => a - b);
+  const earliest = r.shockEvents.map((e) => e[2]).sort((a, b) => a - b).slice(0, days.length);
+  const isEarliest = days.every((d, i) => d === earliest[i]);
+  return isEarliest
+    ? `the ${days.length} earliest of ${r.shockEvents.length} shock-caused stockouts`
+    : `${days.length} of ${r.shockEvents.length} shock-caused stockouts (days ${days[0]} to ${days.at(-1)})`;
+}
+
 /** Why there is nothing to rank at this shock, from backend arrival days and stockout days. */
 function noFixReason(r) {
   const targets = D.routes.map((route) => {
@@ -90,16 +104,17 @@ function verdict() {
   let fix;
   if (shock === 0) fix = "There is nothing to fix.";
   else if (!r.candidates.length) fix = noFixReason(r);
+  else if (loading) fix = `Ranking fixes for ${state.budget} KES…`;
   else {
     const k = ranking();
     const funded = k.selected.filter((id) => id.startsWith("transfer"));
     const cut = Object.entries(k.excluded).filter(([id, why]) => id.startsWith("transfer") && why === "remaining_budget_exceeded");
     const cheapest = Math.min(...r.candidates.map((c) => c.cost));
-    if (!k.selected.length) fix = `At ${rankedBudget} KES, nothing fits the budget; the cheapest fix costs ${cheapest} KES.`;
+    if (!k.selected.length) fix = `At ${rankedBudget} KES (illustrative), nothing fits the budget; the cheapest fix costs ${cheapest} KES.`;
     else {
       const allHold = funded.every((id) => k.effects[id].counterfactual === null);
-      fix = `At ${rankedBudget} KES the optimizer funds <strong>${plural(funded.length, "transfer")}</strong> (${k.total_cost} KES)${
-        allHold ? `, each keeping its facility stocked through day ${H}` : ""
+      fix = `At ${rankedBudget} KES (illustrative) the optimizer funds <strong>${plural(funded.length, "transfer")}</strong> (${k.total_cost} KES)${
+        allHold ? `, ${funded.length === 1 ? "keeping" : "each keeping"} its facility stocked through day ${H}` : ""
       }.`;
       if (cut.length) {
         const names = cut.map(([id]) => {
@@ -107,20 +122,23 @@ function verdict() {
           const e = r.shockEvents.find(([f, cc]) => f === c.facility_id && cc === c.commodity_id);
           return `${byId[c.facility_id].name} (day ${e[2]})`;
         });
-        fix += ` ${names.join(", ")} ${cut.length === 1 ? "does" : "do"} not fit what is left.`;
+        // Name a single cut transfer; for several, a count keeps the sentence inside its reserved lines.
+        fix += cut.length === 1 ? ` ${names[0]} does not fit what is left.` : ` ${plural(cut.length, "other transfer")} do not fit what is left.`;
       }
     }
   }
   document.getElementById("verdict").innerHTML = first;
+  // Coverage changes only with the shock, so it sits outside the reserved budget sentence.
+  const scope = document.getElementById("verdict-scope");
+  scope.textContent = shock !== 0 && r.candidates.length ? `The fixes address only ${coverage(r)}.` : "";
+  scope.hidden = !scope.textContent;
   // The budget sentence has its own reserved line so a ranking that arrives later never moves the page.
   document.getElementById("verdict-fix").innerHTML = fix;
   const view = facilityView(r);
   const count = (s) => view.filter((f) => f.status === s).length;
   const short = alreadyShort(r);
   document.getElementById("facts").innerHTML = [
-    `<li><strong>${r.stockouts.length}</strong> stockouts in total: ${r.shockEvents.length} caused by the shock, ${short.length} already short before it (${short
-      .map((s) => `${s.facility.name} from day ${s.day}`)
-      .join(", ")})</li>`,
+    `<li><strong>${r.stockouts.length}</strong> stockouts in total: ${r.shockEvents.length} caused by the shock, ${short.length} already short before it (${listJoin(short.map((s) => `${s.facility.name} from day ${s.day}`))})</li>`,
     `<li>${count("critical")} Critical · ${count("watch")} Watch · ${count("stable")} Stable</li>`,
   ].join("");
   document.getElementById("scenario").textContent = shock === 0 ? "No shock" : `${shock}% logistics cut`;
@@ -304,7 +322,8 @@ function readableExplanation(text, r) {
 function fixesShell() {
   const r = run();
   const el = document.getElementById("fixes");
-  const head = `<h2 id="fixes-title">Cheapest fixes</h2><p class="sub">OR-Tools picks what fits the budget. Costs are illustrative assumptions.</p>`;
+  const scope = r.candidates.length ? `These options address ${coverage(r)}; the others have no option in this demo. ` : "";
+  const head = `<h2 id="fixes-title">Cheapest fixes</h2><p class="sub">${scope}OR-Tools picks what fits the budget. Costs are in KES (illustrative), not calibrated to real prices.</p>`;
   fixesRun = shownShock();
   if (loading) {
     el.setAttribute("aria-busy", "true");
@@ -313,7 +332,16 @@ function fixesShell() {
   }
   el.removeAttribute("aria-busy");
   if (!r.candidates.length) {
-    el.innerHTML = `${head}<div class="finding" role="status">${
+    // The budget stays visible but disabled, with the reason, so the control does not vanish between shocks.
+    const why = shownShock() === 0 ? "The budget is not used: no stockouts are caused by the shock." : "The budget is not used at this shock: no transfer can arrive in time.";
+    el.innerHTML = `${head}
+    <label class="field-label" for="budget">Budget, KES (illustrative)</label>
+    <div class="budget-control">
+      <input id="budget" type="range" min="0" max="100" step="5" value="${state.budget}" aria-describedby="budget-status" disabled />
+      <input id="budget-number" type="number" min="0" max="100" step="5" value="${state.budget}" aria-label="Budget in KES (illustrative)" disabled />
+    </div>
+    <p class="state" id="budget-status">${why}</p>
+    <div class="finding" role="status">${
       shownShock() === 0
         ? "<strong>With no shock, nothing to fix.</strong> No stockouts are caused by the shock."
         : `<strong>No transfer can arrive in time at this shock.</strong> ${noFixReason(r)}`
@@ -321,10 +349,10 @@ function fixesShell() {
     return;
   }
   el.innerHTML = `${head}
-    <label class="field-label" for="budget">Budget (KES)</label>
+    <label class="field-label" for="budget">Budget, KES (illustrative)</label>
     <div class="budget-control">
       <input id="budget" type="range" min="0" max="100" step="5" value="${state.budget}" aria-describedby="budget-status" />
-      <input id="budget-number" type="number" min="0" max="100" step="5" value="${state.budget}" aria-label="Budget in KES" />
+      <input id="budget-number" type="number" min="0" max="100" step="5" value="${state.budget}" aria-label="Budget in KES (illustrative)" />
     </div>
     <div id="budget-bar"></div>
     <div id="budget-status-slot"></div>
@@ -349,7 +377,11 @@ function fixesUpdate() {
   const cheapest = Math.min(...r.candidates.map((c) => c.cost));
   let status;
   if (failed)
-    status = `<div class="state state--error" role="alert">${icon("i-critical")}<span>The ranking for ${state.budget} KES could not be updated. The fixes below are for ${rankedBudget} KES, the last budget that ranked.<br><button class="btn" type="button" id="retry">Try again</button></span></div>`;
+    status = `<div class="state state--error" role="alert" id="budget-status">${icon("i-critical")}<span>${
+      state.budget === rankedBudget
+        ? `The ranking for ${state.budget} KES could not be refreshed. The fixes below are from the last ranking that arrived.`
+        : `The ranking for ${state.budget} KES could not be updated. The fixes below are for ${rankedBudget} KES, the last budget that ranked.`
+    }<br><button class="btn" type="button" id="retry">Try again</button></span></div>`;
   else if (inFlight)
     status = `<p class="state" role="status" id="budget-status">Updating the ranking for ${state.budget} KES… Showing ${rankedBudget} KES until it arrives.</p>`;
   else if (!k.selected.length)
@@ -364,7 +396,7 @@ function fixesUpdate() {
     const same = effectText(k.effects[t.id]) === effectText(k.effects[e.id]);
     const option = (c) => {
       const funded = k.selected.includes(c.id);
-      return `<li class="option ${funded ? "option--funded" : "option--cut"}"><span class="name">${optionName(c)}</span><span class="cost">${c.cost} KES</span><span class="why">${
+      return `<li class="option ${funded ? "option--funded" : "option--cut"}"><span class="name">${optionName(c)}</span><span class="cost">${c.cost} KES <span class="illus">(illustrative)</span></span><span class="why">${
         funded ? `${icon("i-stable")}Funded` : `Not funded: ${REASONS[k.excluded[c.id]] ?? "reason unavailable"}`
       }${same ? "" : ` · if funded, ${effectText(k.effects[c.id])}`}</span></li>`;
     };
