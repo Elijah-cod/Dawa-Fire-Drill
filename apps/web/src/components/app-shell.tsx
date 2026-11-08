@@ -19,7 +19,6 @@ export function AppShell({ children }: { children: ReactNode }) {
             Dawa Fire Drill
           </a>
           <PrimaryNav label={t("navPrimary")} />
-          <p>{t("syntheticNote")}</p>
         </aside>
         <div className="workspace">
           <header className="topbar">
