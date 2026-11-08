@@ -14,7 +14,11 @@ import { KisumuOverview } from "./kisumu-overview";
 vi.mock("./facility-map", () => ({
   FacilityMap: () => <p>Facility locations are synthetic.</p>,
 }));
-afterEach(cleanup);
+afterEach(() => {
+  cleanup();
+  // The page writes its view into the URL; start each test from a clean link.
+  window.history.replaceState(null, "", "/");
+});
 
 it("updates a facility's risk and driving tracer with the selected scenario", async () => {
   const panel = {
@@ -480,4 +484,35 @@ it("frames the question at full size until the first run arrives", () => {
   expect(
     screen.getByRole("complementary", { name: "Scenario" }).textContent,
   ).toContain("Running the 40% scenario…");
+});
+
+it("restores shock, budget, tab and day from a shared link and keeps them in the URL", async () => {
+  window.history.replaceState(
+    null,
+    "",
+    "/kisumu?shock=20&budget=65&tab=facilities&day=41",
+  );
+  const scenario = fixtureScenario();
+  render(<KisumuOverview panel={fixture.pilot} scenario={scenario} />);
+  await vi.waitFor(() =>
+    expect(scenario.submit).toHaveBeenCalledWith(20, expect.any(String)),
+  );
+  expect(
+    screen
+      .getByRole("tab", { name: /Facilities/ })
+      .getAttribute("aria-selected"),
+  ).toBe("true");
+  expect(
+    screen.getByRole("button", { name: "20%" }).getAttribute("aria-pressed"),
+  ).toBe("true");
+  fireEvent.click(screen.getByRole("tab", { name: /Map and fixes/ }));
+  expect(document.getElementById("readout")?.textContent).toMatch(
+    /^Day 41 of 90/,
+  );
+  fireEvent.click(screen.getByRole("button", { name: "100%" }));
+  await vi.waitFor(() =>
+    expect(window.location.search).toBe(
+      "?shock=100&budget=65&tab=overview&day=41",
+    ),
+  );
 });

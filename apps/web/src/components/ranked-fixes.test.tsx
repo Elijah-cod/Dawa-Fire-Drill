@@ -338,3 +338,11 @@ it("shows the budget disabled with the reason when nothing can be ranked", () =>
     "No transfer can arrive in time at this shock.",
   );
 });
+
+it("starts from the budget a shared link asked for", async () => {
+  const { result } = renderHook(() =>
+    useRanking({ runId, events, routes, rank: recorded, initialBudget: 63 }),
+  );
+  expect(result.current.budget).toBe(65);
+  await waitFor(() => expect(result.current.rankedBudget).toBe(65));
+});

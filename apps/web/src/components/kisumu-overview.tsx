@@ -23,9 +23,14 @@ import { useRanking } from "../kisumu/use-ranking";
 import type { ShockEvent } from "../api/candidates";
 import { TabList, type TabItem } from "./tabs";
 import { FacilityDetail, FacilityTable } from "./facility-table";
-import { DEFAULT_DAY, WhereItBreaks } from "./where-it-breaks";
+import { WhereItBreaks } from "./where-it-breaks";
 
-type View = "overview" | "order" | "funding" | "facilities";
+import {
+  DEFAULT_LINK_STATE,
+  readLinkState,
+  writeLinkState,
+  type View,
+} from "../kisumu/link-state";
 import {
   ScenarioControls,
   type Compare,
@@ -96,11 +101,19 @@ export function KisumuOverview({
   const { t, tf, locale } = usePreferences();
   // Invented display names replace the generator's numbered names everywhere on this page.
   const panel = useMemo(() => withDisplayNames(generated), [generated]);
-  const [shock, setShock] = useState<Shock>(40);
+  // A shared link recreates the view: shock, budget, tab and day live in the URL.
+  const [link] = useState(() =>
+    typeof window === "undefined"
+      ? DEFAULT_LINK_STATE
+      : readLinkState(window.location.search),
+  );
+  const [shock, setShock] = useState<Shock>(link.shock);
+  const [tab, setTab] = useState<View>(link.tab);
+  const [day, setDay] = useState(link.day);
   const [compare, setCompare] = useState<Compare>("shock");
   const [controlsOpen, setControlsOpen] = useState(false);
   const { magnitude, setMagnitude, run, status, previous, runMagnitude } =
-    useKisumuScenario(scenario, canRun, 40);
+    useKisumuScenario(scenario, canRun, link.shock);
   const choose = (next: Shock, view: Compare) => {
     setShock(next);
     setCompare(view);
@@ -190,7 +203,23 @@ export function KisumuOverview({
     events: shown,
     routes,
     rank: rank && run ? (body) => rank(run.id, body) : undefined,
+    initialBudget: link.budget,
   });
+  useEffect(() => {
+    if (!canRun) return;
+    const search = writeLinkState(window.location.search, {
+      shock,
+      budget: ranking.budget,
+      tab,
+      day,
+    });
+    if (search !== window.location.search)
+      window.history.replaceState(
+        window.history.state,
+        "",
+        `${window.location.pathname}${search}${window.location.hash}`,
+      );
+  }, [canRun, shock, ranking.budget, tab, day]);
   const reveal = (id: string | HTMLElement | null) => {
     const element = typeof id === "string" ? document.getElementById(id) : id;
     if (!element) return;
@@ -199,8 +228,6 @@ export function KisumuOverview({
       element.setAttribute("tabindex", "-1");
     element.focus({ preventScroll: true });
   };
-  const [tab, setTab] = useState<View>("overview");
-  const [day, setDay] = useState(DEFAULT_DAY);
   // The facility map starts only once its tab is shown, so it never sizes itself while hidden.
   const [mapReady, setMapReady] = useState(false);
   useEffect(() => {

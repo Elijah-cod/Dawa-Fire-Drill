@@ -376,6 +376,24 @@ test("every facility marker is inside the map and clear of its controls", async 
   expect(problems).toEqual([]);
 });
 
+test("a shared link recreates shock, budget, tab and day", async ({ page }) => {
+  await page.goto(`${KISUMU}?shock=20&budget=40&tab=order&day=41`);
+  await expect(verdict(page)).toContainText(
+    "The fixes address only 4 of 77 shock-caused stockouts",
+    { timeout: 30000 },
+  );
+  await expect(
+    page.getByRole("tab", { name: /Stockout order/ }),
+  ).toHaveAttribute("aria-selected", "true");
+  await page.getByRole("tab", { name: "Map and fixes" }).click();
+  await expect(page.locator("#readout")).toContainText("Day 41 of 90");
+  await expect(budgetStatus(page)).toHaveText("40 of 40 units used.", {
+    timeout: 30000,
+  });
+  await page.getByLabel("Budget (illustrative units)").fill("100");
+  await expect(page).toHaveURL(/shock=20&budget=100&tab=overview&day=41/);
+});
+
 test("facility role sees only its trusted facility", async ({ page }) => {
   await page.goto(KISUMU);
   await page.getByLabel("Demo role").selectOption("facility");

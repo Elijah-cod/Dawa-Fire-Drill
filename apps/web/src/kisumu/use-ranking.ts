@@ -52,7 +52,10 @@ export function useRanking({
   events,
   routes,
   rank,
+  initialBudget = DEFAULT_BUDGET,
 }: {
+  /** The budget a shared link asked for. */
+  initialBudget?: number;
   runId: string | null;
   events: ShockEvent[];
   routes: PlantedRoute[];
@@ -60,7 +63,7 @@ export function useRanking({
 }): RankingState {
   const fixes = useMemo(() => plannedFixes(events, routes), [events, routes]);
   const candidates = useMemo(() => fixCandidates(fixes), [fixes]);
-  const [budget, setBudgetState] = useState(DEFAULT_BUDGET);
+  const [budget, setBudgetState] = useState(() => snapBudget(initialBudget));
   const [result, setResult] = useState<Ranking | null>(null);
   const [rankedBudget, setRankedBudget] = useState<number | null>(null);
   const [status, setStatus] = useState<RankingState["status"]>("idle");
