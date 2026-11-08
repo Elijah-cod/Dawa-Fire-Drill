@@ -15,6 +15,7 @@ import { usePreferences } from "../preferences/preferences";
 import type { ScenarioApi } from "../scenario/use-kisumu-scenario";
 import { FacilitySelf } from "./facility-self";
 import { KisumuOverview } from "./kisumu-overview";
+import { useTour } from "../tour/tour";
 
 type Mode = "mock" | "demo" | "none";
 type Loaded = {
@@ -147,15 +148,24 @@ function KisumuContent({
 
 export function KisumuEntry({ mode }: { mode: Mode }) {
   const [role, setRole] = useState<DemoRole>("planner");
+  const { step } = useTour();
+  useEffect(() => {
+    // Capture belongs to the facility in-charge; the guided demo switches role for that step only.
+    setRole(step === "capture" ? "facility" : "planner");
+  }, [step]);
   const adapter = useMemo<AuthAdapter>(() => {
     if (mode === "demo") return createDemoAdapter(api, role);
     if (mode === "mock")
       return {
-        load: async () => ({
-          status: "authenticated",
-          role: "planner",
-          countyCode: "042",
-        }),
+        load: async () =>
+          role === "facility"
+            ? {
+                status: "authenticated",
+                role: "facility",
+                countyCode: "042",
+                facilityId: "SYN-KE-042-F001",
+              }
+            : { status: "authenticated", role: "planner", countyCode: "042" },
       };
     return { load: async () => ({ status: "missing" }) };
   }, [mode, role]);

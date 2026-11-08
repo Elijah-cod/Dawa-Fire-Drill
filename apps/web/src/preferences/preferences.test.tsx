@@ -6,13 +6,18 @@ import {
   screen,
   waitFor,
 } from "@testing-library/react";
-import { afterEach, expect, it } from "vitest";
+import { afterEach, expect, it, vi } from "vitest";
 import {
   PreferencesProvider,
   PreferenceControls,
   usePreferences,
 } from "./preferences";
 import { AppShell } from "../components/app-shell";
+
+vi.mock("next/navigation", () => ({
+  usePathname: () => "/",
+  useRouter: () => ({ push: vi.fn() }),
+}));
 
 afterEach(cleanup);
 

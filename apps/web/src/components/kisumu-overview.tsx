@@ -14,6 +14,7 @@ import { FacilityMap } from "./facility-map";
 import { StockoutOrder } from "./stockout-order";
 import type { components } from "../generated/api";
 import { FundingTrace } from "./funding-trace";
+import { SHOCK_STEPS, useTour } from "../tour/tour";
 
 /** Same footprint as the loaded panel so arriving results do not shift the page. */
 function RankPlaceholder({ message }: { message?: string }) {
@@ -82,6 +83,11 @@ export function KisumuOverview({
     scenario,
     canRun,
   );
+  const { step } = useTour();
+  useEffect(() => {
+    // The guided demo shows the 40% shock; the user can still move the slider.
+    if (canRun && step && SHOCK_STEPS.includes(step)) setMagnitude(40);
+  }, [step, canRun]);
   const [subcounty, setSubcounty] = useState("all");
   const [selected, setSelected] = useState<string | null>(null);
   const dialog = useRef<HTMLDialogElement>(null);

@@ -5,6 +5,7 @@ import { ApiError } from "../api/client";
 import type { PilotPanel } from "../api/client";
 import type { components } from "../generated/api";
 import { usePreferences } from "../preferences/preferences";
+import { useTour } from "../tour/tour";
 
 type Request = components["schemas"]["ModeledRequest"];
 type Result = components["schemas"]["ModeledResponse"];
@@ -148,6 +149,12 @@ export function RankedFixes({
               ? t("rankNotSelected")
               : t("rankReasonUnavailable");
   }
+  const { step } = useTour();
+  useEffect(() => {
+    // The guided demo ranks once at the default ceiling when it reaches this step.
+    if (step === "rank" && routeMatches && online && !started.current)
+      void submit(budget);
+  }, [step, routeMatches, online]);
   return (
     <section className="panel rank-panel" aria-labelledby="ranked-title">
       <h2 id="ranked-title">{t("doThisFirst")}</h2>

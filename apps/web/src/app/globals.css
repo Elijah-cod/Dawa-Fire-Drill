@@ -180,6 +180,47 @@ p {
 .same-day-note {
   font-size: 0.875rem;
 }
+.tour-start,
+.tour-actions button {
+  min-height: 44px;
+  padding: 0.5rem 1rem;
+  border: 1px solid var(--primary);
+  border-radius: 0.5rem;
+  color: var(--primary);
+  font-weight: 600;
+}
+.tour-actions button:disabled {
+  opacity: 0.5;
+}
+.tour-actions .tour-primary {
+  background: var(--primary);
+  color: var(--surface);
+}
+.tour-panel {
+  position: fixed;
+  inset: auto 0 0 0;
+  z-index: 50;
+  background: var(--surface);
+  border-top: 2px solid var(--primary);
+  padding: 0.75rem 1rem calc(0.75rem + env(safe-area-inset-bottom));
+  box-shadow: 0 -4px 16px rgb(0 0 0 / 0.12);
+}
+.tour-panel h2:focus {
+  outline: none;
+}
+.tour-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+body:has(.tour-panel) main {
+  padding-bottom: 16rem;
+}
+[data-tour-active] {
+  outline: 3px solid var(--primary);
+  outline-offset: 4px;
+}
 .rank-cost-note {
   color: var(--muted);
   font-size: 0.875rem;
@@ -318,6 +359,12 @@ input {
   margin-top: 1rem;
 }
 @media (min-width: 768px) {
+  .tour-panel {
+    inset: auto 1rem 1rem auto;
+    max-width: 26rem;
+    border: 2px solid var(--primary);
+    border-radius: 0.75rem;
+  }
   .shock-panel {
     min-height: 15.75rem;
   }

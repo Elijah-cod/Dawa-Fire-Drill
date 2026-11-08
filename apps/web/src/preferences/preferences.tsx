@@ -103,6 +103,34 @@ const strings = {
     fundingRetry: "Try again",
     fundingEmpty: "No delayed flows in this synthetic view.",
     fundingOffline: "Showing saved funding summary.",
+    tourStart: "Try the 3-minute demo",
+    tourLabel: "Guided demo",
+    tourStep: "Step",
+    tourBack: "Back",
+    tourNext: "Next step",
+    tourFinish: "Finish demo",
+    tourExit: "Exit demo",
+    tour_overview_title: "National overview",
+    tour_overview_text:
+      "All 47 counties on a schematic grid with illustrative risk. Every number is synthetic.",
+    tour_kisumu_title: "Kisumu pilot",
+    tour_kisumu_text:
+      "Forty invented facilities on synthetic map locations, each with a non-color risk symbol.",
+    tour_shock_title: "Apply a 40% shock",
+    tour_shock_text:
+      "Donor logistics support drops by 40%. The illustrative model reruns the county.",
+    tour_stockout_title: "First stockout",
+    tour_stockout_text:
+      "The order in which items run out because of the shock. The first one is where to act.",
+    tour_funding_title: "Funding trace",
+    tour_funding_text:
+      "Money approved but not yet released, aged in days for one synthetic flow.",
+    tour_rank_title: "Ranked fix",
+    tour_rank_text:
+      "OR-Tools picks the cheapest action within the budget. The explanation only restates its result.",
+    tour_capture_title: "Bin-card capture",
+    tour_capture_text:
+      "A facility in-charge uploads a bin-card photo and confirms every field before anything is saved.",
     showRemainingSuffix: "stockouts",
     openingStock: "Synthetic opening stock",
     noStock: "No synthetic stock entries for this facility.",
@@ -247,6 +275,34 @@ const strings = {
     fundingRetry: "Jaribu tena",
     fundingEmpty: "Hakuna mtiririko uliochelewa katika mwonekano huu wa mfano.",
     fundingOffline: "Inaonyesha muhtasari wa ufadhili uliohifadhiwa.",
+    tourStart: "Jaribu onyesho la dakika 3",
+    tourLabel: "Onyesho la kuongozwa",
+    tourStep: "Hatua",
+    tourBack: "Rudi",
+    tourNext: "Hatua inayofuata",
+    tourFinish: "Maliza onyesho",
+    tourExit: "Toka kwenye onyesho",
+    tour_overview_title: "Muhtasari wa kitaifa",
+    tour_overview_text:
+      "Kaunti zote 47 kwenye gridi ya mchoro yenye hatari ya mfano. Kila nambari ni ya kubuni.",
+    tour_kisumu_title: "Majaribio ya Kisumu",
+    tour_kisumu_text:
+      "Vituo arobaini vya kubuni kwenye maeneo ya ramani ya mfano, kila kimoja na alama ya hatari isiyotegemea rangi.",
+    tour_shock_title: "Weka mshtuko wa 40%",
+    tour_shock_text:
+      "Msaada wa usafirishaji wa wafadhili unapungua kwa 40%. Mfano unaendeshwa upya kwa kaunti.",
+    tour_stockout_title: "Bidhaa ya kwanza kuisha",
+    tour_stockout_text:
+      "Mfuatano wa bidhaa kuisha kutokana na mshtuko. Ya kwanza ndipo pa kuchukua hatua.",
+    tour_funding_title: "Ufuatiliaji wa ufadhili",
+    tour_funding_text:
+      "Pesa zilizoidhinishwa lakini bado hazijatolewa, kwa siku, kwa mtiririko mmoja wa mfano.",
+    tour_rank_title: "Hatua iliyopangwa",
+    tour_rank_text:
+      "OR-Tools huchagua hatua ya bei nafuu ndani ya bajeti. Maelezo yanarudia tu matokeo yake.",
+    tour_capture_title: "Kunasa kadi ya akiba",
+    tour_capture_text:
+      "Msimamizi wa kituo anapakia picha ya kadi ya akiba na kuthibitisha kila sehemu kabla ya kuhifadhi.",
     showRemainingSuffix: "ya kuisha kwa bidhaa",
     openingStock: "Akiba ya mwanzo iliyobuniwa",
     noStock: "Hakuna taarifa za akiba zilizobuniwa kwa kituo hiki.",
