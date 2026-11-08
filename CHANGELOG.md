@@ -1,5 +1,7 @@
 # Changelog
 
+- Rewrote the README with screenshots, a demo-session quickstart, a three-minute demo script and a limitations section.
+
 - Added online-only synthetic bin-card upload for the facility in-charge, with photo preview, editable fields, and an explicit human confirmation before saving.
 
 - Added a guided 3-minute demo with per-step captions, Back, Next and Exit controls, Escape to exit, and URL-kept progress from the national overview to bin-card capture.
