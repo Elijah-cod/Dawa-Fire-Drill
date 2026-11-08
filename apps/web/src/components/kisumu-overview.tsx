@@ -23,6 +23,7 @@ import { useRanking } from "../kisumu/use-ranking";
 import type { ShockEvent } from "../api/candidates";
 import { TabList, type TabItem } from "./tabs";
 import { FacilityDetail, FacilityTable } from "./facility-table";
+import { DEFAULT_DAY, WhereItBreaks } from "./where-it-breaks";
 
 type View = "overview" | "order" | "funding" | "facilities";
 import {
@@ -197,6 +198,7 @@ export function KisumuOverview({
     element.focus({ preventScroll: true });
   };
   const [tab, setTab] = useState<View>("overview");
+  const [day, setDay] = useState(DEFAULT_DAY);
   useEffect(() => {
     // The navigation's funding link lands on this page with #funding-title.
     if (window.location.hash === "#funding-title") setTab("funding");
@@ -376,7 +378,16 @@ export function KisumuOverview({
             hidden={tab !== "overview"}
           >
             <div className="overview">
-              {mapSection}
+              {canRun && (
+                <WhereItBreaks
+                  panel={panel}
+                  events={allEvents}
+                  risks={risks}
+                  day={day}
+                  onDay={setDay}
+                />
+              )}
+              {!canRun && mapSection}
               {canRun &&
                 rank &&
                 (pending || !events ? (
@@ -579,6 +590,7 @@ export function KisumuOverview({
                 }}
               />
             </section>
+            {canRun && mapSection}
             <section
               className="panel facility-detail"
               id="facility-detail"

@@ -146,6 +146,8 @@ it("renders a single facility map while the mobile sheet is open", async () => {
     read: vi.fn(),
   };
   render(<KisumuOverview panel={panel} scenario={scenario} />);
+  // The facility map lives in the Facilities tab; Map and fixes holds the area map.
+  fireEvent.click(screen.getByRole("tab", { name: /Facilities/ }));
   expect(screen.getAllByText("Facility locations are synthetic.")).toHaveLength(
     1,
   );
