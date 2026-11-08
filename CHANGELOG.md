@@ -1,5 +1,7 @@
 # Changelog
 
+- Map clusters now show their status mix (for example “6 · 2 Crit · 3 Watch · 1 Stable”) with the worst-status symbol, never overlap, and keep zooming in on repeated Enter with focus kept on the same facility.
+
 - Recaptured the README facility-map screenshot with clusters and the counts line, and updated the map limitation.
 
 - The facility map groups nearby facilities into one keyboard-accessible cluster per area at low zoom, labeled with the count and worst status (for example “6 · Critical”); activating a cluster zooms in and separates it. A line under the legend always shows Critical, Watch and Stable counts and how many facilities were already short before the shock.

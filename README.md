@@ -35,7 +35,7 @@ All screens show synthetic data; every number is illustrative and unvalidated.
 | ![Guided demo on a phone](docs/screenshots/readme-tour-mobile-390.png) | ![Bin-card capture awaiting human confirmation](docs/screenshots/readme-capture-confirm-390.png) |
 | Guided demo at 390 px | Bin-card capture: nothing is saved until “Confirm and save” |
 | ![Kisumu facility map at a 40% shock with the risk legend](docs/screenshots/readme-map-40-1280.png) | |
-| Facility map at 40%: clusters show count and worst status; the line under the legend gives 10 Critical, 18 Watch, 12 Stable | |
+| Facility map at 40%: each cluster shows its status mix; the line under the legend gives 10 Critical, 18 Watch, 12 Stable | |
 
 ## Local quickstart
 
@@ -92,7 +92,7 @@ See [agent rules](AGENTS.md), [current progress](docs/PROGRESS.md), [design appr
 - **Language.** Swahili strings, and the English-only optimizer explanation, need native-speaker review.
 - **No production sign-in.** The demo uses a server-side proxy with a privileged synthetic token, allowed only in local or staging environments behind external access control.
 - **Risk cutoffs are tuned, not a standard.** Map labels use Critical within 45 days, Watch 46–52 and Stable beyond 52. These cutoffs were tuned to make this synthetic scenario readable, are relative to the 90-day simulation horizon, and are not a standard. A facility takes the status of its worst commodity.
-- **Map clusters show the worst status.** At county zoom, nearby facilities share one cluster labeled with its count and worst status (for example “6 · Critical”), so most clusters read Critical at 40% even though 10 of 40 facilities are Critical; the counts line under the legend gives the full split. Enter or a click zooms into a cluster (narrow screens may need two steps). Cluster labels can overlap slightly near Kisumu city.
+- **Map clusters group whole areas.** At county zoom, nearby facilities share one cluster labeled with its size and status mix (for example “6 · 2 Crit · 3 Watch · 1 Stable”) and the worst-status symbol. Groups merge until no two labels overlap, so on a phone most of the county can be one cluster; Enter or a click zooms in step by step until facilities separate. The counts line under the legend always gives the full split.
 - **Performance and design gaps.** The interactive Lighthouse flow meets its performance budget. Its layout shift ranged from 0.006 to 0.203 in earlier runs; the latest run, after the shock card change, measured 0.001, but one run does not show the issue is resolved. The flow is not in CI. Bottom navigation, several design states and screenshot review against the approved design are outstanding. See [progress](docs/PROGRESS.md) and [Phase 3 notes](docs/phases/3.md).
 
 ## Next steps
