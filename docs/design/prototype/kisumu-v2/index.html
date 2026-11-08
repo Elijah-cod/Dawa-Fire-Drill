@@ -3,177 +3,121 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Kisumu v2 preview · Dawa Fire Drill</title>
+    <title>Kisumu · Dawa Fire Drill (v3 preview)</title>
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
-    <svg width="0" height="0" style="position: absolute" aria-hidden="true">
+    <svg width="0" height="0" style="position: absolute" aria-hidden="true" focusable="false">
       <symbol id="i-home" viewBox="0 0 24 24"><path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z" /></symbol>
       <symbol id="i-pin" viewBox="0 0 24 24"><path d="M12 21s-7-6.2-7-11a7 7 0 0 1 14 0c0 4.8-7 11-7 11z" /><circle cx="12" cy="10" r="2.5" /></symbol>
       <symbol id="i-flow" viewBox="0 0 24 24"><path d="M4 6h10M4 12h16M4 18h7" /><circle cx="18" cy="6" r="2" /><circle cx="15" cy="18" r="2" /></symbol>
       <symbol id="i-card" viewBox="0 0 24 24"><rect x="4" y="3" width="16" height="18" rx="2" /><path d="M8 8h8M8 12h8M8 16h5" /></symbol>
-      <symbol id="i-play" viewBox="0 0 24 24"><path d="M7 5l12 7-12 7z" /></symbol>
+      <symbol id="i-critical" viewBox="0 0 24 24"><path d="M8 3h8l5 5v8l-5 5H8l-5-5V8z" /><path d="M12 8v5M12 16.5v.5" /></symbol>
+      <symbol id="i-watch" viewBox="0 0 24 24"><path d="M12 4l9 16H3z" /><path d="M12 10v4M12 17v.5" /></symbol>
+      <symbol id="i-stable" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" /><path d="M8 12.5l2.5 2.5L16 9.5" /></symbol>
+      <symbol id="i-unknown" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" /><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .9-1 1.6M12 17v.5" /></symbol>
+      <symbol id="i-out" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" /><path d="M9 9l6 6M15 9l-6 6" /></symbol>
+      <symbol id="i-short" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 2" /></symbol>
+      <symbol id="i-play" viewBox="0 0 24 24"><path d="M8 5l11 7-11 7z" /></symbol>
+      <symbol id="i-pause" viewBox="0 0 24 24"><path d="M8 5v14M16 5v14" /></symbol>
       <symbol id="i-prev" viewBox="0 0 24 24"><path d="M15 6l-6 6 6 6" /></symbol>
       <symbol id="i-next" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6" /></symbol>
       <symbol id="i-link" viewBox="0 0 24 24"><path d="M10 14a4 4 0 0 0 6 0l3-3a4 4 0 0 0-6-6l-1 1" /><path d="M14 10a4 4 0 0 0-6 0l-3 3a4 4 0 0 0 6 6l1-1" /></symbol>
       <symbol id="i-download" viewBox="0 0 24 24"><path d="M12 4v11M7 10l5 5 5-5M5 20h14" /></symbol>
       <symbol id="i-sort" viewBox="0 0 24 24"><path d="M8 9l4-4 4 4M8 15l4 4 4-4" /></symbol>
-      <symbol id="i-chevron" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6" /></symbol>
+      <symbol id="i-pause-stage" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" /><path d="M10 9v6M14 9v6" /></symbol>
     </svg>
     <div class="shell">
       <aside class="sidebar" aria-label="Primary navigation">
-        <a class="brand" href="#"><svg class="icon"><use href="#i-pin" /></svg>Dawa Fire Drill</a>
+        <a class="brand" href="#"><svg class="icon" aria-hidden="true"><use href="#i-pin" /></svg>Dawa Fire Drill</a>
         <nav aria-label="Primary">
-          <a href="#"><svg class="icon"><use href="#i-home" /></svg>Overview</a>
-          <a href="#" aria-current="page"><svg class="icon"><use href="#i-pin" /></svg>Kisumu</a>
-          <a href="#"><svg class="icon"><use href="#i-flow" /></svg>Funding trace</a>
-          <a href="#"><svg class="icon"><use href="#i-card" /></svg>Bin-card capture</a>
+          <a href="#"><svg class="icon" aria-hidden="true"><use href="#i-home" /></svg>Overview</a>
+          <a href="#" aria-current="page"><svg class="icon" aria-hidden="true"><use href="#i-pin" /></svg>Kisumu</a>
+          <a href="#"><svg class="icon" aria-hidden="true"><use href="#i-flow" /></svg>Funding trace</a>
+          <a href="#"><svg class="icon" aria-hidden="true"><use href="#i-card" /></svg>Bin-card capture</a>
         </nav>
-        <p class="side-note">Synthetic examples only. Illustrative and unvalidated.</p>
       </aside>
       <div>
         <header class="topbar">
-          <a class="brand" href="#"><svg class="icon"><use href="#i-pin" /></svg>Dawa Fire Drill</a>
-          <span class="crumbs">Kenya · County planning workspace</span>
+          <a class="brand" href="#"><svg class="icon" aria-hidden="true"><use href="#i-pin" /></svg>Dawa Fire Drill</a>
+          <span class="workspace">Kenya · County planning workspace</span>
         </header>
-        <div class="banner" role="note">Synthetic demo data · Calibrated to public aggregates · Results are illustrative, not validated.</div>
+        <section class="banner" aria-label="About the data">
+          <span>Facilities, names, locations and costs are invented. Results are illustrative, not validated.</span>
+          <a href="#about" id="about-link" aria-expanded="false" aria-controls="about">About this demo</a>
+        </section>
+        <div class="about" id="about" hidden>
+          <p>This is a stress-test sandbox, not a live monitoring system or a government system. Stock, demand, coordinates, facility names and costs come from a reproducible generator (version 5, seed 42), calibrated only to public aggregates. The optimizer (OR-Tools) ranks the fixes; plain-language explanations only restate its result.</p>
+          <p>A stockout is one facility running out of one commodity within the 90-day run.</p>
+        </div>
         <main id="content">
-          <div class="page-head">
-            <p class="crumbs"><a href="#">Kenya</a> / Kisumu</p>
-            <h1>Kisumu synthetic pilot</h1>
-            <div class="chips">
-              <span class="chip chip--synthetic">Synthetic data</span>
-              <span class="chip" id="scenario-chip">40% logistics shock · seed 42</span>
-            </div>
+          <p class="crumbs"><a href="#">Kenya</a> / Kisumu</p>
+          <div class="head-row">
+            <h1>Kisumu</h1>
+            <span class="scenario" id="scenario"></span>
           </div>
-
-          <section class="cards" aria-label="Summary">
-            <div class="card metric"><span class="value">40</span><span class="label">Facilities in pilot</span></div>
-            <div class="card metric"><span class="value" id="m-stockouts">211</span><span class="label" id="m-stockouts-label">Stockouts at 40%</span><span class="note" id="m-stockouts-note">209 caused by the shock</span></div>
-            <div class="card metric"><span class="value">Day 41</span><span class="label">First stockout</span><span class="note">SYN-KE-042-F031 · SYN-C04</span></div>
-            <div class="card metric"><span class="value" id="m-budget">30 / 30</span><span class="label">Budget used (KES)</span><span class="note" id="m-budget-note">3 fixes funded</span></div>
+          <section class="verdict" aria-live="polite" aria-label="What breaks first">
+            <p class="verdict-line" id="verdict"></p>
+            <ul class="verdict-facts" id="facts"></ul>
           </section>
 
           <div class="layout">
-            <aside class="card controls" aria-label="Scenario controls">
-              <details open>
-                <summary><span>Scenario controls</span><svg class="icon"><use href="#i-chevron" /></svg></summary>
-                <div class="control">
-                  <label for="shock">Donor logistics support reduction: <span id="shock-value">40%</span></label>
-                  <input id="shock" type="range" min="0" max="100" value="40" />
-                  <div class="presets" role="group" aria-label="Shock presets">
-                    <button class="preset" aria-pressed="false">0%</button>
-                    <button class="preset" aria-pressed="false">20%</button>
-                    <button class="preset" aria-pressed="true">40%</button>
-                    <button class="preset" aria-pressed="false">100%</button>
-                  </div>
-                </div>
-                <div class="control">
-                  <span class="label" id="compare-label">Compare</span>
-                  <div class="segmented" role="group" aria-labelledby="compare-label">
-                    <button aria-pressed="false">No shock</button>
-                    <button aria-pressed="true">40% shock</button>
-                  </div>
-                </div>
-                <div class="control">
-                  <label for="budget">Budget ceiling (KES)</label>
-                  <div class="budget-input">
-                    <input id="budget" type="range" min="0" max="100" step="5" value="30" />
-                    <input type="number" aria-label="Budget ceiling in KES" value="30" id="budget-number" />
-                  </div>
-                </div>
-                <button class="btn btn--primary">Rank feasible actions</button>
-                <div class="btn-row" style="margin-top: var(--space-2)">
-                  <button class="btn btn--ghost"><svg class="icon"><use href="#i-link" /></svg>Copy link</button>
-                  <button class="btn btn--ghost"><svg class="icon"><use href="#i-download" /></svg>CSV</button>
-                </div>
-              </details>
+            <aside class="panel controls" aria-label="Scenario">
+              <fieldset>
+                <legend>Donor logistics support cut</legend>
+                <div class="segmented" id="shock-presets"></div>
+                <p class="hint">Results exist for these four settings.</p>
+              </fieldset>
+              <fieldset>
+                <legend>Compare</legend>
+                <div class="segmented" id="compare"></div>
+              </fieldset>
+              <div class="btn-row">
+                <button class="btn" type="button"><svg class="icon icon--sm" aria-hidden="true"><use href="#i-link" /></svg>Copy link</button>
+                <button class="btn" type="button"><svg class="icon icon--sm" aria-hidden="true"><use href="#i-download" /></svg>Action list (CSV)</button>
+              </div>
             </aside>
 
             <section aria-label="Results">
-              <div class="tabs" role="tablist" aria-label="Kisumu views">
-                <button class="tab" role="tab" id="t-map" aria-controls="p-map" aria-selected="true">Map</button>
-                <button class="tab" role="tab" id="t-order" aria-controls="p-order" aria-selected="false" tabindex="-1">Stockout order <span class="count">209</span></button>
-                <button class="tab" role="tab" id="t-fixes" aria-controls="p-fixes" aria-selected="false" tabindex="-1">Fixes <span class="count">8</span></button>
-                <button class="tab" role="tab" id="t-funding" aria-controls="p-funding" aria-selected="false" tabindex="-1">Funding trace</button>
-                <button class="tab" role="tab" id="t-facilities" aria-controls="p-facilities" aria-selected="false" tabindex="-1">Facilities <span class="count">40</span></button>
-              </div>
-
-              <div role="tabpanel" id="p-map" aria-labelledby="t-map">
-                <div class="filters">
-                  <select aria-label="Commodity"><option>All commodities</option></select>
-                  <button class="filter-chip" aria-pressed="false">! Critical</button>
-                  <button class="filter-chip" aria-pressed="false">△ Watch</button>
-                  <button class="filter-chip" aria-pressed="false">✓ Stable</button>
-                  <select aria-label="Sub-county"><option>All sub-counties</option></select>
-                </div>
-                <div class="timeline">
-                  <div class="segmented">
-                    <button class="btn" aria-label="Previous week"><svg class="icon"><use href="#i-prev" /></svg></button>
-                    <button class="btn" aria-label="Play timeline"><svg class="icon"><use href="#i-play" /></svg></button>
-                    <button class="btn" aria-label="Next week"><svg class="icon"><use href="#i-next" /></svg></button>
-                  </div>
-                  <input id="day" type="range" min="0" max="90" value="45" aria-label="Day of the 90-day run" />
-                  <p class="readout" id="readout"></p>
-                </div>
-                <div class="split">
-                  <div>
-                    <div class="map" id="map" role="group" aria-label="Facility locations are synthetic."></div>
-                    <p class="counts" id="counts"></p>
-                    <div class="legend"><span>! Critical ≤45 days</span><span>△ Watch 46–52</span><span>✓ Stable &gt;52</span><span>✕ Out of stock by this day</span></div>
-                  </div>
-                  <aside class="card detail" aria-label="Selected facility" id="detail"></aside>
+              <div class="tabs-wrap">
+                <div class="tabs" role="tablist" aria-label="Kisumu views">
+                  <button class="tab" role="tab" id="t-overview" aria-controls="p-overview">Map and fixes</button>
+                  <button class="tab" role="tab" id="t-order" aria-controls="p-order">Stockout order <span class="count" id="order-count"></span></button>
+                  <button class="tab" role="tab" id="t-funding" aria-controls="p-funding">Funding trace</button>
+                  <button class="tab" role="tab" id="t-facilities" aria-controls="p-facilities">Facilities <span class="count">40</span></button>
                 </div>
               </div>
 
-              <div role="tabpanel" id="p-order" aria-labelledby="t-order" hidden>
-                <div class="card">
-                  <p><strong>40% shock: 211 stockouts vs 2 with no shock · 209 caused by the shock.</strong> First: SYN-KE-042-F031 · SYN-C04 on day 41. Most: days 71–77 (53).</p>
-                  <ol id="order"></ol>
+              <div role="tabpanel" id="p-overview" aria-labelledby="t-overview" tabindex="0">
+                <div class="overview">
+                  <section class="panel map-panel" aria-labelledby="map-title">
+                    <h2 id="map-title">Where it breaks</h2>
+                    <p class="sub">Each circle is one area: facilities out of at least one commodity by the selected day, out of all facilities there.</p>
+                    <div class="timeline" id="timeline"></div>
+                    <div class="map" id="map" role="group" aria-label="Kisumu areas with facilities out of stock by the selected day"></div>
+                    <ul class="areas" id="areas" aria-label="Areas"></ul>
+                  </section>
+                  <section class="panel fixes" aria-labelledby="fixes-title" id="fixes"></section>
                 </div>
               </div>
 
-              <div role="tabpanel" id="p-fixes" aria-labelledby="t-fixes" hidden>
-                <div class="card">
-                  <h2 class="panel-title">Do this first</h2>
-                  <p class="modeled">OR-Tools funds what most delays the earliest stockouts. Costs are illustrative.</p>
-                  <div class="budget-bar" id="budget-bar"></div>
-                  <div class="fix-grid" id="fixes"></div>
-                </div>
+              <div role="tabpanel" id="p-order" aria-labelledby="t-order" tabindex="0" hidden>
+                <section class="panel" id="order"></section>
               </div>
-
-              <div role="tabpanel" id="p-funding" aria-labelledby="t-funding" hidden>
-                <div class="card" id="funding"></div>
+              <div role="tabpanel" id="p-funding" aria-labelledby="t-funding" tabindex="0" hidden>
+                <section class="panel" id="funding"></section>
               </div>
-
-              <div role="tabpanel" id="p-facilities" aria-labelledby="t-facilities" hidden>
-                <div class="split">
-                  <div class="card table-wrap">
-                    <table>
-                      <caption class="modeled" style="text-align: left">40% shock · sorted by first stockout · synthetic facilities</caption>
-                      <thead>
-                        <tr>
-                          <th scope="col"><button>Facility <svg class="icon"><use href="#i-sort" /></svg></button></th>
-                          <th scope="col"><button>Sub-county</button></th>
-                          <th scope="col"><button>Status</button></th>
-                          <th scope="col" aria-sort="ascending"><button>First stockout <svg class="icon"><use href="#i-sort" /></svg></button></th>
-                          <th scope="col">Driving commodity</th>
-                        </tr>
-                      </thead>
-                      <tbody id="rows"></tbody>
-                    </table>
-                  </div>
-                  <aside class="card detail" aria-label="Selected facility" id="detail-2"></aside>
-                </div>
+              <div role="tabpanel" id="p-facilities" aria-labelledby="t-facilities" tabindex="0" hidden>
+                <section class="panel" id="facilities"></section>
               </div>
             </section>
           </div>
         </main>
         <nav class="bottom-nav" aria-label="Primary (mobile)">
-          <a href="#"><svg class="icon"><use href="#i-home" /></svg>Overview</a>
-          <a href="#" aria-current="page"><svg class="icon"><use href="#i-pin" /></svg>Kisumu</a>
-          <a href="#"><svg class="icon"><use href="#i-flow" /></svg>Funding</a>
-          <a href="#"><svg class="icon"><use href="#i-card" /></svg>Capture</a>
+          <a href="#"><svg class="icon" aria-hidden="true"><use href="#i-home" /></svg>Overview</a>
+          <a href="#" aria-current="page"><svg class="icon" aria-hidden="true"><use href="#i-pin" /></svg>Kisumu</a>
+          <a href="#"><svg class="icon" aria-hidden="true"><use href="#i-flow" /></svg>Funding</a>
+          <a href="#"><svg class="icon" aria-hidden="true"><use href="#i-card" /></svg>Capture</a>
         </nav>
       </div>
     </div>
