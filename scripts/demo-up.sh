@@ -30,7 +30,7 @@ printf '%s\n' 'Synthetic data only; all outputs are illustrative and unvalidated
 # One shared demo identity drives the browser suite and Lighthouse, so the
 # local session raises the per-subject limit; demo-down restores the default.
 export APP_ENV=local DEMO_ROLE_SWITCHER=true SUPABASE_URL="https://synthetic-demo.invalid"
-export RATE_LIMIT_PER_MINUTE=600
+export RATE_LIMIT_PER_MINUTE=1200
 SUPABASE_JWT_SECRET="$(python3 -c 'import secrets; print(secrets.token_urlsafe(48))')"
 export SUPABASE_JWT_SECRET
 printf '%s\n' 'Recreating the api container with disposable demo signing material…'

@@ -1,5 +1,7 @@
 # Changelog
 
+- The local demo session raises the per-subject rate limit to 1,200 requests per minute (from 600) so the full browser suite fits; `demo-down.sh` still restores 60.
+
 - Updated browser checks, Lighthouse results and README screenshots for the new risk cutoffs; added a facility-map screenshot at 40%.
 
 - Shortened the “Do this first” intro to two lines and moved the cost assumptions and targeted stockouts behind “How these options are built”.
