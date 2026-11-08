@@ -2,7 +2,14 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { usePreferences } from "../preferences/preferences";
-import { riskLegend, type FacilityRisk, type Risk } from "../risk/risk";
+import {
+  riskLegend,
+  riskSummary,
+  worstStatus,
+  type FacilityRisk,
+  type Risk,
+} from "../risk/risk";
+import { clusterPoints } from "./map-clusters";
 
 export type MapFacility = {
   id: string;
@@ -76,12 +83,15 @@ export function FacilityMap({
   risks,
   onSelect,
   preShock,
+  magnitude,
 }: {
   facilities: MapFacility[];
   risks: Record<string, FacilityRisk>;
   onSelect?: (id: string) => void;
   /** Facilities short regardless of the shock (pre-shock gaps or no-shock stockouts). */
   preShock?: ReadonlySet<string>;
+  /** Selected shock (%); shows the always-visible status counts under the legend. */
+  magnitude?: number;
 }) {
   const { t, locale } = usePreferences();
   const container = useRef<HTMLDivElement>(null);
@@ -90,6 +100,15 @@ export function FacilityMap({
   const markers = useMemo(
     () => facilityMarkers(facilities, risks),
     [facilities, risks],
+  );
+  const summary = useMemo(
+    () =>
+      riskSummary(
+        facilities.map((item) => item.id),
+        risks,
+        preShock,
+      ),
+    [facilities, risks, preShock],
   );
   useEffect(() => {
     if (!container.current || !markers.length || mapNearViewport) return;
@@ -176,10 +195,7 @@ export function FacilityMap({
           map.addControl(
             new library.NavigationControl({ visualizePitch: false }),
           );
-          for (const marker of markers) {
-            const button = document.createElement("button");
-            button.type = "button";
-            button.className = `facility-marker facility-marker--${marker.risk}`;
+          const describe = (marker: Marker) => {
             const time =
               marker.risk === "unknown"
                 ? t("noRiskData")
@@ -189,20 +205,100 @@ export function FacilityMap({
             const short = preShock?.has(marker.facility.id)
               ? ` · ${t("alreadyShort")}`
               : "";
-            const description = `${marker.facility.name} · ${t(marker.risk)}${short} · ${time} · ${t("drivers")}: ${marker.result.drivers.join(", ") || "—"}`;
-            button.setAttribute("aria-label", description);
-            button.title = `${description}. ${riskLegend(locale).join("; ")}`;
-            const symbol = document.createElement("span");
-            symbol.setAttribute("aria-hidden", "true");
-            symbol.textContent = marker.symbol;
-            button.append(symbol);
-            button.addEventListener("click", () =>
-              onSelect?.(marker.facility.id),
-            );
-            new library.Marker({ element: button })
-              .setLngLat([marker.longitude, marker.latitude])
-              .addTo(map);
-          }
+            return `${marker.facility.name} · ${t(marker.risk)}${short} · ${time} · ${t("drivers")}: ${marker.result.drivers.join(", ") || "—"}`;
+          };
+          const legend = riskLegend(locale).join("; ");
+          let placed: {
+            marker: import("maplibre-gl").Marker;
+            ids: string[];
+          }[] = [];
+          let focusId: string | null = null;
+          // Regroup on every move: nearby markers share one cluster button at low zoom.
+          const render = () => {
+            if (!map) return;
+            for (const item of placed) item.marker.remove();
+            placed = [];
+            const projected = markers.map((marker) => ({
+              marker,
+              ...map!.project([marker.longitude, marker.latitude]),
+            }));
+            for (const group of clusterPoints(projected)) {
+              const members = group.map((item) => item.marker);
+              const button = document.createElement("button");
+              button.type = "button";
+              const symbol = document.createElement("span");
+              symbol.setAttribute("aria-hidden", "true");
+              let position: [number, number];
+              if (members.length === 1) {
+                const [marker] = members;
+                const description = describe(marker);
+                button.className = `facility-marker facility-marker--${marker.risk}`;
+                button.setAttribute("aria-label", description);
+                button.title = `${description}. ${legend}`;
+                symbol.textContent = marker.symbol;
+                button.append(symbol);
+                button.addEventListener("click", () =>
+                  onSelect?.(marker.facility.id),
+                );
+                position = [marker.longitude, marker.latitude];
+              } else {
+                const worst = worstStatus(members.map((item) => item.risk));
+                const counts = riskSummary(
+                  members.map((item) => item.facility.id),
+                  Object.fromEntries(
+                    members.map((item) => [item.facility.id, item.result]),
+                  ),
+                );
+                const breakdown = (
+                  ["critical", "watch", "stable", "unknown"] as const
+                )
+                  .filter((status) => counts[status])
+                  .map((status) => `${counts[status]} ${t(status)}`)
+                  .join(", ");
+                const label = `${members.length} ${t("clusterFacilities")} · ${t("clusterWorst")}: ${t(worst)} · ${breakdown}. ${t("clusterZoom")}`;
+                button.className = `facility-marker facility-cluster facility-marker--${worst}`;
+                button.dataset.count = String(members.length);
+                button.setAttribute("aria-label", label);
+                button.title = `${label} ${legend}`;
+                symbol.textContent = symbols[worst];
+                const text = document.createElement("span");
+                text.setAttribute("aria-hidden", "true");
+                text.textContent = `${members.length} · ${t(worst)}`;
+                button.append(symbol, text);
+                const area = new library.LngLatBounds();
+                for (const item of members)
+                  area.extend([item.longitude, item.latitude]);
+                button.addEventListener("click", () => {
+                  focusId = members[0].facility.id;
+                  map?.fitBounds(area, {
+                    padding: MAP_FIT_PADDING,
+                    maxZoom: 18,
+                    duration: 0,
+                  });
+                });
+                position = [
+                  members.reduce((sum, item) => sum + item.longitude, 0) /
+                    members.length,
+                  members.reduce((sum, item) => sum + item.latitude, 0) /
+                    members.length,
+                ];
+              }
+              placed.push({
+                marker: new library.Marker({ element: button })
+                  .setLngLat(position)
+                  .addTo(map),
+                ids: members.map((item) => item.facility.id),
+              });
+            }
+            // After a cluster zoom, keep keyboard focus on the group's first facility.
+            if (focusId) {
+              const target = placed.find((item) => item.ids.includes(focusId!));
+              focusId = null;
+              target?.marker.getElement().focus();
+            }
+          };
+          map.on("moveend", render);
+          render();
         } catch {
           setTilesUnavailable(true);
         }
@@ -234,6 +330,16 @@ export function FacilityMap({
             <li key={line}>{line}</li>
           ))}
         </ul>
+        {magnitude !== undefined && (
+          <p className="risk-summary" role="status">
+            {magnitude}% {t("summaryShock")} · {summary.total}{" "}
+            {t("summaryFacilities")}: {summary.critical} {t("critical")} ·{" "}
+            {summary.watch} {t("watch")} · {summary.stable} {t("stable")}
+            {summary.unknown > 0 &&
+              ` · ${summary.unknown} ${t("unknown")}`} · {summary.alreadyShort}{" "}
+            {t("alreadyShortCount")}
+          </p>
+        )}
       </section>
     </section>
   );

@@ -12,6 +12,8 @@ import { FacilityMap, facilityMarkers, MAP_FIT_PADDING } from "./facility-map";
 
 const handlers = vi.hoisted(() => new Map<string, (event: unknown) => void>());
 const fits = vi.hoisted(() => [] as { bounds: unknown; options: unknown }[]);
+// Pixels per degree: county zoom by default; a cluster zoom (maxZoom 18) spreads markers apart.
+const view = vi.hoisted(() => ({ scale: 1000 }));
 vi.mock("maplibre-gl", () => {
   class Map {
     container: HTMLElement;
@@ -22,9 +24,16 @@ vi.mock("maplibre-gl", () => {
       handlers.set(type, handler);
       return this;
     }
-    fitBounds(bounds: unknown, options: unknown) {
+    fitBounds(bounds: unknown, options: { maxZoom?: number }) {
       fits.push({ bounds, options });
+      if (options.maxZoom === 18) {
+        view.scale = 10_000_000;
+        handlers.get("moveend")?.({});
+      }
       return this;
+    }
+    project([lng, lat]: [number, number]) {
+      return { x: lng * view.scale, y: -lat * view.scale };
     }
     addControl() {
       return this;
@@ -45,6 +54,12 @@ vi.mock("maplibre-gl", () => {
       map.container.append(this.element);
       return this;
     }
+    getElement() {
+      return this.element;
+    }
+    remove() {
+      this.element.remove();
+    }
   }
   class LngLatBounds {
     points: [number, number][] = [];
@@ -57,7 +72,10 @@ vi.mock("maplibre-gl", () => {
   return { Map, Marker, LngLatBounds, NavigationControl };
 });
 
-afterEach(cleanup);
+afterEach(() => {
+  cleanup();
+  view.scale = 1000;
+});
 
 it("shows the map-unavailable state for a version without synthetic coordinates", () => {
   render(<FacilityMap facilities={oldFacilities} risks={{}} />);
@@ -309,4 +327,46 @@ it("fits the map to every marker with padding that clears the controls, again on
   expect(options.padding.bottom).toBeGreaterThan(options.padding.top);
   act(() => handlers.get("resize")!({}));
   expect(fits).toHaveLength(2);
+});
+
+it("clusters nearby facilities with count and worst status, then separates them on activation", async () => {
+  handlers.clear();
+  const near = (id: string, offset: number) => ({
+    id,
+    name: `Synthetic ${id}`,
+    latitude: -0.075 + offset,
+    longitude: 34.76 + offset,
+    coordinates_synthetic: true,
+  });
+  const facilities = [near("A", 0), near("B", 0.001), near("C", 0.002)];
+  render(
+    <FacilityMap
+      facilities={facilities}
+      risks={{
+        A: { status: "stable", drivers: [], days: null },
+        B: { status: "critical", drivers: ["C01"], days: 41 },
+        C: { status: "watch", drivers: ["C02"], days: 48 },
+      }}
+      preShock={new Set(["B"])}
+      magnitude={40}
+    />,
+  );
+  const cluster = await screen.findByRole("button", {
+    name: "3 synthetic facilities · worst: Critical · 1 Critical, 1 Watch, 1 Stable. Press Enter to zoom in.",
+  });
+  expect(cluster.textContent).toBe("!3 · Critical");
+  expect(cluster.dataset.count).toBe("3");
+  expect(screen.queryByRole("button", { name: /^Synthetic A/ })).toBeNull();
+  expect(document.querySelector(".risk-summary")?.textContent).toBe(
+    "40% shock · 3 facilities: 1 Critical · 1 Watch · 1 Stable · 1 already short before the shock",
+  );
+  act(() => cluster.click());
+  const first = screen.getByRole("button", { name: /^Synthetic A · Stable/ });
+  expect(document.activeElement).toBe(first);
+  expect(
+    screen.getByRole("button", {
+      name: /^Synthetic B · Critical · Already short/,
+    }),
+  ).toBeTruthy();
+  expect(document.querySelector(".facility-cluster")).toBeNull();
 });

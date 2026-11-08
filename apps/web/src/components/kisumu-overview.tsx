@@ -163,6 +163,7 @@ export function KisumuOverview({
               risks={risks}
               onSelect={setSelected}
               preShock={preShock}
+              magnitude={run && !previous ? magnitude : undefined}
             />
           )}
         </div>
@@ -184,6 +185,7 @@ export function KisumuOverview({
               risks={risks}
               onSelect={setSelected}
               preShock={preShock}
+              magnitude={run && !previous ? magnitude : undefined}
             />
           )}
           <div className="map-drawer" aria-live="polite">

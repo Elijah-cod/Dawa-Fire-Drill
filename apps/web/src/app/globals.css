@@ -323,6 +323,19 @@ input {
   font-size: 1.15rem;
   cursor: pointer;
 }
+.facility-cluster {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  width: auto;
+  padding: 0 0.75rem;
+  border-radius: 22px;
+  white-space: nowrap;
+  font-weight: 700;
+}
+.risk-summary {
+  font-weight: 600;
+}
 .facility-marker--critical {
   background: #9b2c2c;
 }

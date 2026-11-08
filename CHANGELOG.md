@@ -1,5 +1,7 @@
 # Changelog
 
+- The facility map groups nearby facilities into one keyboard-accessible cluster per area at low zoom, labeled with the count and worst status (for example “6 · Critical”); activating a cluster zooms in and separates it. A line under the legend always shows Critical, Watch and Stable counts and how many facilities were already short before the shock.
+
 - The local demo session raises the per-subject rate limit to 1,200 requests per minute (from 600) so the full browser suite fits; `demo-down.sh` still restores 60.
 
 - Updated browser checks, Lighthouse results and README screenshots for the new risk cutoffs; added a facility-map screenshot at 40%.
