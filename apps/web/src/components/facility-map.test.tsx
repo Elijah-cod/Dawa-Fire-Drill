@@ -86,7 +86,7 @@ it("shows synthetic location labeling, thresholds, and an accessible risk marker
   const marker = await screen.findByRole("button", {
     name: /Synthetic one.*Critical.*7 days.*C1/i,
   });
-  expect(marker.getAttribute("title")).toContain("within 7 days");
+  expect(marker.getAttribute("title")).toContain("within 45 days");
   fireEvent.click(marker);
   expect(select).toHaveBeenCalledWith("SYN-1");
 });

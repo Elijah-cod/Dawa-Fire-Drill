@@ -1,7 +1,8 @@
 /** Planner-selected illustrative thresholds; not clinical or operational standards. */
+// Sized for county generator version 5, whose first 40% shock stockout is on day 41.
 export const RISK_THRESHOLDS = Object.freeze({
-  criticalDays: 7,
-  watchDays: 30,
+  criticalDays: 45,
+  watchDays: 75,
 });
 export type Risk = "critical" | "watch" | "stable" | "unknown";
 export type CommodityRisk = {

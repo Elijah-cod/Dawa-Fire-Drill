@@ -4,10 +4,10 @@ import { classifyDays, facilityRisk, riskLegend, risksForRun } from "./risk";
 describe("illustrative facility stockout risk", () => {
   it.each([
     [0, "critical"],
-    [7, "critical"],
-    [8, "watch"],
-    [30, "watch"],
-    [31, "stable"],
+    [45, "critical"],
+    [46, "watch"],
+    [75, "watch"],
+    [76, "stable"],
     [null, "stable"],
     [undefined, "unknown"],
   ] as const)("classifies %s days as %s", (days, status) =>
@@ -16,13 +16,13 @@ describe("illustrative facility stockout risk", () => {
   it("uses the worst commodity and reports its identifier and days", () => {
     expect(
       facilityRisk([
-        { commodityId: "C1", days: 31 },
-        { commodityId: "C2", days: 7 },
+        { commodityId: "C1", days: 76 },
+        { commodityId: "C2", days: 45 },
       ]),
-    ).toEqual({ status: "critical", drivers: ["C2"], days: 7 });
+    ).toEqual({ status: "critical", drivers: ["C2"], days: 45 });
     expect(
       facilityRisk([
-        { commodityId: "C1", days: 31 },
+        { commodityId: "C1", days: 76 },
         { commodityId: "C2", days: undefined },
       ]).status,
     ).toBe("unknown");
@@ -32,7 +32,9 @@ describe("illustrative facility stockout risk", () => {
     expect(facilityRisk([{ commodityId: "C1", days: null }]).status).toBe(
       "stable",
     );
-    expect(facilityRisk([{ commodityId: "C1", days: 8 }]).status).toBe("watch");
+    expect(facilityRisk([{ commodityId: "C1", days: 46 }]).status).toBe(
+      "watch",
+    );
   });
   it("derives each facility's worst tracer from the selected run and available inputs", () => {
     const panel = {
@@ -54,9 +56,9 @@ describe("illustrative facility stockout risk", () => {
     expect(
       risksForRun(panel, {
         horizon_days: 90,
-        stockouts: [{ facility_id: "F1", commodity_id: "C2", day: 8 }],
+        stockouts: [{ facility_id: "F1", commodity_id: "C2", day: 46 }],
       }).F1,
-    ).toEqual({ status: "watch", drivers: ["C2"], days: 8 });
+    ).toEqual({ status: "watch", drivers: ["C2"], days: 46 });
     expect(
       risksForRun(
         { ...panel, stock: panel.stock.slice(0, 1) },
@@ -75,9 +77,11 @@ describe("illustrative facility stockout risk", () => {
   });
   it("builds legend text from the configured cutoffs", () => {
     expect(riskLegend()).toContain(
-      "Critical: already stocked out or within 7 days",
+      "Critical: already stocked out or within 45 days",
     );
-    expect(riskLegend()).toContain("Watch: 8–30 days");
+    expect(riskLegend()).toContain("Watch: 46–75 days");
+    expect(riskLegend()).toContain("Stable: no stockout within 75 days");
+    expect(riskLegend("sw")).toContain("Angalizo: siku 46–75");
     expect(riskLegend()).toContain(
       "Illustrative thresholds, not clinical or operational standards.",
     );

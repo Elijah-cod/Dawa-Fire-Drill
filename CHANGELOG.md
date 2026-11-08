@@ -1,5 +1,7 @@
 # Changelog
 
+- Changed the illustrative facility risk cutoffs to Critical within 45 days, Watch 46–75 days and Stable beyond 75 days to fit generator version 5.
+
 - Moved the stockout summary into the shock card's reserved space and removed the separate stockout panel.
 
 - Ranked fixes now cover the four earliest shock-caused stockouts with planted transfer and emergency candidates, so a 30 KES ceiling funds some and cuts others with the remaining budget named as the reason.
