@@ -332,10 +332,13 @@ export function FacilityMap({
               });
             }
             // A wide cluster label near the edge of a narrow map can overhang it; nudge the
-            // label sideways so it stays inside, still over its own area.
-            const frame = container.current?.getBoundingClientRect();
-            if (frame && frame.width > 0)
-              for (const item of placed) {
+            // label sideways so it stays inside, still over its own area. Measured on the next
+            // frame, once MapLibre has positioned the markers.
+            const current = placed;
+            requestAnimationFrame(() => {
+              const frame = container.current?.getBoundingClientRect();
+              if (!frame || frame.width === 0 || current !== placed) return;
+              for (const item of current) {
                 const box = item.marker.getElement().getBoundingClientRect();
                 const shift =
                   box.left < frame.left + 4
@@ -345,6 +348,7 @@ export function FacilityMap({
                       : 0;
                 if (shift) item.marker.setOffset([shift, 0]);
               }
+            });
             // After a cluster zoom, focus moves to the group's first facility.
             if (keep)
               placed
