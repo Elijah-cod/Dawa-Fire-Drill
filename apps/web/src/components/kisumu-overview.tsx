@@ -218,25 +218,20 @@ export function KisumuOverview({
           value={magnitude}
           onChange={(event) => setMagnitude(Number(event.target.value))}
         />
-        {magnitude === 0 && <p>{t("baseline")}</p>}
-        <p className="scenario-status" role="status" aria-live="polite">
-          {status === "running"
-            ? t("scenarioRunning")
-            : status === "error"
-              ? t("scenarioError")
-              : previous
-                ? t("previousRun")
-                : ""}
-        </p>
-        {/* Always rendered so the line's removal cannot shift the page. */}
-        <p className="previous-note">{previous ? t("previousRun") : ""}</p>
-      </section>
-      {magnitude > 0 && (
-        <section className="panel shock-panel" aria-busy={pending}>
-          <h2>{t("shockFirst")}</h2>
-          {pending ? (
-            <p>
-              {status === "error" ? t("scenarioError") : t("scenarioRunning")}
+        {/* One reserved slot: baseline note, run status, or the shock summary. */}
+        <div
+          className="shock-summary"
+          aria-busy={magnitude > 0 && pending}
+          aria-label={t("shockFirst")}
+          role="group"
+        >
+          {magnitude === 0 ? (
+            <p>{t("baseline")}</p>
+          ) : status === "error" ? (
+            <p role="alert">{t("scenarioError")}</p>
+          ) : pending ? (
+            <p role="status">
+              {status === "running" ? t("scenarioRunning") : t("previousRun")}
             </p>
           ) : !validEvents(shockEvents) ? (
             <p>{t("shockDetailsUnavailable")}</p>
@@ -254,8 +249,8 @@ export function KisumuOverview({
           ) : (
             <p>{t("noShockStockouts")}</p>
           )}
-        </section>
-      )}
+        </div>
+      </section>
       {canRun && rank && magnitude > 0 && pending && (
         <RankPlaceholder
           message={status === "error" ? t("scenarioError") : undefined}

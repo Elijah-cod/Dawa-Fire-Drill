@@ -1,5 +1,7 @@
 # Changelog
 
+- Moved the stockout summary into the shock card's reserved space and removed the separate stockout panel.
+
 - Ranked fixes now cover the four earliest shock-caused stockouts with planted transfer and emergency candidates, so a 30 KES ceiling funds some and cuts others with the remaining budget named as the reason.
 
 - Replaced the long shock-caused stockout list with a summary line (counts against no shock, first stockout, busiest week) and kept the full order behind a disclosure; removed the same-day line.

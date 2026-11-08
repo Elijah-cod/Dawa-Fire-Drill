@@ -91,15 +91,20 @@ it("reserves the shock and ranked panels while the shock run is pending", async 
   await vi.waitFor(() =>
     expect(scenario.submit).toHaveBeenCalledWith(0, expect.any(String)),
   );
-  expect(container.querySelector(".shock-panel")).toBeNull();
+  const slot = () => container.querySelector(".shock-summary");
+  expect(slot()?.getAttribute("aria-busy")).toBe("false");
+  expect(
+    slot()?.closest("section")?.querySelector("#shock-slider"),
+  ).not.toBeNull();
   fireEvent.change(
     screen.getByLabelText(/donor logistics support reduction/i),
     { target: { value: "40" } },
   );
+  expect(slot()?.getAttribute("aria-busy")).toBe("true");
+  expect(slot()?.textContent).toMatch(/running illustrative scenario/i);
   expect(
-    container.querySelector(".shock-panel")?.getAttribute("aria-busy"),
-  ).toBe("true");
-  expect(container.querySelector(".previous-note")).not.toBeNull();
+    container.querySelectorAll("section.panel h2")[0]?.textContent,
+  ).not.toBe("Shock-caused stockout order");
   expect(container.querySelector(".rank-placeholder")?.textContent).toMatch(
     /Do this first.*Ranking feasible actions/,
   );

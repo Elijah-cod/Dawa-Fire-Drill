@@ -18,7 +18,7 @@ export const TOUR_STEPS = [
   { id: "overview", path: "/", target: "main h1" },
   { id: "kisumu", path: "/kisumu", target: "main h1" },
   { id: "shock", path: "/kisumu", target: "#shock-slider" },
-  { id: "stockout", path: "/kisumu", target: ".shock-panel" },
+  { id: "stockout", path: "/kisumu", target: ".shock-summary" },
   { id: "funding", path: "/kisumu", target: "#funding-title" },
   { id: "rank", path: "/kisumu", target: "#ranked-title" },
   { id: "capture", path: "/kisumu", target: "#capture-title" },

@@ -164,18 +164,15 @@ p {
   font-weight: 600;
 }
 /* Reserved from measured fixture-run heights so arriving results do not shift the page. */
-.scenario-status,
-.previous-note {
-  min-height: 1.5em;
-}
-.shock-panel {
-  min-height: 26rem;
+.shock-summary {
+  min-height: 9rem;
+  margin-top: 0.5rem;
 }
 .rank-placeholder {
-  min-height: 58rem;
+  min-height: 113.5rem;
 }
 .rank-results {
-  min-height: 32.5rem;
+  min-height: 77.25rem;
 }
 .tour-start,
 .tour-actions button {
@@ -400,14 +397,14 @@ input {
     border: 2px solid var(--primary);
     border-radius: 0.75rem;
   }
-  .shock-panel {
-    min-height: 15.75rem;
+  .shock-summary {
+    min-height: 4.5rem;
   }
   .rank-placeholder {
-    min-height: 37rem;
+    min-height: 65.5rem;
   }
   .rank-results {
-    min-height: 21.75rem;
+    min-height: 45.5rem;
   }
   .mobile-map-toggle {
     display: none;
@@ -418,10 +415,10 @@ input {
 }
 @media (min-width: 1024px) {
   .rank-placeholder {
-    min-height: 34rem;
+    min-height: 58rem;
   }
   .rank-results {
-    min-height: 18.75rem;
+    min-height: 39.75rem;
   }
   .shell {
     display: grid;

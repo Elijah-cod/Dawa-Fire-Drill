@@ -34,7 +34,7 @@ test("guided demo walks overview to capture by keyboard", async ({ page }) => {
   ).toBeVisible();
 
   await next("First stockout");
-  await expect(page.locator(".shock-panel")).toContainText(
+  await expect(page.locator(".shock-summary")).toContainText(
     "SYN-KE-042-F031 · SYN-C04",
     { timeout: 30000 },
   );

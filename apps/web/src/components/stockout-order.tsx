@@ -35,7 +35,7 @@ export function StockoutOrder({
   const peak = peakWindow(events);
   return (
     <>
-      <p className="stockout-summary">
+      <p className="stockout-summary" role="status">
         {magnitude}% {t("summaryShock")}:{" "}
         {total !== undefined && noShock !== undefined && (
           <>
