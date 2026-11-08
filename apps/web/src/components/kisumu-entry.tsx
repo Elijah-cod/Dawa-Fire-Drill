@@ -15,6 +15,7 @@ import { usePreferences } from "../preferences/preferences";
 import type { ScenarioApi } from "../scenario/use-kisumu-scenario";
 import { FacilitySelf } from "./facility-self";
 import { KisumuOverview } from "./kisumu-overview";
+import { useSearchParams } from "next/navigation";
 import { useTour } from "../tour/tour";
 
 type Mode = "mock" | "demo" | "none";
@@ -186,10 +187,10 @@ export function KisumuEntry({ mode }: { mode: Mode }) {
   // Capture belongs to the facility in-charge: the capture link and the demo's capture step
   // open that role; leaving the demo's capture step returns to the planner.
   const [role, setRole] = useState<DemoRole>("planner");
+  const view = useSearchParams().get("view");
   useEffect(() => {
-    if (new URLSearchParams(window.location.search).get("view") === "capture")
-      setRole("facility");
-  }, []);
+    if (view === "capture") setRole("facility");
+  }, [view]);
   const { step } = useTour();
   const previousStep = useRef(step);
   useEffect(() => {

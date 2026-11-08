@@ -105,8 +105,14 @@ export function BinCardCapture({
     },
     [preview],
   );
+  const focusField = useRef<keyof Draft | null>(null);
   useEffect(() => {
     if (status === "confirming") confirmHeading.current?.focus();
+    // Runs after the review fields are enabled, so focus cannot land on a disabled input.
+    if (status === "review" && focusField.current) {
+      document.getElementById(`capture-${focusField.current}`)?.focus();
+      focusField.current = null;
+    }
   }, [status]);
 
   function choose(next: File | undefined) {
@@ -135,13 +141,10 @@ export function BinCardCapture({
       setDraft(next);
       setStatus("review");
       // Empty or partial extraction: start typing at the first missing field.
-      const missing = (Object.keys(next) as (keyof Draft)[]).find(
-        (name) => next[name] === "",
-      );
-      if (missing)
-        requestAnimationFrame(() =>
-          document.getElementById(`capture-${missing}`)?.focus(),
-        );
+      focusField.current =
+        (Object.keys(next) as (keyof Draft)[]).find(
+          (name) => next[name] === "",
+        ) ?? null;
     } catch {
       setStatus("error");
     }
