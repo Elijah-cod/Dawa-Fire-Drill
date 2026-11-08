@@ -33,10 +33,12 @@ test("guided demo works in Swahili and dark theme, keeping the English-only expl
   await expect(
     page.getByRole("heading", { name: "Hatua iliyopangwa" }),
   ).toBeFocused({ timeout: 15000 });
-  const ranked = page.locator(".rank-panel").last();
-  await expect(ranked).toContainText("Maelezo kwa lugha rahisi", {
-    timeout: 30000,
-  });
+  const ranked = page.locator(".fixes").last();
+  await expect(page.locator("#budget-status")).toHaveText(
+    "Vipimo 30 kati ya 30 vimetumika.",
+    { timeout: 30000 },
+  );
+  await ranked.getByText("Kwa nini chaguo hizi?").click();
   await expect(ranked).toContainText(
     "Maelezo yanapatikana kwa Kiingereza pekee. Explanation available in English only.",
   );
@@ -49,6 +51,7 @@ test("guided demo works in Swahili and dark theme, keeping the English-only expl
 test("funding trace works in Swahili and dark theme", async ({ page }) => {
   await page.goto("http://localhost:3300/kisumu");
   await swahiliDark(page);
+  await page.getByRole("tab", { name: "Ufuatiliaji wa ufadhili" }).click();
   const funding = page.getByRole("region", {
     name: "Ufadhili umechelewa wapi?",
   });
@@ -102,7 +105,7 @@ test("clustered map works in Swahili and dark theme", async ({
 }, testInfo) => {
   await page.goto("http://localhost:3300/kisumu");
   await swahiliDark(page);
-  await page.getByLabel(/Kupungua kwa msaada wa usafirishaji/).fill("40");
+  await page.getByRole("tab", { name: /Vituo/ }).click();
   const mobile = testInfo.project.name === "mobile";
   if (mobile)
     await page.getByRole("button", { name: "Fungua ramani ya vituo" }).click();

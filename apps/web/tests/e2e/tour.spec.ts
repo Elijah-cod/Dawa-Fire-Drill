@@ -25,17 +25,19 @@ test("guided demo walks overview to capture by keyboard", async ({ page }) => {
   await next("Kisumu pilot");
   await expect(page).toHaveURL(/\/kisumu\?tour=kisumu/);
   await expect(
-    page.getByRole("heading", { name: "Kisumu synthetic pilot" }),
+    page.getByRole("heading", { name: "Kisumu", level: 1 }),
   ).toBeVisible();
 
   await next("Apply a 40% shock");
   await expect(
-    page.getByText("Donor logistics support reduction: 40%"),
-  ).toBeVisible();
+    page.getByRole("button", { name: "40%", exact: true }),
+  ).toHaveAttribute("aria-pressed", "true");
 
   await next("First stockout");
-  await expect(page.locator(".shock-summary")).toContainText(
-    "SYN-KE-042-F031 · SYN-C04",
+  await expect(
+    page.getByRole("region", { name: "What breaks first" }),
+  ).toContainText(
+    "Tamarind Crossing Sub-County Hospital (Kisumu West) runs out of family planning tracer 04 first, on day 41.",
     { timeout: 30000 },
   );
 
@@ -47,10 +49,14 @@ test("guided demo walks overview to capture by keyboard", async ({ page }) => {
   });
 
   await next("Ranked fix");
-  const ranked = page.getByRole("region", { name: "Do this first" });
-  await expect(ranked).toContainText(
-    "Redistribution transfer → SYN-KE-042-F031 · SYN-C04 · 10 KES · 50 modeled days deferred · Selected by the optimizer",
+  const ranked = page.getByRole("region", { name: "Cheapest fixes" });
+  await expect(ranked.locator(".pair").first()).toContainText(
+    "Tamarind Crossing Sub-County Hospital: family planning tracer 04",
     { timeout: 30000 },
+  );
+  await expect(ranked.locator(".option--funded")).toHaveCount(3);
+  await expect(page.locator("#budget-status")).toHaveText(
+    "30 of 30 units used.",
   );
 
   const box = await page

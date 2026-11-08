@@ -1,160 +1,339 @@
-import { expect, test } from "@playwright/test";
+import { expect, test, type Page } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
 
-test("Kisumu map follows the selected synthetic scenario", async ({
-  page,
-}, testInfo) => {
-  await page.goto("http://localhost:3300/");
-  await page
-    .getByRole("region", { name: "County list" })
-    .getByRole("button", { name: /Kisumu.*042/ })
-    .click();
-  await page.getByRole("link", { name: "Explore Kisumu pilot" }).click();
-  await expect(
-    page.getByRole("heading", { name: "Kisumu synthetic pilot" }),
-  ).toBeVisible();
-  if (testInfo.project.name === "mobile")
-    await page.getByRole("button", { name: "Open facility map" }).click();
-  await expect(
-    page.getByText("Facility locations are synthetic."),
-  ).toBeVisible();
-  await expect(
-    page.getByRole("region", { name: "Illustrative stockout risk" }),
-  ).toContainText(
-    "Illustrative thresholds, not clinical or operational standards.",
-  );
-  await expect(
-    page.getByRole("region", { name: "Illustrative stockout risk" }),
-  ).toContainText("46–52 days");
-  await page
-    .getByRole("heading", { name: "Facility locations are synthetic." })
-    .scrollIntoViewIfNeeded();
-  const mobile = testInfo.project.name === "mobile";
-  const map = () => page.locator(mobile ? "dialog" : ".desktop-grid").first();
-  await expect(map().locator(".risk-summary")).toHaveText(
-    "0% shock · 40 facilities: 2 Critical · 0 Watch · 38 Stable · 2 already short before the shock",
-    { timeout: 20000 },
-  );
-  const cluster = map().locator(".facility-cluster").first();
-  await expect(cluster).toHaveAttribute(
-    "aria-label",
-    /^(\d+)( · \d+ (Crit|Watch|Stable|Unk))+ · \1 synthetic facilities: .*; worst status (Critical|Watch|Stable|Unknown)\. Press Enter to zoom in\.$/,
-  );
-  await cluster.focus();
-  // Each Enter zooms into the focused cluster; on narrow screens a large cluster first
-  // splits into smaller clusters, and focus follows the group's first facility.
-  for (let step = 0; step < 6; step++) {
-    await page.keyboard.press("Enter");
-    await expect(page.locator(".facility-marker:focus")).toHaveCount(1);
-    if (!(await page.locator(".facility-cluster:focus").count())) break;
-  }
-  const focused = page.locator(".facility-marker:not(.facility-cluster):focus");
-  await expect(focused).toHaveAttribute(
-    "aria-label",
-    /^Synthetic facility \d{3} · /,
-  );
-  const name = (await focused.getAttribute("aria-label"))!.split(" · ")[0];
-  await page.keyboard.press("Enter");
-  if (mobile) await page.getByRole("button", { name: "Close map" }).click();
-  await expect(
-    page.getByRole("heading", { name: new RegExp(`^${name} · `) }),
-  ).toBeVisible();
-  const slider = page.getByLabel(/Donor logistics support reduction/i);
-  await slider.focus();
-  await page.keyboard.press("End");
-  await page
-    .locator(".county-list")
-    .getByRole("button", { name: /Synthetic facility 004/ })
-    .click();
-  await expect(
-    page
-      .getByRole("heading", { name: /Synthetic facility 004.*F004/ })
-      .locator(".."),
-  ).toContainText(/Critical · .*26 days to stockout/, { timeout: 30000 });
-  if (mobile)
-    await page.getByRole("button", { name: "Open facility map" }).click();
-  await expect(map().locator(".risk-summary")).toHaveText(
-    "100% shock · 40 facilities: 40 Critical · 0 Watch · 0 Stable · 2 already short before the shock",
-    { timeout: 30000 },
-  );
-  expect(
-    await page.evaluate(
-      () => document.documentElement.scrollWidth <= innerWidth,
-    ),
-  ).toBe(true);
+const KISUMU = "http://localhost:3300/kisumu";
+
+async function noSeriousAxe(page: Page) {
   const result = await new AxeBuilder({ page }).analyze();
   expect(
     result.violations.filter((item) =>
       ["serious", "critical"].includes(item.impact ?? ""),
     ),
   ).toEqual([]);
-});
-
-test("facility role sees only its trusted facility", async ({ page }) => {
-  await page.goto("http://localhost:3300/kisumu");
-  await page.getByLabel("Demo role").selectOption("facility");
-  await expect(
-    page.getByRole("heading", { name: /Synthetic facility 001.*F001/ }),
-  ).toBeVisible();
-  await expect(page.getByText(/Synthetic facility 002/)).toHaveCount(0);
-});
-
-test("optimizer ranks a synthetic fix for the first shock-caused stockout", async ({
-  page,
-}, testInfo) => {
-  await page.goto("http://localhost:3300/kisumu");
-  await expect(
-    page.getByRole("heading", { name: "Kisumu synthetic pilot" }),
-  ).toBeVisible();
-  await page.getByLabel(/Donor logistics support reduction/i).fill("40");
-  const section = page.getByRole("region", { name: "Do this first" });
-  await expect(section).toBeVisible({ timeout: 30000 });
-  await section.getByRole("button", { name: "Rank feasible actions" }).click();
-  await expect(
-    section.getByRole("heading", { name: "Plain-language explanation" }),
-  ).toBeVisible({ timeout: 30000 });
-  await expect(section).toContainText("Redistribution transfer");
-  await expect(section).toContainText("Emergency delivery");
-  await expect(section).toContainText("Budget used: 30 KES");
-  await expect(section).toContainText(
-    "Not funded: it does not fit in the remaining budget.",
-  );
-  await expect(section).toContainText("The assumed cost exceeds the ceiling.");
-  await expect(section).toContainText("F031");
-  await expect(section).toContainText("C04");
-  await expect(section).toContainText("Budget cut line");
-  const accessibility = await new AxeBuilder({ page }).analyze();
-  expect(
-    accessibility.violations.filter((item) =>
-      ["serious", "critical"].includes(item.impact ?? ""),
-    ),
-  ).toEqual([]);
+}
+async function noSidewaysScroll(page: Page) {
   expect(
     await page.evaluate(
       () => document.documentElement.scrollWidth <= innerWidth,
     ),
   ).toBe(true);
-  await section.scrollIntoViewIfNeeded();
-  await page.screenshot({
-    path: testInfo.outputPath("ranked-fixes.png"),
-    fullPage: true,
-  });
-});
+}
+const verdict = (page: Page) =>
+  page.getByRole("region", { name: "What breaks first" });
+const budgetStatus = (page: Page) => page.locator("#budget-status");
 
-test("every synthetic facility marker is inside the map and clear of its controls", async ({
+/** On phones and tablets the presets sit behind "Change scenario". */
+async function pickShock(page: Page, label: string) {
+  const toggle = page.getByRole("button", { name: /Change scenario/ });
+  if (
+    (await toggle.isVisible()) &&
+    (await toggle.getAttribute("aria-expanded")) === "false"
+  )
+    await toggle.click();
+  await page
+    .getByRole("complementary", { name: "Scenario" })
+    .getByRole("button", { name: label, exact: true })
+    .click();
+}
+
+test("Kisumu leads with what breaks first and the cheapest fix, from the backend", async ({
   page,
 }, testInfo) => {
-  await page.goto("http://localhost:3300/kisumu");
+  await page.goto(KISUMU);
+  await expect(
+    page.getByRole("heading", { name: "Kisumu", level: 1 }),
+  ).toBeVisible();
+  await expect(verdict(page)).toContainText(
+    "A 40% cut in donor logistics support causes 209 stockouts within 90 days; Tamarind Crossing Sub-County Hospital (Kisumu West) runs out of family planning tracer 04 first, on day 41.",
+    { timeout: 30000 },
+  );
+  await expect(verdict(page)).toContainText(
+    "The fixes address only the 4 earliest of 209 shock-caused stockouts.",
+  );
+  await expect(verdict(page)).toContainText(
+    "At 30 units (illustrative) the optimizer funds 3 transfers (30 units), each keeping its facility stocked through day 90. Jacaranda Ridge Sub-County Hospital (day 44) does not fit what is left.",
+    { timeout: 30000 },
+  );
+  await expect(verdict(page)).toContainText(
+    "211 stockouts in total: 209 caused by the shock, 2 already short before it (Acacia Ridge Dispensary from day 1 and Cedar Ridge Dispensary from day 6)",
+  );
+  await expect(verdict(page)).toContainText(
+    "10 Critical · 18 Watch · 12 Stable",
+  );
+  await expect(page.getByRole("note")).toContainText(
+    "Facilities, names, locations and costs are invented. Results are illustrative, not validated.",
+  );
+  const viewport = page.viewportSize()!;
+  if (testInfo.project.name === "mobile") {
+    // Phones: "Change scenario" on the first screen and the map within one swipe.
+    const change = await page
+      .getByRole("button", { name: /Change scenario/ })
+      .boundingBox();
+    expect(change!.y + change!.height).toBeLessThanOrEqual(viewport.height);
+    const map = await page.locator(".area-map").boundingBox();
+    expect(map!.y).toBeLessThan(viewport.height * 2);
+    // The fixed bottom bar never covers the end of the page.
+    await page.evaluate(() =>
+      window.scrollTo(0, document.documentElement.scrollHeight),
+    );
+    const [lastBottom, barTop] = await page.evaluate(() => {
+      const last = [...document.querySelectorAll("main *")]
+        .filter((element) => (element as HTMLElement).offsetParent)
+        .reduce(
+          (bottom, element) =>
+            Math.max(bottom, element.getBoundingClientRect().bottom),
+          0,
+        );
+      return [
+        last,
+        document.querySelector(".bottom-nav")!.getBoundingClientRect().top,
+      ];
+    });
+    expect(lastBottom).toBeLessThanOrEqual(barTop);
+  }
+  await noSidewaysScroll(page);
+  await noSeriousAxe(page);
+});
+
+test("the four prepared shocks match the backend runs", async ({ page }) => {
+  test.setTimeout(90000);
+  await page.goto(KISUMU);
+  await expect(verdict(page)).toContainText("209 stockouts", {
+    timeout: 30000,
+  });
+  for (const [label, text, counts] of [
+    [
+      "20%",
+      "The fixes address only 4 of 77 shock-caused stockouts (days 47 to 74).",
+      "2 Critical · 5 Watch · 33 Stable",
+    ],
+    [
+      "100%",
+      "None of the 4 listed transfers can arrive in time: they arrive from day 39, but their stockouts happen by day 26.",
+      "40 Critical · 0 Watch · 0 Stable",
+    ],
+    [
+      "0%",
+      "With no shock, nothing new runs out within 90 days.",
+      "2 Critical · 0 Watch · 38 Stable",
+    ],
+    [
+      "40%",
+      "causes 209 stockouts within 90 days",
+      "10 Critical · 18 Watch · 12 Stable",
+    ],
+  ] as const) {
+    await pickShock(page, label);
+    await expect(verdict(page)).toContainText(text, { timeout: 30000 });
+    await expect(verdict(page)).toContainText(counts);
+  }
+  // Compare flips to the no-shock run while 40% stays selected.
+  await page
+    .getByRole("complementary", { name: "Scenario" })
+    .getByRole("button", { name: "No shock" })
+    .click();
+  await expect(verdict(page)).toContainText("With no shock", {
+    timeout: 30000,
+  });
+  await expect(
+    page.getByRole("button", { name: "40%", exact: true }),
+  ).toHaveAttribute("aria-pressed", "true");
+  await noSeriousAxe(page);
+});
+
+test("the budget slider funds three transfers at 30, four at 100 and none at 5", async ({
+  page,
+}) => {
+  await page.goto(KISUMU);
+  const fixes = page.getByRole("region", { name: "Cheapest fixes" });
+  await expect(budgetStatus(page)).toHaveText("30 of 30 units used.", {
+    timeout: 30000,
+  });
+  await expect(fixes.locator(".option--funded")).toHaveCount(3);
+  await expect(fixes).toContainText(
+    "Not funded: Does not fit in what is left of the budget",
+  );
+  await expect(fixes).not.toContainText("KES");
+  const slider = page.getByLabel("Budget (illustrative units)");
+  await slider.fill("100");
+  await expect(budgetStatus(page)).toHaveText("40 of 100 units used.", {
+    timeout: 30000,
+  });
+  await expect(fixes.locator(".option--funded")).toHaveCount(4);
+  await expect(verdict(page)).toContainText(
+    "At 100 units (illustrative) the optimizer funds 4 transfers (40 units)",
+  );
+  await slider.fill("5");
+  await expect(budgetStatus(page)).toHaveText(
+    "Nothing fits 5 units. The cheapest fix costs 10 units.",
+    { timeout: 30000 },
+  );
+  await expect(fixes.locator(".option--funded")).toHaveCount(0);
+  await expect(fixes.locator(".explain-summary")).toHaveText(
+    "Nothing is funded: the cheapest option costs 10 units, more than the 5-unit budget.",
+  );
+  await slider.fill("30");
+  await expect(budgetStatus(page)).toHaveText("30 of 30 units used.", {
+    timeout: 30000,
+  });
+  await expect(fixes.locator(".explain-summary")).toHaveText(
+    "Transfers and emergency deliveries give the same delay here, so the cheaper transfers are funded first.",
+  );
+  await fixes.getByText("Why these picks?").click();
+  await expect(fixes.locator('.explain p[lang="en"]')).toContainText(
+    "OR-Tools selected the transfer to Tamarind Crossing Sub-County Hospital",
+  );
+  // "3 transfers" in the verdict jumps to the funded fixes.
+  await verdict(page).getByRole("button", { name: "3 transfers" }).click();
+  await expect(fixes.locator(".option--funded").first()).toBeFocused();
+  await noSeriousAxe(page);
+});
+
+test("tabs follow the ARIA pattern and the verdict's phrases open them", async ({
+  page,
+}) => {
+  await page.goto(KISUMU);
+  await expect(verdict(page)).toContainText("209 stockouts", {
+    timeout: 30000,
+  });
+  const first = page.getByRole("tab", { name: "Map and fixes" });
+  await expect(first).toHaveAttribute("aria-selected", "true");
+  await first.focus();
+  await page.keyboard.press("ArrowRight");
+  const order = page.getByRole("tab", { name: /Stockout order/ });
+  await expect(order).toBeFocused();
+  await expect(order).toHaveAttribute("aria-selected", "true");
+  await expect(order).toContainText("209");
+  await page.keyboard.press("End");
+  await expect(page.getByRole("tab", { name: /Facilities/ })).toBeFocused();
+  await page.keyboard.press("Home");
+  await expect(first).toBeFocused();
+  await verdict(page).getByRole("button", { name: "209 stockouts" }).click();
+  await expect(order).toHaveAttribute("aria-selected", "true");
+  const panel = page.getByRole("tabpanel", { name: /Stockout order/ });
+  await expect(panel).toContainText("Already short before the shock (2)");
+  await expect(panel).toContainText("Caused by the shock (209)");
+  await verdict(page)
+    .getByRole("button", {
+      name: "Tamarind Crossing Sub-County Hospital (Kisumu West)",
+    })
+    .click();
+  await expect(
+    page.getByRole("heading", {
+      name: "Tamarind Crossing Sub-County Hospital · SYN-KE-042-F031",
+    }),
+  ).toBeVisible();
+  await noSeriousAxe(page);
+});
+
+test("the timeline counts match the run at days 0, 41 and 90", async ({
+  page,
+}) => {
+  await page.goto(KISUMU);
+  const readout = page.locator("#readout");
+  await expect(readout).toContainText("Day 45 of 90: 11 of 211", {
+    timeout: 30000,
+  });
+  const day = page.getByLabel("Day of the 90-day run");
+  for (const [value, soFar, out] of [
+    [0, 0, 0],
+    [41, 3, 3],
+    [90, 211, 40],
+  ] as const) {
+    await day.fill(String(value));
+    await expect(readout).toHaveText(
+      `Day ${value} of 90: ${soFar} of 211 stockouts so far, ${out} of 40 facilities out of at least one commodity. Modeled, no intervention.`,
+    );
+  }
+  await page.getByRole("button", { name: "Back one week" }).click();
+  await expect(readout).toContainText("Day 83 of 90");
+  await expect(page.locator(".area")).toHaveCount(7);
+  await noSeriousAxe(page);
+});
+
+test("facilities can be sorted, filtered and opened", async ({ page }) => {
+  await page.goto(KISUMU);
+  await expect(verdict(page)).toContainText("209 stockouts", {
+    timeout: 30000,
+  });
+  await page.getByRole("tab", { name: /Facilities/ }).click();
+  const table = page.getByRole("region", { name: "Facilities table" });
+  const rows = table.locator("tbody tr");
+  await expect(rows).toHaveCount(40);
+  await page.getByRole("button", { name: "Critical", exact: true }).click();
+  await expect(rows).toHaveCount(10);
+  await expect(page.locator(".filter-count")).toHaveText(
+    "Showing 10 of 40 facilities.",
+  );
+  await table.getByRole("button", { name: /First stockout/ }).click();
+  await expect(rows.first()).toContainText("Acacia Ridge Dispensary");
+  await table
+    .getByRole("button", { name: "Tamarind Crossing Sub-County Hospital" })
+    .click();
+  const detail = page.locator("#facility-detail");
+  await expect(detail).toContainText("Family planning tracer 04: day 41");
+  await expect(detail).toContainText(
+    "Planted transfer: family planning tracer 04",
+  );
+  await noSidewaysScroll(page);
+  await noSeriousAxe(page);
+});
+
+test("the facility map clusters by keyboard and opens the chosen facility", async ({
+  page,
+}, testInfo) => {
+  await page.goto(KISUMU);
+  await page.getByRole("tab", { name: /Facilities/ }).click();
+  const mobile = testInfo.project.name === "mobile";
+  if (mobile)
+    await page.getByRole("button", { name: "Open facility map" }).click();
+  const map = () => page.locator(mobile ? "dialog" : ".desktop-grid").first();
+  await expect(map().locator(".risk-summary")).toHaveText(
+    "40% shock · 40 facilities: 10 Critical · 18 Watch · 12 Stable · 2 already short before the shock",
+    { timeout: 30000 },
+  );
+  await map().locator(".facility-map").scrollIntoViewIfNeeded();
+  const cluster = map().locator(".facility-cluster").first();
+  await expect(cluster).toHaveAttribute(
+    "aria-label",
+    /^(\d+)( · \d+ (Crit|Watch|Stable|Unk))+ · \1 synthetic facilities: .*; worst status (Critical|Watch|Stable|Unknown)\. Press Enter to zoom in\.$/,
+    { timeout: 30000 },
+  );
+  await cluster.focus();
+  for (let step = 0; step < 6; step++) {
+    await page.keyboard.press("Enter");
+    await expect(page.locator(".facility-marker:focus")).toHaveCount(1);
+    if (!(await page.locator(".facility-cluster:focus").count())) break;
+  }
+  const focused = page.locator(".facility-marker:not(.facility-cluster):focus");
+  const name = (await focused.getAttribute("aria-label"))!.split(" · ")[0];
+  expect(name).toMatch(
+    /^(Acacia|Mvule|Cedar|Jacaranda|Neem|Fig|Tamarind|Croton) /,
+  );
+  await page.keyboard.press("Enter");
+  if (mobile) await page.getByRole("button", { name: "Close map" }).click();
+  await expect(
+    page.getByRole("heading", { name: new RegExp(`^${name} · SYN-`) }),
+  ).toBeVisible();
+  await noSidewaysScroll(page);
+  await noSeriousAxe(page);
+});
+
+test("every facility marker is inside the map and clear of its controls", async ({
+  page,
+}, testInfo) => {
+  await page.goto(KISUMU);
+  await page.getByRole("tab", { name: /Facilities/ }).click();
   const mobile = testInfo.project.name === "mobile";
   if (mobile)
     await page.getByRole("button", { name: "Open facility map" }).click();
   const map = page.locator(
     mobile ? "dialog .facility-map" : ".desktop-grid .facility-map",
   );
+  await map.scrollIntoViewIfNeeded();
   await expect(map.locator(".facility-marker").first()).toBeVisible({
     timeout: 30000,
   });
-  // Each facility is either its own marker or counted in exactly one cluster.
   expect(
     await map.evaluate((element) =>
       [...element.querySelectorAll(".facility-marker")].reduce(
@@ -193,96 +372,11 @@ test("every synthetic facility marker is inside the map and clear of its control
   expect(problems).toEqual([]);
 });
 
-test("the Do this first intro stays within two lines with details on demand", async ({
-  page,
-}) => {
-  await page.goto("http://localhost:3300/kisumu");
-  await page.getByLabel(/Donor logistics support reduction/i).fill("40");
-  const intro = page.locator(".rank-intro");
-  await expect(intro).toBeVisible({ timeout: 30000 });
-  const lines = await intro.evaluate(
-    (element) =>
-      element.getBoundingClientRect().height /
-      parseFloat(getComputedStyle(element).lineHeight),
-  );
-  expect(Math.round(lines)).toBeLessThanOrEqual(2);
-  const details = page.locator(".rank-details");
-  await expect(details).not.toHaveAttribute("open", "");
-  await details.locator("summary").click();
-  await expect(details).toContainText("10 KES and 50 KES");
-});
-
-test("the map summary matches the backend counts at each shock", async ({
-  page,
-}, testInfo) => {
-  test.setTimeout(90000);
-  await page.goto("http://localhost:3300/kisumu");
-  const mobile = testInfo.project.name === "mobile";
-  const slider = page.getByLabel(/Donor logistics support reduction/i);
-  await expect(slider).toBeEnabled({ timeout: 30000 });
-  for (const [magnitude, counts] of [
-    [0, "2 Critical · 0 Watch · 38 Stable"],
-    [20, "2 Critical · 5 Watch · 33 Stable"],
-    [40, "10 Critical · 18 Watch · 12 Stable"],
-    [100, "40 Critical · 0 Watch · 0 Stable"],
-  ] as const) {
-    if (mobile && (await page.locator("dialog[open]").count()))
-      await page.getByRole("button", { name: "Close map" }).click();
-    await slider.fill(String(magnitude));
-    if (mobile)
-      await page.getByRole("button", { name: "Open facility map" }).click();
-    const map = page.locator(mobile ? "dialog" : ".desktop-grid").first();
-    await expect(map.locator(".risk-summary")).toHaveText(
-      `${magnitude}% shock · 40 facilities: ${counts} · 2 already short before the shock`,
-      { timeout: 30000 },
-    );
-    const clusters = map.locator(".facility-cluster");
-    // The map loads lazily when it nears the viewport.
-    await map.locator(".facility-map").scrollIntoViewIfNeeded();
-    await expect(clusters.first()).toBeVisible();
-    // Visible mix adds up to the cluster size and the text fits inside its pill.
-    for (const cluster of await clusters.evaluateAll((items) =>
-      items.map((item) => ({
-        size: Number((item as HTMLElement).dataset.count),
-        text: (item.lastElementChild as HTMLElement).textContent ?? "",
-        overflow:
-          item.scrollWidth > item.clientWidth + 1 ||
-          item.scrollHeight > item.clientHeight + 1,
-      })),
-    )) {
-      const [size, ...parts] = cluster.text.split(" · ");
-      expect(Number(size)).toBe(cluster.size);
-      expect(
-        parts.reduce((sum, part) => sum + Number(part.split(" ")[0]), 0),
-      ).toBe(cluster.size);
-      expect(cluster.overflow).toBe(false);
-    }
-    // No two cluster labels overlap on screen.
-    const boxes = await clusters.evaluateAll((items) =>
-      items.map((item) => {
-        const r = item.getBoundingClientRect();
-        return { left: r.left, right: r.right, top: r.top, bottom: r.bottom };
-      }),
-    );
-    for (let i = 0; i < boxes.length; i++)
-      for (let j = i + 1; j < boxes.length; j++)
-        expect(
-          boxes[i].right <= boxes[j].left ||
-            boxes[j].right <= boxes[i].left ||
-            boxes[i].bottom <= boxes[j].top ||
-            boxes[j].bottom <= boxes[i].top,
-        ).toBe(true);
-    for (const label of await clusters.evaluateAll((items) =>
-      items.map((item) => item.getAttribute("aria-label") ?? ""),
-    ))
-      expect(label).toMatch(
-        /^(\d+)( · \d+ (Crit|Watch|Stable|Unk))+ · \1 synthetic facilities: /,
-      );
-  }
-  const result = await new AxeBuilder({ page }).analyze();
-  expect(
-    result.violations.filter((item) =>
-      ["serious", "critical"].includes(item.impact ?? ""),
-    ),
-  ).toEqual([]);
+test("facility role sees only its trusted facility", async ({ page }) => {
+  await page.goto(KISUMU);
+  await page.getByLabel("Demo role").selectOption("facility");
+  await expect(
+    page.getByRole("heading", { name: /Synthetic facility 001.*F001/ }),
+  ).toBeVisible();
+  await expect(page.getByText(/Synthetic facility 002/)).toHaveCount(0);
 });
