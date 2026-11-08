@@ -11,6 +11,9 @@ import type { PilotPanel } from "../api/client";
 import fixture from "../fixtures/kisumu.json";
 import { KisumuOverview } from "./kisumu-overview";
 
+vi.mock("next/navigation", () => ({
+  useSearchParams: () => new URLSearchParams(window.location.search),
+}));
 vi.mock("./facility-map", () => ({
   FacilityMap: () => <p>Facility locations are synthetic.</p>,
 }));
@@ -514,5 +517,41 @@ it("restores shock, budget, tab and day from a shared link and keeps them in the
     expect(window.location.search).toBe(
       "?shock=100&budget=65&tab=overview&day=41",
     ),
+  );
+});
+
+it("follows a tab change in the URL and focuses that panel's heading", async () => {
+  const { rerender } = render(
+    <KisumuOverview panel={fixture.pilot} scenario={fixtureScenario()} />,
+  );
+  expect(
+    screen
+      .getByRole("tab", { name: "Map and fixes" })
+      .getAttribute("aria-selected"),
+  ).toBe("true");
+  // A sidebar link changes only the query string; the page does not remount.
+  window.history.pushState(null, "", "/kisumu?tab=facilities");
+  rerender(
+    <KisumuOverview panel={fixture.pilot} scenario={fixtureScenario()} />,
+  );
+  await vi.waitFor(() =>
+    expect(document.activeElement?.id).toBe("facilities-heading"),
+  );
+  expect(
+    screen
+      .getByRole("tab", { name: /Facilities/ })
+      .getAttribute("aria-selected"),
+  ).toBe("true");
+  // Back to a URL with no tab: the first tab again.
+  window.history.pushState(null, "", "/kisumu");
+  rerender(
+    <KisumuOverview panel={fixture.pilot} scenario={fixtureScenario()} />,
+  );
+  await vi.waitFor(() =>
+    expect(
+      screen
+        .getByRole("tab", { name: "Map and fixes" })
+        .getAttribute("aria-selected"),
+    ).toBe("true"),
   );
 });

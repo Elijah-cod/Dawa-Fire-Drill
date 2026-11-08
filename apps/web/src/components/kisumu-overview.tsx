@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import dynamic from "next/dynamic";
 import type { PilotPanel } from "../api/client";
 import { usePreferences } from "../preferences/preferences";
@@ -45,6 +46,12 @@ const RankedFixes = dynamic(
   { ssr: false, loading: FixesLoading },
 );
 const NO_EVENTS: ShockEvent[] = [];
+/** The heading that takes focus when navigation opens each tab. */
+const PANEL_HEADINGS = {
+  order: "stockout-order",
+  funding: "funding-title",
+  facilities: "facilities-heading",
+} as const;
 
 type Event = { facility_id: string; commodity_id: string; day: number };
 function validEvents(value: unknown): value is Event[] {
@@ -107,6 +114,7 @@ export function KisumuOverview({
       ? DEFAULT_LINK_STATE
       : readLinkState(window.location.search),
   );
+  const search = useSearchParams()?.toString() ?? "";
   const [shock, setShock] = useState<Shock>(link.shock);
   const [tab, setTab] = useState<View>(link.tab);
   const [day, setDay] = useState(link.day);
@@ -205,8 +213,37 @@ export function KisumuOverview({
     rank: rank && run ? (body) => rank(run.id, body) : undefined,
     initialBudget: link.budget,
   });
+  // Links, back and forward can change the tab in the URL without remounting this page.
+  // Only a change of the URL's tab that this page did not write itself counts as
+  // navigation; a URL with no tab means the first tab, except during the guided demo,
+  // which picks its own tab. Arriving on a tab by navigation focuses that panel's heading.
+  const query = new URLSearchParams(search);
+  const touring = query.has("tour");
+  const urlTab: View = query.has("tab")
+    ? readLinkState(`?${search}`).tab
+    : "overview";
+  const written = useRef<View | null>(null);
+  const navigatingTo = useRef<View | null>(null);
+  useEffect(() => {
+    if (touring || urlTab === written.current) return;
+    const first = written.current === null;
+    written.current = urlTab;
+    if (urlTab === tab) {
+      if (first && urlTab !== "overview") show(urlTab, PANEL_HEADINGS[urlTab]);
+      return;
+    }
+    navigatingTo.current = urlTab;
+    if (urlTab === "overview") setTab(urlTab);
+    else show(urlTab, PANEL_HEADINGS[urlTab]);
+  }, [urlTab, touring]);
   useEffect(() => {
     if (!canRun) return;
+    // While a navigation's tab is being applied, wait for the state to catch up.
+    if (navigatingTo.current !== null) {
+      if (tab !== navigatingTo.current) return;
+      navigatingTo.current = null;
+    }
+    written.current = tab;
     const search = writeLinkState(window.location.search, {
       shock,
       budget: ranking.budget,
@@ -219,7 +256,7 @@ export function KisumuOverview({
         "",
         `${window.location.pathname}${search}${window.location.hash}`,
       );
-  }, [canRun, shock, ranking.budget, tab, day]);
+  }, [canRun, shock, ranking.budget, tab, day, search]);
   const reveal = (id: string | HTMLElement | null) => {
     const element = typeof id === "string" ? document.getElementById(id) : id;
     if (!element) return;
@@ -233,10 +270,6 @@ export function KisumuOverview({
   useEffect(() => {
     if (tab === "facilities") setMapReady(true);
   }, [tab]);
-  useEffect(() => {
-    // The navigation's funding link lands on this page with #funding-title.
-    if (window.location.hash === "#funding-title") setTab("funding");
-  }, []);
   useEffect(() => {
     // The guided demo opens the tab that holds each step's target.
     if (step === "funding") setTab("funding");
