@@ -143,7 +143,7 @@ const strings = {
     captureError:
       "We could not read this image. Retake the photo and try again.",
     captureManual:
-      "Automatic reading is unavailable. Enter each field from the photo.",
+      "Automatic reading is unavailable. Type each of the four fields from the photo.",
     capturePartial: "Some fields were unclear. Check the highlighted values.",
     captureCheck: "Check every value against the photo.",
     capturePreviewAlt: "Your bin-card photo",
@@ -374,7 +374,7 @@ const strings = {
     captureReading: "Inasoma kadi…",
     captureError: "Hatukuweza kusoma picha hii. Piga picha tena ujaribu.",
     captureManual:
-      "Usomaji wa kiotomatiki haupatikani. Jaza kila sehemu kutoka kwenye picha.",
+      "Usomaji wa kiotomatiki haupatikani. Andika kila moja ya sehemu nne kutoka kwenye picha.",
     capturePartial:
       "Baadhi ya sehemu hazikuwa wazi. Kagua thamani zilizoangaziwa.",
     captureCheck: "Linganisha kila thamani na picha.",

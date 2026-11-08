@@ -84,6 +84,11 @@ it("saves only after the person reviews every field and confirms", async () => {
     await screen.findByText(/automatic reading is unavailable/i),
   ).toBeTruthy();
   expect(screen.getByRole("img", { name: "Your bin-card photo" })).toBeTruthy();
+  await vi.waitFor(() =>
+    expect(document.activeElement).toBe(
+      screen.getByLabelText("Commodity name"),
+    ),
+  );
   const review = screen.getByRole("button", {
     name: "Review and save",
   }) as HTMLButtonElement;
@@ -111,6 +116,9 @@ it("saves only after the person reviews every field and confirms", async () => {
   ).toBeNull();
   expect(confirm).not.toHaveBeenCalled();
   fireEvent.click(screen.getByRole("button", { name: "Review and save" }));
+  expect(
+    screen.getByRole("button", { name: "Confirm and save" }).className,
+  ).toContain("button-primary");
   fireEvent.click(screen.getByRole("button", { name: "Confirm and save" }));
   expect(
     await screen.findByText(/saved to this synthetic facility/i),
@@ -140,6 +148,11 @@ it("prefills extracted values and highlights unclear ones", async () => {
   });
   fireEvent.click(readButton());
   expect(await screen.findByText(/some fields were unclear/i)).toBeTruthy();
+  await vi.waitFor(() =>
+    expect(document.activeElement).toBe(
+      screen.getByLabelText("Closing balance (units)"),
+    ),
+  );
   expect(
     (screen.getByLabelText("Commodity name") as HTMLInputElement).value,
   ).toBe("Synthetic tracer");

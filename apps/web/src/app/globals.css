@@ -339,6 +339,11 @@ body:has(.tour-panel) main {
   margin: 0;
   font-weight: 600;
 }
+.button-primary {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: var(--surface);
+}
 .rank-cost-note {
   color: var(--muted);
   font-size: 0.875rem;

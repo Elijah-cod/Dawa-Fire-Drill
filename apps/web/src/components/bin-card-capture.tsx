@@ -131,8 +131,17 @@ export function BinCardCapture({
       if (result.status !== "pending" || result.facility_id !== facilityId)
         throw new Error("Unexpected capture");
       setCapture(result);
-      setDraft(toDraft(result.fields));
+      const next = toDraft(result.fields);
+      setDraft(next);
       setStatus("review");
+      // Empty or partial extraction: start typing at the first missing field.
+      const missing = (Object.keys(next) as (keyof Draft)[]).find(
+        (name) => next[name] === "",
+      );
+      if (missing)
+        requestAnimationFrame(() =>
+          document.getElementById(`capture-${missing}`)?.focus(),
+        );
     } catch {
       setStatus("error");
     }
@@ -255,7 +264,7 @@ export function BinCardCapture({
             {t("captureGoBack")}
           </button>{" "}
           <button
-            className="rank-action tour-primary"
+            className="rank-action button-primary"
             type="button"
             disabled={!online}
             onClick={() => void save()}
