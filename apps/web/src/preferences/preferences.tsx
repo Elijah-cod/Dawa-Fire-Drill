@@ -88,6 +88,8 @@ const strings = {
     scenarioCut: "{n}% logistics cut",
     verdictLabel: "What breaks first",
     verdictLoading: "Running the {n}% scenario…",
+    verdictFraming:
+      "Stress-testing Kisumu: what breaks first if donor logistics support is cut, and what is the cheapest fix?",
     verdictNoShock: "With no shock, nothing new runs out within {h} days.",
     verdictLead:
       "A {n}% cut in donor logistics support causes {count} within {h} days; {place} runs out of {medicine} first, on day {day}.",
@@ -491,6 +493,8 @@ const strings = {
     scenarioCut: "Upunguzaji wa usafirishaji wa {n}%",
     verdictLabel: "Kinachoharibika kwanza",
     verdictLoading: "Inaendesha hali ya {n}%…",
+    verdictFraming:
+      "Kupima Kisumu kwa mshtuko: nini kinaharibika kwanza msaada wa usafirishaji wa wafadhili ukipunguzwa, na suluhisho la bei nafuu zaidi ni lipi?",
     verdictNoShock:
       "Bila mshtuko, hakuna bidhaa mpya inayoisha ndani ya siku {h}.",
     verdictLead:

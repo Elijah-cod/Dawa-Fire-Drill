@@ -462,3 +462,21 @@ it("filters the facilities by status, sub-county and commodity without changing 
     "10 Critical · 18 Watch · 12 Stable",
   );
 });
+
+it("frames the question at full size until the first run arrives", () => {
+  const { container } = render(
+    <KisumuOverview
+      panel={fixture.pilot}
+      scenario={{
+        submit: vi.fn(() => new Promise<never>(() => {})),
+        read: vi.fn(),
+      }}
+    />,
+  );
+  expect(container.querySelector(".verdict-lead")?.textContent).toBe(
+    "Stress-testing Kisumu: what breaks first if donor logistics support is cut, and what is the cheapest fix?",
+  );
+  expect(container.querySelector(".verdict-fix")?.textContent).toBe(
+    "Running the 40% scenario…",
+  );
+});

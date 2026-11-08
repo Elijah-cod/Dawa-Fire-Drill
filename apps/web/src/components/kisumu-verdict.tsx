@@ -18,6 +18,7 @@ export function KisumuVerdict({
   panel,
   routes,
   magnitude,
+  requested,
   events,
   counts,
   busy,
@@ -29,6 +30,8 @@ export function KisumuVerdict({
   routes: PlantedRoute[];
   /** The shock of the run on screen, which trails the selection while a run is in flight. */
   magnitude: number | null;
+  /** The selected shock, for the status line before the first run arrives. */
+  requested: number;
   events: RunEvents | null;
   counts: StatusCounts | null;
   busy: boolean;
@@ -46,8 +49,12 @@ export function KisumuVerdict({
   let lead: ReactNode;
   let scope: string | null = null;
   let fix: ReactNode = budgetLine ?? null;
-  if (magnitude === null) lead = t("overviewLoading");
-  else if (!events) lead = t("verdictUnavailable");
+  if (magnitude === null) {
+    // Before the first run arrives: the page's question, at full size, and the run status in
+    // the budget line's reserved space. The verdict replaces both in the same elements.
+    lead = t("verdictFraming");
+    fix = tf("verdictLoading", { n: requested });
+  } else if (!events) lead = t("verdictUnavailable");
   else if (magnitude === 0) {
     lead = tf("verdictNoShock", { h: horizon });
     fix = t("verdictNothingToFix");
