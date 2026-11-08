@@ -12,6 +12,7 @@ import { StartTourButton, TOUR_STEPS, TourProvider, useTour } from "./tour";
 
 const navigation = vi.hoisted(() => ({ pathname: "/", push: vi.fn() }));
 vi.mock("next/navigation", () => ({
+  useSearchParams: () => new URLSearchParams(window.location.search),
   usePathname: () => navigation.pathname,
   useRouter: () => ({ push: navigation.push }),
 }));

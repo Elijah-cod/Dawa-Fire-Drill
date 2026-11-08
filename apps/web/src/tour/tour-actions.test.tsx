@@ -6,6 +6,7 @@ import { KisumuOverview } from "../components/kisumu-overview";
 import { TourProvider } from "./tour";
 
 vi.mock("next/navigation", () => ({
+  useSearchParams: () => new URLSearchParams(window.location.search),
   usePathname: () => "/kisumu",
   useRouter: () => ({ push: vi.fn() }),
 }));

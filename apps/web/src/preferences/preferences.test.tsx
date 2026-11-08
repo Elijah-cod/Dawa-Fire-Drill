@@ -15,6 +15,7 @@ import {
 import { AppShell } from "../components/app-shell";
 
 vi.mock("next/navigation", () => ({
+  useSearchParams: () => new URLSearchParams(window.location.search),
   usePathname: () => "/",
   useRouter: () => ({ push: vi.fn() }),
 }));
