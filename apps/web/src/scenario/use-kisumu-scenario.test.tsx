@@ -68,6 +68,25 @@ it("does not replace a newer scenario with a late older result", async () => {
   expect(result.current.run?.id).toBe("40");
 });
 
+it("starts from the requested shock and reports the shock on screen", async () => {
+  const api = {
+    submit: vi.fn(async (magnitude: number) => ({
+      id: String(magnitude),
+      status: "succeeded",
+      result: { synthetic: true },
+      horizon_days: 90,
+    })),
+    read: vi.fn(),
+  };
+  const { result } = renderHook(() => useKisumuScenario(api, true, 40));
+  await waitFor(() => expect(result.current.runMagnitude).toBe(40));
+  expect(api.submit).toHaveBeenCalledTimes(1);
+  act(() => result.current.setMagnitude(20));
+  expect(result.current.previous).toBe(true);
+  expect(result.current.runMagnitude).toBe(40);
+  await waitFor(() => expect(result.current.runMagnitude).toBe(20));
+});
+
 it("does not submit a run for a read-only role", async () => {
   const api = { submit: vi.fn(), read: vi.fn() };
   const { result } = renderHook(() => useKisumuScenario(api, false));

@@ -1,7 +1,14 @@
 // @vitest-environment jsdom
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import {
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+  within,
+} from "@testing-library/react";
 import { afterEach, expect, it, vi } from "vitest";
 import type { PilotPanel } from "../api/client";
+import fixture from "../fixtures/kisumu.json";
 import { KisumuOverview } from "./kisumu-overview";
 
 vi.mock("./facility-map", () => ({
@@ -46,21 +53,19 @@ it("updates a facility's risk and driving tracer with the selected scenario", as
     read: vi.fn(),
   };
   render(<KisumuOverview panel={panel} scenario={scenario} />);
+  // Invented display names replace the generator's numbered names.
   fireEvent.click(
-    screen.getByRole("button", { name: /Synthetic facility one/i }),
-  );
-  expect(await screen.findByText(/Stable.*C01/i)).toBeTruthy();
-  fireEvent.change(
-    screen.getByLabelText(/donor logistics support reduction/i),
-    { target: { value: "40" } },
+    screen.getByRole("button", { name: /Acacia Ridge Dispensary · F1/ }),
   );
   expect(await screen.findByText(/Critical.*C01.*7/i)).toBeTruthy();
   expect(
-    await screen.findByText(/Shock-caused stockout details are unavailable/i),
+    await screen.findByText(/Stockout details are unavailable for this run/i),
   ).toBeTruthy();
+  fireEvent.click(screen.getByRole("button", { name: "0%" }));
+  expect(await screen.findByText(/Stable.*C01/i)).toBeTruthy();
 });
 
-it("reserves the shock and ranked panels while the shock run is pending", async () => {
+it("keeps the previous verdict, marked busy, while another shock runs", async () => {
   const panel = {
     synthetic: true,
     county_code: "042",
@@ -74,10 +79,10 @@ it("reserves the shock and ranked panels while the shock run is pending", async 
   } as unknown as PilotPanel;
   const scenario = {
     submit: vi.fn(async (magnitude: number) =>
-      magnitude
+      magnitude === 20
         ? new Promise<never>(() => {})
         : {
-            id: "0",
+            id: String(magnitude),
             status: "succeeded",
             horizon_days: 90,
             result: { synthetic: true, county_code: "042", stockouts: [] },
@@ -89,22 +94,21 @@ it("reserves the shock and ranked panels while the shock run is pending", async 
     <KisumuOverview panel={panel} scenario={scenario} rank={vi.fn()} canRun />,
   );
   await vi.waitFor(() =>
-    expect(scenario.submit).toHaveBeenCalledWith(0, expect.any(String)),
+    expect(scenario.submit).toHaveBeenCalledWith(40, expect.any(String)),
   );
-  const slot = () => container.querySelector(".shock-summary");
-  expect(slot()?.getAttribute("aria-busy")).toBe("false");
-  expect(
-    slot()?.closest("section")?.querySelector("#shock-slider"),
-  ).not.toBeNull();
-  fireEvent.change(
-    screen.getByLabelText(/donor logistics support reduction/i),
-    { target: { value: "40" } },
+  const verdict = () => container.querySelector("#verdict");
+  await vi.waitFor(() =>
+    expect(verdict()?.getAttribute("aria-busy")).toBe("false"),
   );
-  expect(slot()?.getAttribute("aria-busy")).toBe("true");
-  expect(slot()?.textContent).toMatch(/running illustrative scenario/i);
+  expect(screen.getByRole("button", { name: "40%" })).toHaveProperty(
+    "ariaPressed",
+    "true",
+  );
+  fireEvent.click(screen.getByRole("button", { name: "20%" }));
+  expect(verdict()?.getAttribute("aria-busy")).toBe("true");
   expect(
-    container.querySelectorAll("section.panel h2")[0]?.textContent,
-  ).not.toBe("Shock-caused stockout order");
+    screen.getByRole("complementary", { name: "Scenario" }).textContent,
+  ).toMatch(/Running the 20% scenario…/);
   expect(container.querySelector(".rank-placeholder")?.textContent).toMatch(
     /Do this first.*Ranking feasible actions/,
   );
@@ -190,11 +194,145 @@ it("explains Critical at no shock for facilities already short before the shock"
     read: vi.fn(),
   };
   render(<KisumuOverview panel={panel} scenario={scenario} />);
-  fireEvent.click(screen.getByRole("button", { name: /Synthetic one/ }));
+  fireEvent.click(
+    screen.getByRole("button", { name: /Acacia Ridge Dispensary · F001/ }),
+  );
   expect(
     await screen.findByText(/Critical · Already short before the shock/),
   ).toBeTruthy();
-  fireEvent.click(screen.getByRole("button", { name: /Synthetic four/ }));
+  fireEvent.click(
+    screen.getByRole("button", { name: /Mvule Ridge Dispensary · F004/ }),
+  );
   expect(await screen.findByText(/^Stable/)).toBeTruthy();
   expect(screen.queryByText(/Already short/)).toBeNull();
+});
+
+/** The mock client's backend runs at the four prepared shocks. */
+function fixtureScenario() {
+  return {
+    submit: vi.fn(async (magnitude: number) => ({
+      id: String(magnitude),
+      status: "succeeded",
+      horizon_days: 90,
+      result: {
+        synthetic: true,
+        county_code: "042",
+        ...fixture.risk_runs[String(magnitude) as "0" | "20" | "40" | "100"],
+      },
+    })),
+    read: vi.fn(),
+  };
+}
+
+it("answers what breaks first at each prepared shock from the backend runs", async () => {
+  const { container } = render(
+    <KisumuOverview panel={fixture.pilot} scenario={fixtureScenario()} />,
+  );
+  const verdict = () => container.querySelector("#verdict")!;
+  await vi.waitFor(() =>
+    expect(verdict().textContent).toContain(
+      "A 40% cut in donor logistics support causes 209 stockouts within 90 days; Tamarind Crossing Sub-County Hospital (Kisumu West) runs out of family planning tracer 04 first, on day 41.",
+    ),
+  );
+  expect(verdict().textContent).toContain(
+    "The fixes address only the 4 earliest of 209 shock-caused stockouts.",
+  );
+  expect(verdict().textContent).toContain(
+    "211 stockouts in total: 209 caused by the shock, 2 already short before it (Acacia Ridge Dispensary from day 1 and Cedar Ridge Dispensary from day 6)",
+  );
+  expect(verdict().textContent).toContain("10 Critical · 18 Watch · 12 Stable");
+
+  fireEvent.click(screen.getByRole("button", { name: "20%" }));
+  await vi.waitFor(() =>
+    expect(verdict().textContent).toContain(
+      "The fixes address only 4 of 77 shock-caused stockouts (days 47 to 74).",
+    ),
+  );
+  expect(verdict().textContent).toContain("2 Critical · 5 Watch · 33 Stable");
+
+  fireEvent.click(screen.getByRole("button", { name: "100%" }));
+  await vi.waitFor(() =>
+    expect(verdict().textContent).toContain(
+      "None of the 4 listed transfers can arrive in time: they arrive from day 39, but their stockouts happen by day 26.",
+    ),
+  );
+  expect(verdict().textContent).toContain("causes 393 stockouts");
+
+  fireEvent.click(screen.getByRole("button", { name: "0%" }));
+  await vi.waitFor(() =>
+    expect(verdict().textContent).toContain(
+      "With no shock, nothing new runs out within 90 days.There is nothing to fix.",
+    ),
+  );
+  expect(screen.queryByRole("group", { name: "Compare" })).toBeNull();
+});
+
+it("makes the verdict's highlighted phrases real controls", async () => {
+  render(<KisumuOverview panel={fixture.pilot} scenario={fixtureScenario()} />);
+  const verdict = await screen.findByRole("region", {
+    name: "What breaks first",
+  });
+  const count = await within(verdict).findByRole("button", {
+    name: "209 stockouts",
+  });
+  fireEvent.click(count);
+  expect(document.activeElement?.id).toBe("stockout-order");
+  fireEvent.click(
+    within(verdict).getByRole("button", {
+      name: "Tamarind Crossing Sub-County Hospital (Kisumu West)",
+    }),
+  );
+  expect(document.activeElement?.id).toBe("facility-detail");
+  expect(
+    screen.getByRole("heading", {
+      name: "Tamarind Crossing Sub-County Hospital · SYN-KE-042-F031",
+    }),
+  ).toBeTruthy();
+});
+
+it("compares the selected shock with the no-shock run", async () => {
+  const scenario = fixtureScenario();
+  const { container } = render(
+    <KisumuOverview panel={fixture.pilot} scenario={scenario} />,
+  );
+  await vi.waitFor(() =>
+    expect(container.querySelector("#verdict")?.textContent).toContain(
+      "209 stockouts",
+    ),
+  );
+  fireEvent.click(screen.getByRole("button", { name: "No shock" }));
+  await vi.waitFor(() =>
+    expect(container.querySelector("#verdict")?.textContent).toContain(
+      "With no shock",
+    ),
+  );
+  expect(screen.getByRole("button", { name: "40%" })).toHaveProperty(
+    "ariaPressed",
+    "true",
+  );
+  fireEvent.click(screen.getByRole("button", { name: "40% cut" }));
+  await vi.waitFor(() =>
+    expect(container.querySelector("#verdict")?.textContent).toContain(
+      "209 stockouts",
+    ),
+  );
+});
+
+it("opens the scenario controls from Change scenario on phones", () => {
+  render(
+    <KisumuOverview
+      panel={fixture.pilot}
+      scenario={{
+        submit: vi.fn(() => new Promise<never>(() => {})),
+        read: vi.fn(),
+      }}
+    />,
+  );
+  const toggle = screen.getByRole("button", { name: /Change scenario/ });
+  const controls = screen.getByRole("complementary", { name: "Scenario" });
+  expect(toggle.getAttribute("aria-expanded")).toBe("false");
+  expect(controls.dataset.open).toBe("false");
+  fireEvent.click(toggle);
+  expect(toggle.getAttribute("aria-expanded")).toBe("true");
+  expect(controls.dataset.open).toBe("true");
 });

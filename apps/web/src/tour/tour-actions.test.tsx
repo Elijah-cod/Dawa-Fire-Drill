@@ -91,6 +91,12 @@ it("applies the 40% shock during the demo's shock steps", async () => {
     </TourProvider>,
   );
   expect(
-    await screen.findByText(/Donor logistics support reduction: 40%/),
-  ).toBeTruthy();
+    (await screen.findByRole("button", { name: "40%" })).getAttribute(
+      "aria-pressed",
+    ),
+  ).toBe("true");
+  expect(screen.getAllByText("40% logistics cut").length).toBeGreaterThan(0);
+  await vi.waitFor(() =>
+    expect(scenario.submit).toHaveBeenCalledWith(40, expect.any(String)),
+  );
 });

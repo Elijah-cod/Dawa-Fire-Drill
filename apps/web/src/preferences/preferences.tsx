@@ -2,6 +2,8 @@
 
 import {
   createContext,
+  Fragment,
+  isValidElement,
   useContext,
   useEffect,
   useState,
@@ -20,7 +22,16 @@ const strings = {
     navMobile: "Primary (mobile)",
     kenya: "Kenya · County planning workspace",
     banner:
-      "Synthetic demo data · Calibrated to public aggregates · Results are illustrative, not validated.",
+      "Facilities, names, locations and costs are invented. Results are illustrative, not validated.",
+    aboutLink: "About this demo",
+    aboutSandbox:
+      "This is a stress-test sandbox, not a live monitoring system or a government system.",
+    aboutInvented:
+      "Facilities, names, coordinates, stock levels and costs are invented. Only some scale parameters (facility mix, lead times, demand and funding totals) are anchored to public aggregates, as documented in the project's data assumptions. Nothing is validated.",
+    aboutMethod:
+      "Runs come from a reproducible generator (version 5, seed 42). OR-Tools ranks the fixes; the plain-language explanation only restates its result.",
+    aboutTerms:
+      "A stockout is one facility running out of one commodity within the 90-day run. Costs are illustrative units, not calibrated to real prices.",
     syntheticNote: "Synthetic examples only. Illustrative and unvalidated.",
     gridTitle: "Kenya counties",
     gridDescription:
@@ -72,7 +83,40 @@ const strings = {
     noStockout: "No stockout within the run horizon",
     noRiskData: "No forecast or run is available",
     drivers: "Driving commodities",
-    kisumuTitle: "Kisumu synthetic pilot",
+    kisumuTitle: "Kisumu",
+    scenarioNone: "No shock",
+    scenarioCut: "{n}% logistics cut",
+    verdictLabel: "What breaks first",
+    verdictLoading: "Running the {n}% scenario…",
+    verdictNoShock: "With no shock, nothing new runs out within {h} days.",
+    verdictLead:
+      "A {n}% cut in donor logistics support causes {count} within {h} days; {place} runs out of {medicine} first, on day {day}.",
+    verdictNone:
+      "A {n}% cut in donor logistics support causes no new stockouts within {h} days.",
+    verdictStockouts: "{n} stockouts",
+    verdictStockout: "{n} stockout",
+    verdictPlace: "{name} ({area})",
+    verdictScopeEarliest:
+      "The fixes address only the {n} earliest of {total} shock-caused stockouts.",
+    verdictScopeSome:
+      "The fixes address only {n} of {total} shock-caused stockouts (days {first} to {last}).",
+    verdictNothingToFix: "There is nothing to fix.",
+    verdictLate:
+      "None of the {n} listed transfers can arrive in time: they arrive from day {arrival}, but their stockouts happen by day {day}.",
+    verdictUnavailable: "Stockout details are unavailable for this run.",
+    factsTotal:
+      "{total} stockouts in total: {caused} caused by the shock, {short} already short before it",
+    factsShortItem: "{name} from day {day}",
+    factsStatus: "{critical} Critical · {watch} Watch · {stable} Stable",
+    and: "and",
+    controlsLabel: "Scenario",
+    shockPresets: "Donor logistics support cut",
+    shockHint: "Four scenarios are prepared for this demo.",
+    compare: "Compare",
+    compareNone: "No shock",
+    compareShock: "{n}% cut",
+    changeScenario: "Change scenario",
+    hideScenario: "Hide scenario",
     shockLabel: "Donor logistics support reduction",
     baseline: "No-shock baseline",
     scenarioRunning: "Running illustrative scenario…",
@@ -251,7 +295,16 @@ const strings = {
     navMobile: "Urambazaji mkuu (simu)",
     kenya: "Kenya · Eneo la kupanga la kaunti",
     banner:
-      "Data za majaribio zilizobuniwa · Zimepimwa kwa takwimu za jumla za umma · Matokeo ni ya mfano na hayajathibitishwa.",
+      "Vituo, majina, maeneo na gharama ni vya kubuni. Matokeo ni ya mfano na hayajathibitishwa.",
+    aboutLink: "Kuhusu onyesho hili",
+    aboutSandbox:
+      "Hiki ni chombo cha majaribio ya mshtuko, si mfumo wa ufuatiliaji wa moja kwa moja wala mfumo wa serikali.",
+    aboutInvented:
+      "Vituo, majina, viwianishi, viwango vya akiba na gharama ni vya kubuni. Ni baadhi tu ya vigezo vya ukubwa (mchanganyiko wa vituo, muda wa kusubiri bidhaa, jumla za mahitaji na ufadhili) vinavyotegemea takwimu za jumla za umma, kama ilivyoandikwa katika dhana za data za mradi. Hakuna kilichothibitishwa.",
+    aboutMethod:
+      "Majaribio yanatoka kwa jenereta inayorudiwa (toleo 5, mbegu 42). OR-Tools hupanga suluhisho; maelezo kwa lugha rahisi hurudia tu matokeo yake.",
+    aboutTerms:
+      "Kuisha kwa bidhaa ni kituo kimoja kukosa bidhaa moja ndani ya siku 90 za jaribio. Gharama ni vipimo vya mfano, havijapimwa kwa bei halisi.",
     syntheticNote:
       "Mifano iliyobuniwa pekee. Matokeo ni ya mfano na hayajathibitishwa.",
     gridTitle: "Kaunti za Kenya",
@@ -304,7 +357,42 @@ const strings = {
     noStockout: "Hakuna bidhaa inayoisha ndani ya kipindi cha uigaji",
     noRiskData: "Hakuna utabiri au uigaji unaopatikana",
     drivers: "Bidhaa zinazoamua hali",
-    kisumuTitle: "Majaribio yaliyobuniwa ya Kisumu",
+    kisumuTitle: "Kisumu",
+    scenarioNone: "Bila mshtuko",
+    scenarioCut: "Upunguzaji wa usafirishaji wa {n}%",
+    verdictLabel: "Kinachoharibika kwanza",
+    verdictLoading: "Inaendesha hali ya {n}%…",
+    verdictNoShock:
+      "Bila mshtuko, hakuna bidhaa mpya inayoisha ndani ya siku {h}.",
+    verdictLead:
+      "Kupunguzwa kwa {n}% kwa msaada wa usafirishaji wa wafadhili kunasababisha {count} ndani ya siku {h}; {place} kinakosa {medicine} kwanza, siku ya {day}.",
+    verdictNone:
+      "Kupunguzwa kwa {n}% kwa msaada wa usafirishaji wa wafadhili hakusababishi bidhaa mpya kuisha ndani ya siku {h}.",
+    verdictStockouts: "matukio {n} ya kuisha kwa bidhaa",
+    verdictStockout: "tukio {n} la kuisha kwa bidhaa",
+    verdictPlace: "{name} ({area})",
+    verdictScopeEarliest:
+      "Suluhisho zinashughulikia matukio {n} ya mapema zaidi tu kati ya {total} yaliyosababishwa na mshtuko.",
+    verdictScopeSome:
+      "Suluhisho zinashughulikia matukio {n} tu kati ya {total} yaliyosababishwa na mshtuko (siku {first} hadi {last}).",
+    verdictNothingToFix: "Hakuna cha kurekebisha.",
+    verdictLate:
+      "Hakuna kati ya uhamisho {n} ulioorodheshwa unaoweza kufika kwa wakati: unafika kuanzia siku {arrival}, lakini bidhaa zinaisha kufikia siku {day}.",
+    verdictUnavailable:
+      "Maelezo ya kuisha kwa bidhaa hayapatikani kwa jaribio hili.",
+    factsTotal:
+      "Jumla ya matukio {total} ya kuisha kwa bidhaa: {caused} yamesababishwa na mshtuko, {short} yalikuwepo kabla yake",
+    factsShortItem: "{name} kuanzia siku {day}",
+    factsStatus: "{critical} Hatari · {watch} Tahadhari · {stable} Thabiti",
+    and: "na",
+    controlsLabel: "Hali",
+    shockPresets: "Kupunguzwa kwa msaada wa usafirishaji wa wafadhili",
+    shockHint: "Hali nne zimeandaliwa kwa onyesho hili.",
+    compare: "Linganisha",
+    compareNone: "Bila mshtuko",
+    compareShock: "Upunguzaji wa {n}%",
+    changeScenario: "Badilisha hali",
+    hideScenario: "Ficha hali",
     shockLabel: "Kupungua kwa msaada wa usafirishaji wa wafadhili",
     baseline: "Msingi bila mshtuko",
     scenarioRunning: "Inaendesha uigaji wa mfano…",
@@ -479,6 +567,23 @@ const strings = {
 } as const;
 
 type Key = keyof typeof strings.en;
+type Vars = Record<string, ReactNode>;
+
+/** Fill {name} placeholders; values may be elements, such as a button inside a sentence. */
+export function fill(template: string, vars: Vars): ReactNode[] {
+  return template
+    .split(/(\{\w+\})/)
+    .filter(Boolean)
+    .map((part, index) => {
+      const name = /^\{(\w+)\}$/.exec(part)?.[1];
+      const value = name !== undefined && name in vars ? vars[name] : part;
+      return isValidElement(value) ? (
+        <Fragment key={index}>{value}</Fragment>
+      ) : (
+        String(value)
+      );
+    });
+}
 type Locale = "en" | "sw";
 type Theme = "system" | "light" | "dark";
 type Preferences = {
@@ -487,6 +592,10 @@ type Preferences = {
   setLocale: (value: Locale) => void;
   setTheme: (value: Theme) => void;
   t: (key: Key) => string;
+  /** A string with {name} placeholders filled; plain text only. */
+  tf: (key: Key, vars: Record<string, string | number>) => string;
+  /** A string with {name} placeholders filled; values may be elements. */
+  tn: (key: Key, vars: Vars) => ReactNode[];
 };
 const defaults: Preferences = {
   locale: "en",
@@ -494,6 +603,8 @@ const defaults: Preferences = {
   setLocale: () => {},
   setTheme: () => {},
   t: (key) => strings.en[key],
+  tf: (key, vars) => fill(strings.en[key], vars).join(""),
+  tn: (key, vars) => fill(strings.en[key], vars),
 };
 const Context = createContext<Preferences>(defaults);
 
@@ -512,6 +623,8 @@ export function PreferencesProvider({ children }: { children: ReactNode }) {
         setLocale,
         setTheme,
         t: (key) => strings[locale][key],
+        tf: (key, vars) => fill(strings[locale][key], vars).join(""),
+        tn: (key, vars) => fill(strings[locale][key], vars),
       }}
     >
       {children}
@@ -528,7 +641,7 @@ export function PreferenceControls() {
   return (
     <div className="preferences">
       <label>
-        Language / Lugha
+        <span>Language / Lugha</span>
         <select
           value={locale}
           onChange={(event) => setLocale(event.target.value as Locale)}
@@ -538,7 +651,7 @@ export function PreferenceControls() {
         </select>
       </label>
       <label>
-        Theme / Mandhari
+        <span>Theme / Mandhari</span>
         <select
           value={theme}
           onChange={(event) => setTheme(event.target.value as Theme)}

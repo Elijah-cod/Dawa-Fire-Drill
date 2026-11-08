@@ -15,6 +15,14 @@ import { StockoutOrder } from "./stockout-order";
 import type { components } from "../generated/api";
 import { FundingTrace } from "./funding-trace";
 import { SHOCK_STEPS, useTour } from "../tour/tour";
+import { withDisplayNames } from "../kisumu/names";
+import { runEvents } from "../kisumu/view";
+import { KisumuVerdict } from "./kisumu-verdict";
+import {
+  ScenarioControls,
+  type Compare,
+  type Shock,
+} from "./scenario-controls";
 
 /** Same footprint as the loaded panel so arriving results do not shift the page. */
 function RankPlaceholder({ message }: { message?: string }) {
@@ -56,14 +64,6 @@ function preShockFacilities(run: ScenarioRun | null): ReadonlySet<string> {
   ].flatMap((value) => (validEvents(value) ? value : []));
   return new Set(rows.map((row) => row.facility_id));
 }
-/** Events that also happen without the shock: pre-shock gaps plus baseline stockouts. */
-function noShockCount(run: ScenarioRun | null) {
-  const pre = run?.result?.pre_shock_stockouts;
-  const baseline = run?.result?.baseline_stockouts;
-  return Array.isArray(pre) && Array.isArray(baseline)
-    ? pre.length + baseline.length
-    : undefined;
-}
 function evidence(run: ScenarioRun | null) {
   if (
     !run?.result ||
@@ -76,7 +76,7 @@ function evidence(run: ScenarioRun | null) {
 }
 
 export function KisumuOverview({
-  panel,
+  panel: generated,
   scenario,
   canRun = true,
   rank,
@@ -94,15 +94,23 @@ export function KisumuOverview({
     asOf: string,
   ) => Promise<components["schemas"]["FundingTraceResponse"]>;
 }) {
-  const { t } = usePreferences();
-  const { magnitude, setMagnitude, run, status, previous } = useKisumuScenario(
-    scenario,
-    canRun,
-  );
+  const { t, tf } = usePreferences();
+  // Invented display names replace the generator's numbered names everywhere on this page.
+  const panel = useMemo(() => withDisplayNames(generated), [generated]);
+  const [shock, setShock] = useState<Shock>(40);
+  const [compare, setCompare] = useState<Compare>("shock");
+  const [controlsOpen, setControlsOpen] = useState(false);
+  const { magnitude, setMagnitude, run, status, previous, runMagnitude } =
+    useKisumuScenario(scenario, canRun, 40);
+  const choose = (next: Shock, view: Compare) => {
+    setShock(next);
+    setCompare(view);
+    setMagnitude(view === "none" ? 0 : next);
+  };
   const { step } = useTour();
   useEffect(() => {
-    // The guided demo shows the 40% shock; the user can still move the slider.
-    if (canRun && step && SHOCK_STEPS.includes(step)) setMagnitude(40);
+    // The guided demo shows the 40% shock; the user can still pick another.
+    if (canRun && step && SHOCK_STEPS.includes(step)) choose(40, "shock");
   }, [step, canRun]);
   const [subcounty, setSubcounty] = useState("all");
   const [selected, setSelected] = useState<string | null>(null);
@@ -129,6 +137,32 @@ export function KisumuOverview({
   const risk = selected ? risks[selected] : undefined;
   const shockEvents = run?.result?.shock_caused_stockouts;
   const pending = !run || previous;
+  const events = useMemo(() => runEvents(run?.result), [run]);
+  const counts = useMemo(() => {
+    if (!run || !events) return null;
+    const values = Object.values(risks);
+    const count = (status: string) =>
+      values.filter((item) => item.status === status).length;
+    return {
+      critical: count("critical"),
+      watch: count("watch"),
+      stable: count("stable"),
+    };
+  }, [risks, run, events]);
+  // Older snapshots have one planted transfer; test panels may have none.
+  const cases = panel.demo_cases as
+    Partial<PilotPanel["demo_cases"]> | undefined;
+  const routes =
+    cases?.transfer_routes ??
+    (cases?.near_expiry_transfer ? [cases.near_expiry_transfer] : []);
+  const reveal = (id: string) => {
+    const element = document.getElementById(id);
+    if (!element) return;
+    element.scrollIntoView?.({ block: "start" });
+    if (!element.hasAttribute("tabindex"))
+      element.setAttribute("tabindex", "-1");
+    element.focus({ preventScroll: true });
+  };
   const facilitySection = useMemo(
     () => (
       <section className="panel">
@@ -210,109 +244,131 @@ export function KisumuOverview({
   );
   return (
     <>
-      <p>
-        <a className="underline" href="/">
-          Kenya
-        </a>{" "}
-        / Kisumu
+      <p className="crumbs">
+        <a href="/">Kenya</a> / Kisumu
       </p>
-      <h1>{t("kisumuTitle")}</h1>
-      <p>{t("syntheticNote")}</p>
-      <section className="panel">
-        <label htmlFor="shock-slider">
-          {t("shockLabel")}: {magnitude}%
-        </label>
-        <input
-          id="shock-slider"
-          type="range"
-          disabled={!canRun}
-          min="0"
-          max="100"
-          value={magnitude}
-          onChange={(event) => setMagnitude(Number(event.target.value))}
-        />
-        {/* One reserved slot: baseline note, run status, or the shock summary. */}
-        <div
-          className="shock-summary"
-          aria-busy={magnitude > 0 && pending}
-          aria-label={t("shockFirst")}
-          role="group"
-        >
-          {magnitude === 0 ? (
-            <p>{t("baseline")}</p>
-          ) : status === "error" ? (
-            <p role="alert">{t("scenarioError")}</p>
-          ) : pending ? (
-            <p role="status">
-              {status === "running" ? t("scenarioRunning") : t("previousRun")}
-            </p>
-          ) : !validEvents(shockEvents) ? (
-            <p>{t("shockDetailsUnavailable")}</p>
-          ) : shockEvents.length ? (
-            <StockoutOrder
-              events={shockEvents}
-              magnitude={magnitude}
-              total={
-                Array.isArray(run?.result?.stockouts)
-                  ? run.result.stockouts.length
-                  : undefined
-              }
-              noShock={noShockCount(run)}
-            />
-          ) : (
-            <p>{t("noShockStockouts")}</p>
-          )}
-        </div>
-      </section>
-      {canRun && rank && magnitude > 0 && pending && (
-        <RankPlaceholder
-          message={status === "error" ? t("scenarioError") : undefined}
+      <div className="head-row">
+        <h1>{t("kisumuTitle")}</h1>
+        {canRun && (
+          <span className="scenario">
+            {magnitude === 0
+              ? t("scenarioNone")
+              : tf("scenarioCut", { n: magnitude })}
+          </span>
+        )}
+      </div>
+      {canRun && (
+        <KisumuVerdict
+          panel={panel}
+          routes={routes}
+          magnitude={runMagnitude}
+          events={events}
+          counts={counts}
+          busy={pending && status !== "error"}
+          onShowOrder={() => reveal("stockout-order")}
+          onShowFacility={(id) => {
+            setSelected(id);
+            reveal("facility-detail");
+          }}
         />
       )}
-      {run &&
-        canRun &&
-        rank &&
-        magnitude > 0 &&
-        !pending &&
-        validEvents(shockEvents) &&
-        shockEvents.length > 0 && (
-          <RankedFixes
-            key={run.id}
-            runId={run.id}
-            events={shockEvents}
-            routes={
-              panel.demo_cases.transfer_routes ?? [
-                panel.demo_cases.near_expiry_transfer,
-              ]
+      {canRun && (
+        <button
+          type="button"
+          className="btn change-scenario"
+          aria-expanded={controlsOpen}
+          aria-controls="scenario-controls"
+          onClick={() => setControlsOpen(!controlsOpen)}
+        >
+          {controlsOpen ? t("hideScenario") : t("changeScenario")}
+          <span className="change-scenario-current">
+            {magnitude === 0
+              ? t("scenarioNone")
+              : tf("scenarioCut", { n: magnitude })}
+          </span>
+        </button>
+      )}
+      <div className="layout">
+        {canRun && (
+          <ScenarioControls
+            shock={shock}
+            compare={compare}
+            enabled={canRun}
+            open={controlsOpen}
+            status={
+              status === "error"
+                ? t("scenarioError")
+                : pending
+                  ? tf("verdictLoading", { n: magnitude })
+                  : undefined
             }
-            rank={(body) => rank(run.id, body)}
+            onShock={(value) => choose(value, "shock")}
+            onCompare={(view) => choose(shock, view)}
           />
         )}
-      {facilitySection}
-      <section className="panel" aria-live="polite">
-        {facility && risk ? (
-          <>
-            <h2>
-              {facility.name} · {facility.id}
-            </h2>
-            <p>
-              {t(risk.status)}
-              {preShock.has(facility.id) && ` · ${t("alreadyShort")}`} ·{" "}
-              {t("drivers")}: {risk.drivers.join(", ") || "—"} ·{" "}
-              {risk.days === null
-                ? risk.status === "unknown"
-                  ? t("noRiskData")
-                  : t("noStockout")
-                : `${risk.days} ${t("days")}`}
-            </p>
-          </>
-        ) : (
-          <p>{t("selectFacility")}</p>
-        )}
-      </section>
-      {canRun && trace && (
-        <FundingTrace flow={panel.demo_cases.stalled_release} trace={trace} />
-      )}
+        <div className="results">
+          {canRun && events && events.shock.length > 0 && !pending && (
+            <section className="panel" aria-labelledby="stockout-order">
+              <h2 id="stockout-order">{t("shockFirst")}</h2>
+              <StockoutOrder
+                events={events.shock}
+                magnitude={magnitude}
+                total={events.all.length}
+                noShock={events.alreadyShort.length}
+              />
+            </section>
+          )}
+          {canRun && rank && magnitude > 0 && pending && (
+            <RankPlaceholder
+              message={status === "error" ? t("scenarioError") : undefined}
+            />
+          )}
+          {run &&
+            canRun &&
+            rank &&
+            magnitude > 0 &&
+            !pending &&
+            validEvents(shockEvents) &&
+            shockEvents.length > 0 && (
+              <RankedFixes
+                key={run.id}
+                runId={run.id}
+                events={shockEvents}
+                routes={routes}
+                rank={(body) => rank(run.id, body)}
+              />
+            )}
+          {facilitySection}
+          <section className="panel" id="facility-detail" aria-live="polite">
+            {facility && risk ? (
+              <>
+                <h2>
+                  {facility.name} · {facility.id}
+                </h2>
+                <p>
+                  {t(risk.status)}
+                  {preShock.has(facility.id) &&
+                    ` · ${t("alreadyShort")}`} · {t("drivers")}:{" "}
+                  {risk.drivers.join(", ") || "—"} ·{" "}
+                  {risk.days === null
+                    ? risk.status === "unknown"
+                      ? t("noRiskData")
+                      : t("noStockout")
+                    : `${risk.days} ${t("days")}`}
+                </p>
+              </>
+            ) : (
+              <p>{t("selectFacility")}</p>
+            )}
+          </section>
+          {canRun && trace && (
+            <FundingTrace
+              flow={panel.demo_cases.stalled_release}
+              trace={trace}
+            />
+          )}
+        </div>
+      </div>
     </>
   );
 }

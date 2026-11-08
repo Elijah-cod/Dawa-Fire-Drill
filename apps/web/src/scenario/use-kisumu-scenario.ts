@@ -13,9 +13,13 @@ export type ScenarioApi = {
   read: (id: string) => Promise<ScenarioRun>;
 };
 
-/** Run the baseline first; keep the previous result visibly distinct while rerunning. */
-export function useKisumuScenario(api: ScenarioApi, enabled = true) {
-  const [magnitude, setMagnitude] = useState(0);
+/** Run the initial shock first; keep the previous result visibly distinct while rerunning. */
+export function useKisumuScenario(
+  api: ScenarioApi,
+  enabled = true,
+  initial = 0,
+) {
+  const [magnitude, setMagnitude] = useState(initial);
   const [run, setRun] = useState<ScenarioRun | null>(null);
   const [runMagnitude, setRunMagnitude] = useState<number | null>(null);
   const [status, setStatus] = useState<"idle" | "running" | "ready" | "error">(
@@ -64,5 +68,7 @@ export function useKisumuScenario(api: ScenarioApi, enabled = true) {
     run: enabled ? run : null,
     status,
     previous: enabled && run !== null && runMagnitude !== magnitude,
+    /** The shock of the run on screen, which trails magnitude while a run is in flight. */
+    runMagnitude: enabled ? runMagnitude : null,
   };
 }

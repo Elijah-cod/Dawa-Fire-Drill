@@ -54,11 +54,20 @@ it("keeps the synthetic notice visible after switching language", () => {
       </AppShell>
     </PreferencesProvider>,
   );
-  expect(screen.getByRole("note").textContent).toContain("Synthetic demo data");
+  expect(screen.getByRole("note").textContent).toContain(
+    "Facilities, names, locations and costs are invented.",
+  );
+  const about = screen.getByRole("button", { name: "About this demo" });
+  expect(about.getAttribute("aria-expanded")).toBe("false");
+  fireEvent.click(about);
+  expect(about.getAttribute("aria-expanded")).toBe("true");
+  expect(document.getElementById("about-demo")?.textContent).toContain(
+    "Only some scale parameters (facility mix, lead times, demand and funding totals) are anchored to public aggregates",
+  );
   fireEvent.change(screen.getByLabelText(/language/i), {
     target: { value: "sw" },
   });
   expect(screen.getByRole("note").textContent).toContain(
-    "Data za majaribio zilizobuniwa",
+    "Vituo, majina, maeneo na gharama ni vya kubuni.",
   );
 });

@@ -1,16 +1,73 @@
 @import "tailwindcss";
 
+/* Display face: Source Serif 4 Semibold (SIL OFL 1.1), self-hosted Latin subset; see
+   docs/design/fonts.md. Only the page title, panel headings and the verdict use it. */
+@font-face {
+  font-family: "Source Serif 4";
+  src: url("/fonts/source-serif-4-latin-600-normal.woff2") format("woff2");
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+/* Georgia scaled to Source Serif 4's metrics so the swap does not move layout. */
+@font-face {
+  font-family: "Source Serif 4 Fallback";
+  src: local("Georgia");
+  size-adjust: 108.39%;
+  ascent-override: 95.58%;
+  descent-override: 30.91%;
+  line-gap-override: 0%;
+}
+/* Tokens from the approved Kisumu preview (docs/design/prototype/kisumu-v2/styles.css).
+   The older names (--canvas, --soft) alias the new ones. */
 :root {
   color-scheme: light dark;
-  --canvas: #f7f8f4;
+  --bg: #f5f4ef;
   --surface: #ffffff;
-  --ink: #14212b;
-  --muted: #344a52;
+  --surface-2: #eeede6;
+  --ink: #16262c;
+  --muted: #4f5e65;
+  --border: #d6d3c8;
   --primary: #155e63;
-  --border: #b4c3c4;
-  --soft: #e9f0ed;
+  --primary-strong: #0e4a4e;
+  --primary-ink: #ffffff;
+  --primary-soft: #e1efed;
+  --critical: #a32121;
+  --critical-soft: #fbe8e6;
+  --watch: #7a4a00;
+  --watch-soft: #fcefd6;
+  --stable: #1e6a39;
+  --stable-soft: #e2f1e7;
+  --unknown: #4f5e65;
+  --unknown-soft: #ecedea;
+  --out: #5a1a1a;
+  --focus: #1a5fd1;
+  --shadow: 0 1px 2px rgb(22 38 44 / 6%), 0 2px 8px rgb(22 38 44 / 5%);
+  --canvas: var(--bg);
+  --soft: var(--primary-soft);
+  --text-xs: 0.75rem;
+  --text-sm: 0.875rem;
+  --text-md: 1rem;
+  --text-lg: 1.125rem;
+  --text-xl: 1.375rem;
+  --text-2xl: 1.75rem;
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+  --space-7: 48px;
+  --radius: 10px;
+  --radius-sm: 6px;
+  --radius-pill: 999px;
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --bottom-bar: 57px;
+  --font-display: "Source Serif 4", "Source Serif 4 Fallback", Georgia, serif;
   font-family: system-ui, "Noto Sans", sans-serif;
   line-height: 1.5;
+  font-variant-numeric: tabular-nums;
+  accent-color: var(--primary);
 }
 * {
   box-sizing: border-box;
@@ -57,18 +114,30 @@ select {
 }
 :root[data-theme="dark"] {
   color-scheme: dark;
-  --canvas: #0f1b22;
-  --surface: #172a32;
-  --ink: #f6f7f2;
-  --muted: #a7c7c4;
-  --primary: #8ad5cf;
-  --border: #4c666b;
-  --soft: #233b40;
+  --bg: #0e191d;
+  --surface: #152830;
+  --surface-2: #1c343d;
+  --ink: #e6eeed;
+  --muted: #a9b8ba;
+  --border: #2d4952;
+  --primary: #5cc2b9;
+  --primary-strong: #86d6ce;
+  --primary-ink: #0a1d20;
+  --primary-soft: #173d41;
+  --critical: #ff9a90;
+  --critical-soft: #3c1d1d;
+  --watch: #ffc966;
+  --watch-soft: #382c13;
+  --stable: #82d79d;
+  --stable-soft: #173526;
+  --unknown: #b6c2c4;
+  --unknown-soft: #243a41;
+  --out: #ffb4ab;
+  --focus: #8ab4ff;
+  --shadow: 0 1px 2px rgb(0 0 0 / 35%);
 }
-button:focus-visible,
-input:focus-visible,
-a:focus-visible {
-  outline: 3px solid var(--primary);
+:focus-visible {
+  outline: 3px solid var(--focus);
   outline-offset: 2px;
 }
 .skip {
@@ -97,16 +166,81 @@ a:focus-visible {
   font-weight: 800;
   text-decoration: none;
 }
+.icon {
+  width: 20px;
+  height: 20px;
+  flex: none;
+  stroke: currentColor;
+  fill: none;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
 .sidebar nav a {
   display: inline-flex;
   min-height: 44px;
   align-items: center;
+  gap: var(--space-2);
   margin-left: 1rem;
 }
 nav a[aria-current="page"] {
   font-weight: 700;
   text-decoration: underline;
   text-underline-offset: 0.25em;
+}
+.bottom-nav nav a {
+  flex-direction: column;
+  gap: 2px;
+  color: var(--muted);
+  text-decoration: none;
+}
+.bottom-nav nav a[aria-current="page"] {
+  color: var(--primary-strong);
+}
+/* Phones: one compact bar with the brand and the demo button, then the two preferences. */
+.topbar-brand {
+  display: none;
+}
+@media (max-width: 767px) {
+  .sidebar {
+    display: none;
+  }
+  .topbar {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: var(--space-2) var(--space-3);
+    padding: var(--space-2) var(--space-4);
+  }
+  .topbar-brand {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    color: var(--primary-strong);
+  }
+  .workspace-name {
+    display: none;
+  }
+  .topbar .preferences {
+    grid-column: 1 / -1;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-2);
+  }
+  .topbar .preferences label {
+    position: relative;
+  }
+  /* The options are bilingual, so the labels stay as accessible names only. */
+  .topbar .preferences label > span {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+  .topbar .preferences select {
+    width: 100%;
+  }
 }
 /* Phones: primary links move to a bottom bar; the sidebar keeps only the brand. */
 .bottom-nav {
@@ -123,7 +257,7 @@ nav a[aria-current="page"] {
 }
 .bottom-nav a {
   display: flex;
-  min-height: 52px;
+  min-height: 56px;
   align-items: center;
   justify-content: center;
   padding: 0.25rem;
@@ -134,26 +268,66 @@ nav a[aria-current="page"] {
 .sidebar nav {
   display: none;
 }
+/* Room for the fixed bottom bar so the last content is never under it. */
 body {
-  padding-bottom: 4rem;
+  padding-bottom: calc(var(--bottom-bar) + env(safe-area-inset-bottom));
 }
 .topbar {
   padding: 0.75rem 1rem;
   color: var(--muted);
 }
 .synthetic-banner {
-  background: var(--soft);
-  padding: 0.75rem 1rem;
-  border-block: 1px solid var(--border);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0 var(--space-3);
+  padding: var(--space-1) var(--space-4);
+  background: var(--primary-soft);
+  color: var(--ink);
+  font-size: var(--text-sm);
+}
+.link-button {
+  min-height: 44px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--primary-strong);
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+  cursor: pointer;
+}
+.about {
+  padding: 0 var(--space-4) var(--space-3);
+  background: var(--primary-soft);
+  font-size: var(--text-sm);
+}
+.about p {
+  margin: 0 0 var(--space-2);
+  max-width: 70ch;
+  color: var(--ink);
 }
 main {
   padding: 1rem;
   max-width: 1200px;
 }
 h1 {
-  font-size: clamp(1.875rem, 2.8vw, 2.5rem);
-  line-height: 1.12;
+  font-size: var(--text-2xl);
+  line-height: 1.15;
   margin: 0.5rem 0 1rem;
+}
+h1,
+h2,
+h3 {
+  text-wrap: balance;
+}
+/* Display face scope: page title, panel headings and the verdict. */
+h1,
+.panel h2,
+.verdict-line {
+  font-family: var(--font-display);
+  font-weight: 600;
+  letter-spacing: 0;
 }
 h2 {
   font-size: 1.25rem;
@@ -198,10 +372,6 @@ p {
   font-weight: 600;
 }
 /* Reserved from measured fixture-run heights so arriving results do not shift the page. */
-.shock-summary {
-  min-height: 9rem;
-  margin-top: 0.5rem;
-}
 .rank-placeholder {
   min-height: 96.25rem;
 }
@@ -497,6 +667,189 @@ input {
   padding: 1rem;
   margin-top: 1rem;
 }
+/* Kisumu: header, verdict, scenario controls (approved preview, docs/design/prototype/kisumu-v2). */
+.crumbs {
+  margin: 0;
+  font-size: var(--text-sm);
+  color: var(--muted);
+}
+.crumbs a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  min-width: 44px;
+}
+.head-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-2) var(--space-3);
+}
+.head-row h1 {
+  margin: 0;
+}
+.scenario {
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--muted);
+}
+.verdict {
+  margin: var(--space-3) 0 var(--space-4);
+  max-width: 72ch;
+  transition: opacity 200ms var(--ease-out);
+}
+.verdict[data-busy] {
+  opacity: 0.6;
+}
+.verdict-line {
+  margin: 0;
+  color: var(--ink);
+  font-size: var(--text-xl);
+  line-height: 1.35;
+  text-wrap: pretty;
+}
+/* Phones: the lead sentence stays large; coverage and budget sentences step down. */
+.verdict-scope,
+.verdict-fix {
+  margin-top: var(--space-2);
+  font-size: var(--text-md);
+  line-height: 1.45;
+}
+.verdict-fix:empty {
+  display: none;
+}
+.inline-control {
+  display: inline;
+  min-height: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--primary-strong);
+  font: inherit;
+  text-align: inherit;
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.18em;
+  cursor: pointer;
+}
+.inline-control:hover {
+  text-decoration-thickness: 2px;
+}
+.verdict-facts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1) var(--space-4);
+  margin: var(--space-3) 0 0;
+  padding: 0;
+  list-style: none;
+  font-size: var(--text-sm);
+  color: var(--muted);
+}
+.verdict-facts strong {
+  color: var(--ink);
+}
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  min-height: 44px;
+  min-width: 44px;
+  padding: 0 var(--space-4);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--ink);
+  font-weight: 600;
+  cursor: pointer;
+}
+.btn:hover {
+  background: var(--surface-2);
+}
+.btn:active {
+  transform: translateY(1px);
+}
+.change-scenario {
+  width: 100%;
+  justify-content: space-between;
+  margin-bottom: var(--space-3);
+  border-color: var(--primary);
+  color: var(--primary-strong);
+}
+.change-scenario-current {
+  color: var(--muted);
+  font-weight: 600;
+}
+.layout {
+  display: grid;
+  gap: var(--space-4);
+}
+.layout > * {
+  min-width: 0;
+}
+.controls {
+  margin-bottom: 0;
+}
+.controls[data-open="false"] {
+  display: none;
+}
+.controls fieldset {
+  border: 0;
+  margin: 0 0 var(--space-4);
+  padding: 0;
+  min-width: 0;
+}
+.controls legend {
+  display: block;
+  margin-bottom: var(--space-2);
+  font-size: var(--text-sm);
+  font-weight: 700;
+}
+.segmented {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+}
+.segmented button {
+  min-height: 44px;
+  min-width: 0;
+  padding: 0 var(--space-2);
+  border: 0;
+  border-right: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--ink);
+  font-weight: 600;
+  cursor: pointer;
+}
+.segmented button:last-child {
+  border-right: 0;
+}
+.segmented button:hover {
+  background: var(--surface-2);
+}
+.segmented button[aria-pressed="true"] {
+  background: var(--primary);
+  color: var(--primary-ink);
+}
+.segmented button:disabled {
+  cursor: not-allowed;
+}
+.hint {
+  margin: var(--space-2) 0 0;
+  font-size: var(--text-xs);
+  color: var(--muted);
+  text-wrap: balance;
+}
+.controls-status {
+  margin: 0;
+  font-size: var(--text-sm);
+}
+.controls-status:empty {
+  display: none;
+}
 @media (min-width: 768px) {
   .bottom-nav {
     display: none;
@@ -516,8 +869,10 @@ input {
     border: 2px solid var(--primary);
     border-radius: 0.75rem;
   }
-  .shock-summary {
-    min-height: 4.5rem;
+  .verdict-scope,
+  .verdict-fix {
+    font-size: var(--text-xl);
+    line-height: 1.35;
   }
   .rank-placeholder {
     min-height: 60.25rem;
@@ -545,14 +900,47 @@ input {
     border-bottom: 0;
     padding: 1.5rem 1rem;
   }
+  .sidebar nav {
+    display: grid;
+    gap: var(--space-1);
+    margin-top: var(--space-5);
+  }
   .sidebar nav a {
-    margin: 1rem 0;
+    display: flex;
+    gap: var(--space-3);
+    margin: 0;
+    padding: 0 var(--space-3);
+    border-radius: var(--radius-sm);
+    color: var(--ink);
+    font-weight: 600;
+    text-decoration: none;
+  }
+  .sidebar nav a:hover {
+    background: var(--surface-2);
+  }
+  .sidebar nav a[aria-current="page"] {
+    background: var(--primary-soft);
+    color: var(--primary-strong);
+    text-decoration: none;
   }
   .sidebar p {
     display: block;
   }
   main {
     padding: 2rem;
+  }
+  .layout {
+    grid-template-columns: 272px minmax(0, 1fr);
+    align-items: start;
+  }
+  .controls,
+  .controls[data-open="false"] {
+    display: block;
+    position: sticky;
+    top: var(--space-4);
+  }
+  .change-scenario {
+    display: none;
   }
 }
 /* The sidebar narrows content between 1024 and 1279 px; wider screens need less height. */
@@ -566,13 +954,28 @@ input {
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]):not([data-theme="dark"]) {
-    --canvas: #0f1b22;
-    --surface: #172a32;
-    --ink: #f6f7f2;
-    --muted: #a7c7c4;
-    --primary: #8ad5cf;
-    --border: #4c666b;
-    --soft: #233b40;
+    color-scheme: dark;
+    --bg: #0e191d;
+    --surface: #152830;
+    --surface-2: #1c343d;
+    --ink: #e6eeed;
+    --muted: #a9b8ba;
+    --border: #2d4952;
+    --primary: #5cc2b9;
+    --primary-strong: #86d6ce;
+    --primary-ink: #0a1d20;
+    --primary-soft: #173d41;
+    --critical: #ff9a90;
+    --critical-soft: #3c1d1d;
+    --watch: #ffc966;
+    --watch-soft: #382c13;
+    --stable: #82d79d;
+    --stable-soft: #173526;
+    --unknown: #b6c2c4;
+    --unknown-soft: #243a41;
+    --out: #ffb4ab;
+    --focus: #8ab4ff;
+    --shadow: 0 1px 2px rgb(0 0 0 / 35%);
   }
 }
 @media (prefers-reduced-motion: reduce) {
