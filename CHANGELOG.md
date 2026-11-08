@@ -1,5 +1,7 @@
 # Changelog
 
+- Added Kisumu, funding trace and bin-card capture links to the sidebar and a phone bottom navigation bar; the capture link opens the facility in-charge view.
+
 - Map clusters now show their status mix (for example “6 · 2 Crit · 3 Watch · 1 Stable”) with the worst-status symbol, never overlap, and keep zooming in on repeated Enter with focus kept on the same facility.
 
 - Recaptured the README facility-map screenshot with clusters and the counts line, and updated the map limitation.

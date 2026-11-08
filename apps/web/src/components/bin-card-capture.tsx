@@ -7,6 +7,7 @@ import {
   type CaptureRead,
 } from "../api/client";
 import { usePreferences } from "../preferences/preferences";
+import { useHashTarget } from "../navigation/nav";
 
 const MAX_BYTES = 5 * 1024 * 1024;
 const TYPES = ["image/png", "image/jpeg", "image/webp"];
@@ -76,6 +77,7 @@ export function BinCardCapture({
   ) => Promise<CaptureConfirmed>;
 }) {
   const { t } = usePreferences();
+  useHashTarget("capture-title", true);
   const [online, setOnline] = useState(true);
   const [attested, setAttested] = useState(false);
   const [file, setFile] = useState<File | null>(null);

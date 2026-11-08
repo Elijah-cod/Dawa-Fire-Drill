@@ -13,6 +13,11 @@ const strings = {
     overviewTitle: "Where would you act first?",
     overviewLead: "Rehearse a supply shock using synthetic examples.",
     overview: "Overview",
+    navKisumu: "Kisumu",
+    navFunding: "Funding trace",
+    navCapture: "Bin-card capture",
+    navPrimary: "Primary",
+    navMobile: "Primary (mobile)",
     kenya: "Kenya · County planning workspace",
     banner:
       "Synthetic demo data · Calibrated to public aggregates · Results are illustrative, not validated.",
@@ -238,6 +243,11 @@ const strings = {
     overviewLead:
       "Fanya mazoezi ya mshtuko wa usambazaji kwa mifano iliyobuniwa.",
     overview: "Muhtasari",
+    navKisumu: "Kisumu",
+    navFunding: "Ufuatiliaji wa ufadhili",
+    navCapture: "Kunasa kadi ya akiba",
+    navPrimary: "Urambazaji mkuu",
+    navMobile: "Urambazaji mkuu (simu)",
     kenya: "Kenya · Eneo la kupanga la kaunti",
     banner:
       "Data za majaribio zilizobuniwa · Zimepimwa kwa takwimu za jumla za umma · Matokeo ni ya mfano na hayajathibitishwa.",

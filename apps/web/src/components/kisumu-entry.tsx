@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   createApiClient,
   type DemoRole,
@@ -183,11 +183,19 @@ function KisumuContent({
 }
 
 export function KisumuEntry({ mode }: { mode: Mode }) {
+  // Capture belongs to the facility in-charge: the capture link and the demo's capture step
+  // open that role; leaving the demo's capture step returns to the planner.
   const [role, setRole] = useState<DemoRole>("planner");
-  const { step } = useTour();
   useEffect(() => {
-    // Capture belongs to the facility in-charge; the guided demo switches role for that step only.
-    setRole(step === "capture" ? "facility" : "planner");
+    if (new URLSearchParams(window.location.search).get("view") === "capture")
+      setRole("facility");
+  }, []);
+  const { step } = useTour();
+  const previousStep = useRef(step);
+  useEffect(() => {
+    if (step === "capture") setRole("facility");
+    else if (previousStep.current === "capture") setRole("planner");
+    previousStep.current = step;
   }, [step]);
   const adapter = useMemo<AuthAdapter>(() => {
     if (mode === "demo") return createDemoAdapter(api, role);

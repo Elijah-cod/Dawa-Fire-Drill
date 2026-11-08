@@ -3,6 +3,7 @@
 import type { ReactNode } from "react";
 import { PreferenceControls, usePreferences } from "../preferences/preferences";
 import { StartTourButton, TourProvider } from "../tour/tour";
+import { PrimaryNav } from "../navigation/nav";
 
 export function AppShell({ children }: { children: ReactNode }) {
   const { t } = usePreferences();
@@ -16,11 +17,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           <a className="brand" href="/">
             Dawa Fire Drill
           </a>
-          <nav aria-label="Primary">
-            <a href="/" aria-current="page">
-              {t("overview")}
-            </a>
-          </nav>
+          <PrimaryNav label={t("navPrimary")} />
           <p>{t("syntheticNote")}</p>
         </aside>
         <div className="workspace">
@@ -34,6 +31,9 @@ export function AppShell({ children }: { children: ReactNode }) {
           </div>
           <main id="content">{children}</main>
         </div>
+      </div>
+      <div className="bottom-nav">
+        <PrimaryNav label={t("navMobile")} />
       </div>
     </TourProvider>
   );

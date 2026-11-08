@@ -103,6 +103,40 @@ a:focus-visible {
   align-items: center;
   margin-left: 1rem;
 }
+nav a[aria-current="page"] {
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 0.25em;
+}
+/* Phones: primary links move to a bottom bar; the sidebar keeps only the brand. */
+.bottom-nav {
+  position: fixed;
+  inset: auto 0 0 0;
+  z-index: 40;
+  background: var(--surface);
+  border-top: 1px solid var(--border);
+  padding-bottom: env(safe-area-inset-bottom);
+}
+.bottom-nav nav {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+.bottom-nav a {
+  display: flex;
+  min-height: 52px;
+  align-items: center;
+  justify-content: center;
+  padding: 0.25rem;
+  text-align: center;
+  font-size: 0.8125rem;
+  line-height: 1.2;
+}
+.sidebar nav {
+  display: none;
+}
+body {
+  padding-bottom: 4rem;
+}
 .topbar {
   padding: 0.75rem 1rem;
   color: var(--muted);
@@ -192,7 +226,8 @@ p {
 }
 .tour-panel {
   position: fixed;
-  inset: auto 0 0 0;
+  /* Sits above the phone bottom navigation; the 768 px rule moves it to a corner. */
+  inset: auto 0 calc(52px + env(safe-area-inset-bottom)) 0;
   z-index: 50;
   background: var(--surface);
   border-top: 2px solid var(--primary);
@@ -418,6 +453,15 @@ input {
   margin-top: 1rem;
 }
 @media (min-width: 768px) {
+  .bottom-nav {
+    display: none;
+  }
+  .sidebar nav {
+    display: block;
+  }
+  body {
+    padding-bottom: 0;
+  }
   .capture-review {
     grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   }
