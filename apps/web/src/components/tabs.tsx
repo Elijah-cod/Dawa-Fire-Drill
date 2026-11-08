@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, type KeyboardEvent } from "react";
+import { useEffect, useRef, useState, type KeyboardEvent } from "react";
 
 export type TabItem<T extends string> = {
   id: T;
@@ -24,6 +24,37 @@ export function TabList<T extends string>({
   onSelect: (id: T) => void;
 }) {
   const list = useRef<HTMLDivElement>(null);
+  // On narrow screens the strip scrolls sideways; fades and a chevron show there is more.
+  const [more, setMore] = useState({ start: false, end: false });
+  useEffect(() => {
+    const element = list.current;
+    if (!element) return;
+    const update = () =>
+      setMore({
+        start: element.scrollLeft > 1,
+        end: element.scrollLeft + element.clientWidth < element.scrollWidth - 1,
+      });
+    update();
+    element.addEventListener("scroll", update, { passive: true });
+    const observer =
+      typeof ResizeObserver === "undefined" ? null : new ResizeObserver(update);
+    observer?.observe(element);
+    return () => {
+      element.removeEventListener("scroll", update);
+      observer?.disconnect();
+    };
+  }, []);
+  // Keep the selected tab in view when it changes, by keyboard or from elsewhere.
+  // Only the strip scrolls sideways; the page itself never moves.
+  useEffect(() => {
+    const strip = list.current;
+    const tab = strip?.querySelector<HTMLElement>(`#t-${selected}`);
+    if (!strip || !tab) return;
+    const left = tab.offsetLeft - strip.offsetLeft;
+    if (left < strip.scrollLeft) strip.scrollLeft = left;
+    else if (left + tab.offsetWidth > strip.scrollLeft + strip.clientWidth)
+      strip.scrollLeft = left + tab.offsetWidth - strip.clientWidth + 40;
+  }, [selected]);
   const onKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
     const index = items.findIndex((item) => item.id === selected);
     const next = {
@@ -40,7 +71,11 @@ export function TabList<T extends string>({
       ?.focus();
   };
   return (
-    <div className="tabs-wrap">
+    <div
+      className="tabs-wrap"
+      data-more-start={more.start || undefined}
+      data-more-end={more.end || undefined}
+    >
       <div
         className="tabs"
         role="tablist"
@@ -67,6 +102,21 @@ export function TabList<T extends string>({
           </button>
         ))}
       </div>
+      {more.end && (
+        <button
+          type="button"
+          className="tabs-more"
+          aria-hidden="true"
+          tabIndex={-1}
+          onClick={() =>
+            list.current?.scrollBy({ left: list.current.clientWidth * 0.6 })
+          }
+        >
+          <svg className="icon icon--sm" viewBox="0 0 24 24">
+            <path d="M9 6l6 6-6 6" />
+          </svg>
+        </button>
+      )}
     </div>
   );
 }

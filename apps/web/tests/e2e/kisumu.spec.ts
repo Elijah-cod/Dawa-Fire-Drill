@@ -192,11 +192,15 @@ test("the budget slider funds three transfers at 30, four at 100 and none at 5",
 
 test("tabs follow the ARIA pattern and the verdict's phrases open them", async ({
   page,
-}) => {
+}, testInfo) => {
   await page.goto(KISUMU);
   await expect(verdict(page)).toContainText("209 stockouts", {
     timeout: 30000,
   });
+  const wrap = page.locator(".tabs-wrap");
+  if (testInfo.project.name === "mobile")
+    // The strip scrolls on phones; the edge cue says so.
+    await expect(wrap).toHaveAttribute("data-more-end", "true");
   const first = page.getByRole("tab", { name: "Map and fixes" });
   await expect(first).toHaveAttribute("aria-selected", "true");
   await first.focus();
@@ -207,6 +211,15 @@ test("tabs follow the ARIA pattern and the verdict's phrases open them", async (
   await expect(order).toContainText("209");
   await page.keyboard.press("End");
   await expect(page.getByRole("tab", { name: /Facilities/ })).toBeFocused();
+  // The selected tab scrolls into the strip's view, and the end cue clears.
+  const [tabBox, stripBox] = await Promise.all([
+    page.getByRole("tab", { name: /Facilities/ }).boundingBox(),
+    page.locator(".tabs").boundingBox(),
+  ]);
+  expect(tabBox!.x + tabBox!.width).toBeLessThanOrEqual(
+    stripBox!.x + stripBox!.width + 1,
+  );
+  await expect(wrap).not.toHaveAttribute("data-more-end", "true");
   await page.keyboard.press("Home");
   await expect(first).toBeFocused();
   await verdict(page).getByRole("link", { name: "209 stockouts" }).click();

@@ -53,3 +53,21 @@ it("moves and selects with arrows, Home and End, wrapping at the ends", () => {
   fireEvent.click(tabs()[1]);
   expect(tabs()[1].tabIndex).toBe(0);
 });
+
+it("marks an overflowing strip so the edge cue shows, and clears it at the end", () => {
+  render(<Harness />);
+  const strip = screen.getByRole("tablist");
+  Object.defineProperties(strip, {
+    scrollWidth: { configurable: true, value: 600 },
+    clientWidth: { configurable: true, value: 358 },
+    scrollLeft: { configurable: true, writable: true, value: 0 },
+  });
+  fireEvent.scroll(strip);
+  const wrap = strip.parentElement!;
+  expect(wrap.dataset.moreEnd).toBe("true");
+  expect(wrap.dataset.moreStart).toBeUndefined();
+  strip.scrollLeft = 242;
+  fireEvent.scroll(strip);
+  expect(wrap.dataset.moreEnd).toBeUndefined();
+  expect(wrap.dataset.moreStart).toBe("true");
+});

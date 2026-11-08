@@ -844,6 +844,46 @@ input {
 .tabs-wrap {
   position: relative;
 }
+/* Edge fades and a chevron show that the strip scrolls sideways on narrow screens. */
+.tabs-wrap::before,
+.tabs-wrap::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 2px;
+  width: 40px;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 150ms var(--ease-out);
+}
+.tabs-wrap::before {
+  left: 0;
+  background: linear-gradient(to right, var(--bg), transparent);
+}
+.tabs-wrap::after {
+  right: 0;
+  background: linear-gradient(to left, var(--bg) 40%, transparent);
+}
+.tabs-wrap[data-more-start]::before,
+.tabs-wrap[data-more-end]::after {
+  opacity: 1;
+}
+.tabs-more {
+  position: absolute;
+  top: 2px;
+  right: 0;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--primary-strong);
+  cursor: pointer;
+}
 .tabs {
   display: flex;
   gap: var(--space-1);
