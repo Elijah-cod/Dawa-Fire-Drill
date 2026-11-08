@@ -168,13 +168,16 @@ p {
   min-height: 1.5em;
 }
 .shock-panel {
-  min-height: 20.5rem;
+  min-height: 26rem;
 }
 .rank-placeholder {
   min-height: 58rem;
 }
 .rank-results {
   min-height: 32.5rem;
+}
+.same-day-note {
+  font-size: 0.875rem;
 }
 .rank-cost-note {
   color: var(--muted);
@@ -315,7 +318,7 @@ input {
 }
 @media (min-width: 768px) {
   .shock-panel {
-    min-height: 13rem;
+    min-height: 15.75rem;
   }
   .rank-placeholder {
     min-height: 37rem;
