@@ -1,4 +1,24 @@
 /* Kisumu v3 preview. Tokens first; components use only tokens. */
+
+/* Display face: Source Serif 4 Semibold (SIL OFL 1.1), self-hosted, Latin subset.
+   See docs/design/fonts.md. Used only for the page title, section headings and the verdict. */
+@font-face {
+  font-family: "Source Serif 4";
+  src: url("fonts/source-serif-4-latin-600-normal.woff2") format("woff2");
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+/* Georgia scaled to Source Serif 4's advance widths and vertical metrics, so the swap
+   does not move layout. Values computed from both fonts' tables with fontTools. */
+@font-face {
+  font-family: "Source Serif 4 Fallback";
+  src: local("Georgia");
+  size-adjust: 108.39%;
+  ascent-override: 95.58%;
+  descent-override: 30.91%;
+  line-gap-override: 0%;
+}
 :root {
   color-scheme: light;
   --bg: #f5f4ef;
@@ -35,6 +55,7 @@
   --space-5: 24px;
   --space-6: 32px;
   --space-7: 48px;
+  --font-display: "Source Serif 4", "Source Serif 4 Fallback", Georgia, serif;
   --radius: 10px;
   --radius-sm: 6px;
   --radius-pill: 999px;
@@ -258,6 +279,10 @@ h1 {
 }
 .verdict-line strong {
   color: var(--primary-strong);
+}
+.verdict-fix {
+  margin-top: var(--space-2);
+  min-height: calc(5 * 1.35em);
 }
 .verdict-facts {
   display: flex;
@@ -978,4 +1003,24 @@ tr[aria-selected="true"] {
   width: 14px;
   height: 14px;
   border-radius: 50%;
+}
+
+/* Display face scope: page title, section headings, verdict line. */
+h1,
+.panel h2,
+.verdict-line {
+  font-family: var(--font-display);
+  font-weight: 600;
+  letter-spacing: 0;
+}
+.verdict-line strong {
+  font-weight: 600;
+}
+#budget-status-slot {
+  min-height: calc(2 * 1.5em + 2 * var(--space-3) + var(--space-3));
+}
+@media (min-width: 768px) {
+  .verdict-fix {
+    min-height: calc(3 * 1.35em);
+  }
 }

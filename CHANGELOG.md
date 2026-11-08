@@ -1,5 +1,7 @@
 # Changelog
 
+- Kisumu preview: page title, section headings and verdict use self-hosted Source Serif 4 (OFL) with a metric-matched fallback; the verdict and budget status reserve their space so changing the budget no longer moves the page.
+
 - Refreshed README screenshots, demo script and limitations; listed all Swahili strings for review and added a Checkpoint C checklist.
 
 - Added a favicon. Browser tests now cover the guided demo, funding trace, bin-card capture and clustered map in Swahili with the dark theme, including accessibility checks and the English-only note on the optimizer explanation.

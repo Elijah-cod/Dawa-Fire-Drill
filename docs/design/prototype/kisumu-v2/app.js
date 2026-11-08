@@ -111,7 +111,9 @@ function verdict() {
       }
     }
   }
-  document.getElementById("verdict").innerHTML = `${first} ${fix}`;
+  document.getElementById("verdict").innerHTML = first;
+  // The budget sentence has its own reserved line so a ranking that arrives later never moves the page.
+  document.getElementById("verdict-fix").innerHTML = fix;
   const view = facilityView(r);
   const count = (s) => view.filter((f) => f.status === s).length;
   const short = alreadyShort(r);
@@ -352,7 +354,7 @@ function fixesUpdate() {
     status = `<p class="state" role="status" id="budget-status">Updating the ranking for ${state.budget} KES… Showing ${rankedBudget} KES until it arrives.</p>`;
   else if (!k.selected.length)
     status = `<p class="state" role="status" id="budget-status">Nothing fits ${rankedBudget} KES. The cheapest fix costs ${cheapest} KES.</p>`;
-  else status = `<p class="visually-hidden" role="status" id="budget-status">${k.total_cost} of ${rankedBudget} KES used.</p>`;
+  else status = `<p class="state" role="status" id="budget-status">${k.total_cost} of ${rankedBudget} KES used.</p>`;
   document.getElementById("budget-status-slot").innerHTML = status;
   const events = r.shockEvents;
   const pairs = [];
