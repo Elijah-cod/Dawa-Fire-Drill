@@ -6,6 +6,14 @@ import type { components } from "../generated/api";
 type CountyOverview = components["schemas"]["CountyOverview"];
 type CountyRun = components["schemas"]["CountyRunRead"];
 
+/** Fixed run IDs for the four prepared shocks; keep in step with scripts/build-fixtures.mjs. */
+export const MOCK_RUN_IDS: Record<number, string> = {
+  0: "00000000-0000-4000-8000-000000000040",
+  20: "00000000-0000-4000-8000-000000000020",
+  40: "00000000-0000-4000-8000-000000000042",
+  100: "00000000-0000-4000-8000-000000000100",
+};
+
 /** Reproducible backend-generated synthetic fixtures for development and tests only. */
 export function createMockClient(role: Role) {
   if (process.env.NODE_ENV === "production")
@@ -51,16 +59,19 @@ export function createMockClient(role: Role) {
         request.seed !== 42 ||
         request.horizon_days !== 90 ||
         request.shock_type !== "logistics_reduction" ||
-        ![0, 40].includes(request.magnitude)
+        !(request.magnitude in MOCK_RUN_IDS)
       ) {
         throw new Error("Synthetic fixture unavailable for these inputs");
       }
       const fixture = (await import("../fixtures/kisumu.json")).default;
+      const { magnitude } = request;
+      // 20% and 100% keep only the backend event lists, on the 40% run's metadata.
+      const compact =
+        fixture.risk_runs[String(magnitude) as keyof typeof fixture.risk_runs];
+      const { subcounty_rollup: _rollup, ...metadata } = fixture.run;
+      void _rollup;
       return {
-        id:
-          request.magnitude === 0
-            ? "00000000-0000-4000-8000-000000000040"
-            : "00000000-0000-4000-8000-000000000042",
+        id: MOCK_RUN_IDS[magnitude],
         country_code: "KE",
         county_code: "042",
         seed: 42,
@@ -68,7 +79,12 @@ export function createMockClient(role: Role) {
         snapshot_version: 4,
         simulation_version: 2,
         status: "succeeded",
-        result: request.magnitude === 0 ? fixture.baseline : fixture.run,
+        result:
+          magnitude === 0
+            ? fixture.baseline
+            : magnitude === 40
+              ? fixture.run
+              : { ...metadata, ...compact },
         synthetic: true,
       };
     },
@@ -82,16 +98,24 @@ export function createMockClient(role: Role) {
     ): Promise<components["schemas"]["ModeledResponse"]> {
       if (role !== "planner" && role !== "admin") throw new Error("Forbidden");
       const fixture = (await import("../fixtures/kisumu.json")).default;
+      const magnitude = Object.entries(MOCK_RUN_IDS).find(
+        ([, id]) => id === runId,
+      )?.[0];
+      const ranked = (await import("../fixtures/ranked-fixes.json"))
+        .default as Record<
+        string,
+        Record<string, components["schemas"]["ModeledResponse"]>
+      >;
+      const recorded = (magnitude && ranked[magnitude]) || {};
+      const events = magnitude
+        ? fixture.risk_runs[magnitude as keyof typeof fixture.risk_runs]
+            .shock_caused_stockouts
+        : [];
       const expected = fixCandidates(
-        plannedFixes(
-          fixture.run.shock_caused_stockouts,
-          fixture.pilot.demo_cases.transfer_routes,
-        ),
+        plannedFixes(events, fixture.pilot.demo_cases.transfer_routes),
       );
-      const recorded = (await import("../fixtures/ranked-fixes.json"))
-        .default as Record<string, components["schemas"]["ModeledResponse"]>;
       if (
-        runId !== "00000000-0000-4000-8000-000000000042" ||
+        !magnitude ||
         request.synthetic_attested !== true ||
         request.minimum_benefit != null ||
         !(String(request.budget) in recorded) ||

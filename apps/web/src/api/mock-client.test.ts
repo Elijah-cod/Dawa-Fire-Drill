@@ -60,7 +60,16 @@ describe("OpenAPI-typed synthetic mock", () => {
     expect(
       (shock.result?.shock_caused_stockouts as unknown[]).length,
     ).toBeGreaterThan(0);
-    await expect(mock.submitRun({ ...base, magnitude: 20 })).rejects.toThrow(
+    const moderate = await mock.submitRun({ ...base, magnitude: 20 });
+    const severe = await mock.submitRun({ ...base, magnitude: 100 });
+    expect((moderate.result?.shock_caused_stockouts as unknown[]).length).toBe(
+      77,
+    );
+    expect((severe.result?.shock_caused_stockouts as unknown[]).length).toBe(
+      393,
+    );
+    expect(moderate.result?.synthetic).toBe(true);
+    await expect(mock.submitRun({ ...base, magnitude: 30 })).rejects.toThrow(
       "fixture unavailable",
     );
   });
@@ -97,7 +106,24 @@ it("returns only the recorded optimizer fixtures for the exact synthetic demo in
   expect(
     (await mock.rank(runId, { ...request, budget: 100 })).selected_ids,
   ).toHaveLength(4);
+  expect(
+    (await mock.rank(runId, { ...request, budget: 5 })).selected_ids,
+  ).toEqual([]);
   await expect(mock.rank(runId, { ...request, budget: 31 })).rejects.toThrow();
+  const moderate = fixCandidates(
+    plannedFixes(
+      fixture.risk_runs["20"].shock_caused_stockouts,
+      fixture.pilot.demo_cases.transfer_routes,
+    ),
+  );
+  expect(
+    (
+      await mock.rank("00000000-0000-4000-8000-000000000020", {
+        ...request,
+        candidates: moderate,
+      })
+    ).selected_ids,
+  ).toHaveLength(3);
   await expect(
     mock.rank(runId, { ...request, minimum_benefit: 1 }),
   ).rejects.toThrow();

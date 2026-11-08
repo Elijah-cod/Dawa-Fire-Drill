@@ -11,15 +11,17 @@
  * before trimming, so the UI is unchanged. Do not use this fixture as
  * simulation input.
  *
- * risk_runs keeps only the stockout lists of the backend runs at 0, 20, 40 and 100% for
- * map risk tests.
+ * risk_runs keeps only the stockout lists of the backend runs at 0, 20, 40 and 100%
+ * (all, shock-caused, pre-shock and no-shock events) for the mock client's four
+ * prepared shocks and the map risk tests.
  *
  * The funding part is the backend trace of the planted stalled-release flow
  * at its own as_of date.
  *
  * ranked-fixes.json holds the backend rankings (OR-Tools via rank_kisumu and the
- * deterministic explanation) of the candidates the web app builds for the 40%
- * run, keyed by ceiling: 30, 100 and 5 KES.
+ * deterministic explanation) of the candidates the web app builds for the 20% and
+ * 40% runs, keyed by shock and then by ceiling: every 5 units from 0 to 100
+ * (illustrative cost units). The 100% run has no candidate that arrives in time.
  *
  * Always regenerate from backend county generator version 5 with seed 42;
  * never hand-edit. Usage, from apps/web (requires uv):
@@ -34,11 +36,16 @@ const GENERATOR_VERSION = 5;
 const SIMULATION_VERSION = 2;
 const HORIZON_DAYS = 90;
 const SHOCK_MAGNITUDE = 40;
+// Shocks with recorded rankings for the mock client.
+const RANKED_SHOCKS = [20, 40];
 const KEEP_MONTHS = 3;
-// Ceilings with recorded rankings for the mock client (KES, illustrative).
-const BUDGETS = [30, 100, 5];
-// The mock client's fixed run ID for the 40% shock.
-const RUN_ID = "00000000-0000-4000-8000-000000000042";
+// Ceilings with recorded rankings for the mock client (illustrative cost units).
+const BUDGETS = Array.from({ length: 21 }, (_, index) => index * 5);
+// The mock client's fixed run IDs; keep in step with src/api/mock-client.ts.
+const RUN_IDS = {
+  20: "00000000-0000-4000-8000-000000000020",
+  40: "00000000-0000-4000-8000-000000000042",
+};
 
 const api = resolve(import.meta.dirname, "../../api");
 const output = resolve(import.meta.dirname, "../src/fixtures/kisumu.json");
@@ -78,81 +85,92 @@ funding = trace_kisumu_case(
     pilot, flow_id=flow["id"], as_of=date.fromisoformat(flow["as_of"])
 ).model_dump(mode="json")
 
-RUN_ID = "${RUN_ID}"
-shock_run = run(${SHOCK_MAGNITUDE})
-events = shock_run["shock_caused_stockouts"]
-fixes = []
-for route in pilot["demo_cases"]["transfer_routes"]:
-    event = next(
-        (e for e in events
-         if (e["facility_id"], e["commodity_id"]) == (route["facility_id"], route["commodity_id"])),
-        None,
-    )
-    if route.get("synthetic") is True and event and route["arrival_day"] <= event["day"]:
-        fixes.append((event, route))
-fixes.sort(key=lambda item: item[0]["day"])
-candidates = []
-for index, (_, route) in enumerate(fixes, 1):
-    candidates += [
-        {
-            "id": f"transfer-{index}", "kind": "redistribution", "cost": 10,
-            "facility_id": route["facility_id"],
-            "donor_facility_id": route["donor_facility_id"],
-            "commodity_id": route["commodity_id"],
-            "quantity": route["quantity"],
-            "available_units": route["available_units"],
-            "dispatch_day": route["dispatch_day"],
-            "arrival_day": route["arrival_day"],
-            "expiry_day": route["expiry_day"],
-            "minimum_shelf_days": route["minimum_shelf_days"],
-            "distance_km": route["distance_km"],
-            "max_distance_km": route["maximum_distance_km"],
-        },
-        {
-            "id": f"emergency-{index}", "kind": "emergency_procurement", "cost": 50,
-            "facility_id": route["facility_id"],
-            "commodity_id": route["commodity_id"],
-            "quantity": route["quantity"],
-            "arrival_day": route["arrival_day"],
-        },
-    ]
-scenario = ScenarioCreate.model_validate({
-    "name": "Synthetic donor shock", "shock_type": "logistics_reduction",
-    "magnitude": ${SHOCK_MAGNITUDE}, "seed": ${SEED}, "horizon_days": ${HORIZON_DAYS},
-})
+RUN_IDS = ${JSON.stringify(RUN_IDS)}
+runs = {m: run(m) for m in (0, 20, 40, 100)}
+shock_run = runs[${SHOCK_MAGNITUDE}]
+
+def candidates_for(result):
+    events = result["shock_caused_stockouts"]
+    fixes = []
+    for route in pilot["demo_cases"]["transfer_routes"]:
+        event = next(
+            (e for e in events
+             if (e["facility_id"], e["commodity_id"]) == (route["facility_id"], route["commodity_id"])),
+            None,
+        )
+        if route.get("synthetic") is True and event and route["arrival_day"] <= event["day"]:
+            fixes.append((event, route))
+    fixes.sort(key=lambda item: item[0]["day"])
+    candidates = []
+    for index, (_, route) in enumerate(fixes, 1):
+        candidates += [
+            {
+                "id": f"transfer-{index}", "kind": "redistribution", "cost": 10,
+                "facility_id": route["facility_id"],
+                "donor_facility_id": route["donor_facility_id"],
+                "commodity_id": route["commodity_id"],
+                "quantity": route["quantity"],
+                "available_units": route["available_units"],
+                "dispatch_day": route["dispatch_day"],
+                "arrival_day": route["arrival_day"],
+                "expiry_day": route["expiry_day"],
+                "minimum_shelf_days": route["minimum_shelf_days"],
+                "distance_km": route["distance_km"],
+                "max_distance_km": route["maximum_distance_km"],
+            },
+            {
+                "id": f"emergency-{index}", "kind": "emergency_procurement", "cost": 50,
+                "facility_id": route["facility_id"],
+                "commodity_id": route["commodity_id"],
+                "quantity": route["quantity"],
+                "arrival_day": route["arrival_day"],
+            },
+        ]
+    return candidates
+
 ranked = {}
-for budget in ${JSON.stringify(BUDGETS)}:
-    request = ModeledRequest.model_validate(
-        {"synthetic_attested": True, "budget": budget, "candidates": candidates}
-    )
-    result, effects = rank_kisumu(
-        scenario, pilot, shock_run, request=request, horizon_days=${HORIZON_DAYS}
-    )
-    ranked[str(budget)] = ModeledResponse(
-        run_id=RUN_ID,
-        explanation=explain_selection(result, budget=budget).text,
-        selected_ids=result.selected_ids,
-        selected_reasons={item: "included_in_optimal_set" for item in result.selected_ids},
-        excluded_reasons=result.excluded_reasons,
-        cut_line=len(result.selected_ids),
-        total_cost=result.total_cost,
-        remaining_budget=budget - result.total_cost,
-        minimum_benefit=None,
-        effects=effects,
-    ).model_dump(mode="json")
+for magnitude in ${JSON.stringify(RANKED_SHOCKS)}:
+    scenario = ScenarioCreate.model_validate({
+        "name": "Synthetic donor shock", "shock_type": "logistics_reduction",
+        "magnitude": magnitude, "seed": ${SEED}, "horizon_days": ${HORIZON_DAYS},
+    })
+    candidates = candidates_for(runs[magnitude])
+    ranked[str(magnitude)] = {}
+    for budget in ${JSON.stringify(BUDGETS)}:
+        request = ModeledRequest.model_validate(
+            {"synthetic_attested": True, "budget": budget, "candidates": candidates}
+        )
+        result, effects = rank_kisumu(
+            scenario, pilot, runs[magnitude], request=request, horizon_days=${HORIZON_DAYS}
+        )
+        ranked[str(magnitude)][str(budget)] = ModeledResponse(
+            run_id=RUN_IDS[str(magnitude)],
+            explanation=explain_selection(result, budget=budget).text,
+            selected_ids=result.selected_ids,
+            selected_reasons={item: "included_in_optimal_set" for item in result.selected_ids},
+            excluded_reasons=result.excluded_reasons,
+            cut_line=len(result.selected_ids),
+            total_cost=result.total_cost,
+            remaining_budget=budget - result.total_cost,
+            minimum_benefit=None,
+            effects=effects,
+        ).model_dump(mode="json")
 
 print(json.dumps({
     "planning": generate_county_planning(seed=${SEED}),
     "pilot": pilot,
-    "baseline": run(0),
+    "baseline": runs[0],
     "run": shock_run,
     "funding": funding,
     "risk_runs": {
         str(m): {
             key: result[key]
-            for key in ("horizon_days", "stockouts", "pre_shock_stockouts", "baseline_stockouts")
+            for key in (
+                "horizon_days", "stockouts", "shock_caused_stockouts",
+                "pre_shock_stockouts", "baseline_stockouts",
+            )
         }
-        for m, result in ((m, run(m)) for m in (0, 20, 40, 100))
+        for m, result in runs.items()
     },
     "ranked": ranked,
 }))
@@ -169,7 +187,11 @@ if (result.status !== 0) {
   process.exit(1);
 }
 const { ranked, ...fixture } = JSON.parse(result.stdout);
-if (!Object.values(ranked).every((item) => item.synthetic === true))
+if (
+  !Object.values(ranked).every((byBudget) =>
+    Object.values(byBudget).every((item) => item.synthetic === true),
+  )
+)
   throw new Error("Ranking is not synthetic");
 await writeFile(rankedOutput, `${JSON.stringify(ranked, null, 2)}\n`);
 for (const part of ["planning", "pilot", "baseline", "run", "funding"])
