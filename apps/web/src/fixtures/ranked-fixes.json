@@ -19,15 +19,15 @@
   "effects": [
     {
       "id": "transfer",
-      "baseline_stockout_day": 48,
+      "baseline_stockout_day": 41,
       "counterfactual_stockout_day": null,
-      "deferred_days": 43
+      "deferred_days": 50
     },
     {
       "id": "emergency",
-      "baseline_stockout_day": 48,
+      "baseline_stockout_day": 41,
       "counterfactual_stockout_day": null,
-      "deferred_days": 43
+      "deferred_days": 50
     }
   ]
 }

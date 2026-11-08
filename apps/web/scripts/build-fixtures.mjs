@@ -14,7 +14,11 @@
  * The funding part is the backend trace of the planted stalled-release flow
  * at its own as_of date.
  *
- * Always regenerate from backend county generator version 4 with seed 42;
+ * ranked-fixes.json is the backend ranking (OR-Tools via rank_kisumu and the
+ * deterministic explanation) of the candidates the web app builds for the 40%
+ * run at a 100 KES ceiling.
+ *
+ * Always regenerate from backend county generator version 5 with seed 42;
  * never hand-edit. Usage, from apps/web (requires uv):
  *   node scripts/build-fixtures.mjs
  */
@@ -23,20 +27,29 @@ import { writeFile } from "node:fs/promises";
 import { resolve } from "node:path";
 
 const SEED = 42;
-const GENERATOR_VERSION = 4;
+const GENERATOR_VERSION = 5;
 const SIMULATION_VERSION = 2;
 const HORIZON_DAYS = 90;
 const SHOCK_MAGNITUDE = 40;
 const KEEP_MONTHS = 3;
+// The mock client's fixed run ID for the 40% shock.
+const RUN_ID = "00000000-0000-4000-8000-000000000042";
 
 const api = resolve(import.meta.dirname, "../../api");
 const output = resolve(import.meta.dirname, "../src/fixtures/kisumu.json");
+const rankedOutput = resolve(
+  import.meta.dirname,
+  "../src/fixtures/ranked-fixes.json",
+);
 const python = `
 import json
 from datetime import date
 from dawa_api.finance_flow.application import trace_kisumu_case
 from dawa_api.ingestion.county_planning import generate_county_planning
+from dawa_api.explain.service import explain_selection
 from dawa_api.ingestion.kisumu import generate_kisumu_panel
+from dawa_api.optimization.kisumu import rank_kisumu
+from dawa_api.optimization.modeled_schemas import ModeledRequest, ModeledResponse
 from dawa_api.scenarios.schemas import ScenarioCreate
 from dawa_api.simulation.kisumu import simulate_kisumu
 
@@ -60,12 +73,62 @@ funding = trace_kisumu_case(
     pilot, flow_id=flow["id"], as_of=date.fromisoformat(flow["as_of"])
 ).model_dump(mode="json")
 
+RUN_ID = "${RUN_ID}"
+shock_run = run(${SHOCK_MAGNITUDE})
+route = pilot["demo_cases"]["near_expiry_transfer"]
+request = ModeledRequest.model_validate({
+    "synthetic_attested": True,
+    "budget": 100,
+    "minimum_benefit": 1,
+    "candidates": [
+        {
+            "id": "transfer", "kind": "redistribution", "cost": 10,
+            "facility_id": route["facility_id"],
+            "donor_facility_id": route["donor_facility_id"],
+            "commodity_id": route["commodity_id"],
+            "quantity": route["quantity"],
+            "available_units": route["available_units"],
+            "dispatch_day": route["dispatch_day"],
+            "arrival_day": route["arrival_day"],
+            "expiry_day": route["expiry_day"],
+            "minimum_shelf_days": route["minimum_shelf_days"],
+            "distance_km": route["distance_km"],
+            "max_distance_km": route["maximum_distance_km"],
+        },
+        {
+            "id": "emergency", "kind": "emergency_procurement", "cost": 50,
+            "facility_id": route["facility_id"],
+            "commodity_id": route["commodity_id"],
+            "quantity": route["quantity"],
+            "arrival_day": route["arrival_day"],
+        },
+    ],
+})
+scenario = ScenarioCreate.model_validate({
+    "name": "Synthetic donor shock", "shock_type": "logistics_reduction",
+    "magnitude": ${SHOCK_MAGNITUDE}, "seed": ${SEED}, "horizon_days": ${HORIZON_DAYS},
+})
+result, effects = rank_kisumu(scenario, pilot, shock_run, request=request, horizon_days=${HORIZON_DAYS})
+ranked = ModeledResponse(
+    run_id=RUN_ID,
+    explanation=explain_selection(result, budget=request.budget).text,
+    selected_ids=result.selected_ids,
+    selected_reasons={item: "included_in_optimal_set" for item in result.selected_ids},
+    excluded_reasons=result.excluded_reasons,
+    cut_line=len(result.selected_ids),
+    total_cost=result.total_cost,
+    remaining_budget=request.budget - result.total_cost,
+    minimum_benefit=request.minimum_benefit,
+    effects=effects,
+).model_dump(mode="json")
+
 print(json.dumps({
     "planning": generate_county_planning(seed=${SEED}),
     "pilot": pilot,
     "baseline": run(0),
-    "run": run(${SHOCK_MAGNITUDE}),
+    "run": shock_run,
     "funding": funding,
+    "ranked": ranked,
 }))
 `;
 
@@ -79,7 +142,9 @@ if (result.status !== 0) {
   console.error(result.stderr);
   process.exit(1);
 }
-const fixture = JSON.parse(result.stdout);
+const { ranked, ...fixture } = JSON.parse(result.stdout);
+if (ranked?.synthetic !== true) throw new Error("Ranking is not synthetic");
+await writeFile(rankedOutput, `${JSON.stringify(ranked, null, 2)}\n`);
 for (const part of ["planning", "pilot", "baseline", "run", "funding"])
   if (fixture[part]?.synthetic !== true)
     throw new Error(`Generated ${part} is not marked synthetic`);

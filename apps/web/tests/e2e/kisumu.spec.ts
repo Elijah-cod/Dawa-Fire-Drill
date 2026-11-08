@@ -94,8 +94,8 @@ test("optimizer ranks a synthetic fix for the first shock-caused stockout", asyn
   await expect(section).toContainText(
     "Another option for this stockout was selected",
   );
-  await expect(section).toContainText("F001");
-  await expect(section).toContainText("C02");
+  await expect(section).toContainText("F031");
+  await expect(section).toContainText("C04");
   await expect(section).toContainText("Budget cut line");
   const accessibility = await new AxeBuilder({ page }).analyze();
   expect(

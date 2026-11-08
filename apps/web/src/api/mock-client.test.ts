@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { createMockClient } from "./mock-client";
+import fixture from "../fixtures/kisumu.json";
 
 afterEach(() => vi.unstubAllEnvs());
 
@@ -70,6 +71,7 @@ describe("OpenAPI-typed synthetic mock", () => {
 
 it("returns only the recorded optimizer fixture for the exact synthetic demo inputs", async () => {
   const mock = createMockClient("planner");
+  const route = fixture.pilot.demo_cases.near_expiry_transfer;
   const request = {
     synthetic_attested: true as const,
     budget: 100,
@@ -79,26 +81,26 @@ it("returns only the recorded optimizer fixture for the exact synthetic demo inp
         id: "transfer",
         kind: "redistribution" as const,
         cost: 10,
-        facility_id: "SYN-KE-042-F001",
-        donor_facility_id: "SYN-KE-042-F002",
-        commodity_id: "SYN-C02",
-        quantity: 100,
-        available_units: 600,
-        dispatch_day: 45,
-        arrival_day: 46,
-        expiry_day: 90,
-        minimum_shelf_days: 7,
-        distance_km: 7,
-        max_distance_km: 30,
+        facility_id: route.facility_id,
+        donor_facility_id: route.donor_facility_id,
+        commodity_id: route.commodity_id,
+        quantity: route.quantity,
+        available_units: route.available_units,
+        dispatch_day: route.dispatch_day,
+        arrival_day: route.arrival_day,
+        expiry_day: route.expiry_day,
+        minimum_shelf_days: route.minimum_shelf_days,
+        distance_km: route.distance_km,
+        max_distance_km: route.maximum_distance_km,
       },
       {
         id: "emergency",
         kind: "emergency_procurement" as const,
         cost: 50,
-        facility_id: "SYN-KE-042-F001",
-        commodity_id: "SYN-C02",
-        arrival_day: 46,
-        quantity: 100,
+        facility_id: route.facility_id,
+        commodity_id: route.commodity_id,
+        arrival_day: route.arrival_day,
+        quantity: route.quantity,
       },
     ],
   };

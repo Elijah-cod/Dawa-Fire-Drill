@@ -35,7 +35,7 @@ test("guided demo walks overview to capture by keyboard", async ({ page }) => {
 
   await next("First stockout");
   await expect(page.locator(".shock-panel")).toContainText(
-    "SYN-KE-042-F001 · SYN-C02",
+    "SYN-KE-042-F031 · SYN-C04",
     { timeout: 30000 },
   );
 
@@ -49,7 +49,7 @@ test("guided demo walks overview to capture by keyboard", async ({ page }) => {
   await next("Ranked fix");
   const ranked = page.getByRole("region", { name: "Do this first" });
   await expect(ranked).toContainText(
-    "Redistribution transfer · 10 KES · 43 modeled days deferred · Selected by the optimizer",
+    "Redistribution transfer · 10 KES · 50 modeled days deferred · Selected by the optimizer",
     { timeout: 30000 },
   );
 

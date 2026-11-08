@@ -20,7 +20,7 @@ Nothing is deployed. The approved frontend is in progress (Phase 3, before Check
 
 Phase 2b covers synthetic planning records for Kenya's 47 counties, with Kisumu as the only facility-level pilot; see [Phase 2 notes](docs/phases/2.md) for the demo evidence and limitations, including legacy country-only paths and the missing map.
 
-Kisumu generator versions 3 and 4 include invented facility coordinates; they are not real sites or verified administrative locations. Versions 1 and 2 have no coordinates. Version 4 plants a synthetic transfer for the seed-42 first shock-caused stockout; existing snapshots remain unchanged. See [data assumptions](docs/data-assumptions.md).
+Kisumu generator versions 3 and 4 include invented facility coordinates; they are not real sites or verified administrative locations. Versions 1 and 2 have no coordinates. Version 4 plants a synthetic transfer for the seed-42 first shock-caused stockout; existing snapshots remain unchanged. See [data assumptions](docs/data-assumptions.md). Version 5, now served by default, varies opening cover per facility and commodity so shock-caused stockouts spread over several weeks, and replants the transfer for the new first event.
 
 ## Screenshots
 
@@ -69,7 +69,7 @@ Start at `http://localhost:3300/` and press **Try the 3-minute demo**. Each step
 1. **National overview (≈20 s).** “Forty-seven counties on a schematic grid, not a map. Every value is synthetic and illustrative.”
 2. **Kisumu pilot (≈20 s).** “Kisumu is the only facility-level pilot: forty invented facilities at invented locations. Risk uses shape and text, not only color.”
 3. **Apply a 40% shock (≈20 s).** “Donor logistics support drops by 40% and the county model reruns.”
-4. **First stockout (≈30 s).** “The shock-caused order. SYN-KE-042-F001 runs out of SYN-C02 on day 48, alongside other items at the same facility the same day. Act here first.”
+4. **First stockout (≈30 s).** “The shock-caused order. SYN-KE-042-F031 runs out of SYN-C04 first, on day 41; the rest follow over the next seven weeks. Act here first.”
 5. **Funding trace (≈30 s).** “One synthetic flow: 100,000 KES approved but not released, waiting 90 days.”
 6. **Ranked fix (≈40 s).** “OR-Tools compares a 10 KES transfer with a 50 KES emergency delivery under a 100 KES ceiling. It selects the transfer; the emergency delivery sits below the cut line. Costs are assumptions, and the explanation only restates the optimizer's result.”
 7. **Bin-card capture (≈20 s).** “The facility in-charge uploads a synthetic bin-card photo. With no extraction provider configured locally, they type each value from the photo and must confirm before anything is saved.”

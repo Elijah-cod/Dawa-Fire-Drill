@@ -29,7 +29,7 @@ it("contains only synthetic seed-42 data with the last three consumption months"
   );
 });
 
-it("keeps the version-4 transfer aimed at the first shock-caused stockout", () => {
+it("keeps the planted transfer aimed at the first shock-caused stockout", () => {
   const transfer = fixture.pilot.demo_cases.near_expiry_transfer;
   const first = fixture.run.shock_caused_stockouts[0];
   expect([transfer.facility_id, transfer.commodity_id]).toEqual([
