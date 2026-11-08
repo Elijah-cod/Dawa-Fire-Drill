@@ -324,7 +324,6 @@ export function KisumuOverview({
           panel={panel}
           routes={routes}
           magnitude={runMagnitude}
-          requested={magnitude}
           events={events}
           counts={counts}
           busy={pending && status !== "error"}

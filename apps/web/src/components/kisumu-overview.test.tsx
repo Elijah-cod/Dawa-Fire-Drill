@@ -476,7 +476,8 @@ it("frames the question at full size until the first run arrives", () => {
   expect(container.querySelector(".verdict-lead")?.textContent).toBe(
     "Stress-testing Kisumu: what breaks first if donor logistics support is cut, and what is the cheapest fix?",
   );
-  expect(container.querySelector(".verdict-fix")?.textContent).toBe(
-    "Running the 40% scenario…",
-  );
+  expect(container.querySelector(".verdict-fix")?.textContent).toBe("");
+  expect(
+    screen.getByRole("complementary", { name: "Scenario" }).textContent,
+  ).toContain("Running the 40% scenario…");
 });
