@@ -54,13 +54,18 @@ it("updates a facility's risk and driving tracer with the selected scenario", as
   };
   render(<KisumuOverview panel={panel} scenario={scenario} />);
   // Invented display names replace the generator's numbered names.
+  fireEvent.click(screen.getByRole("tab", { name: /Facilities/ }));
   fireEvent.click(
     screen.getByRole("button", { name: /Acacia Ridge Dispensary · F1/ }),
   );
   expect(await screen.findByText(/Critical.*C01.*7/i)).toBeTruthy();
   expect(
-    await screen.findByText(/Stockout details are unavailable for this run/i),
-  ).toBeTruthy();
+    (
+      await screen.findAllByText(
+        /Stockout details are unavailable for this run/i,
+      )
+    ).length,
+  ).toBeGreaterThan(0);
   fireEvent.click(screen.getByRole("button", { name: "0%" }));
   expect(await screen.findByText(/Stable.*C01/i)).toBeTruthy();
 });
@@ -194,6 +199,7 @@ it("explains Critical at no shock for facilities already short before the shock"
     read: vi.fn(),
   };
   render(<KisumuOverview panel={panel} scenario={scenario} />);
+  fireEvent.click(screen.getByRole("tab", { name: /Facilities/ }));
   fireEvent.click(
     screen.getByRole("button", { name: /Acacia Ridge Dispensary · F001/ }),
   );
@@ -204,7 +210,9 @@ it("explains Critical at no shock for facilities already short before the shock"
     screen.getByRole("button", { name: /Mvule Ridge Dispensary · F004/ }),
   );
   expect(await screen.findByText(/^Stable/)).toBeTruthy();
-  expect(screen.queryByText(/Already short/)).toBeNull();
+  expect(document.getElementById("facility-detail")?.textContent).not.toMatch(
+    /Already short/,
+  );
 });
 
 /** The mock client's backend runs at the four prepared shocks. */
@@ -276,13 +284,27 @@ it("makes the verdict's highlighted phrases real controls", async () => {
     name: "209 stockouts",
   });
   fireEvent.click(count);
-  expect(document.activeElement?.id).toBe("stockout-order");
+  await vi.waitFor(() =>
+    expect(document.activeElement?.id).toBe("stockout-order"),
+  );
+  expect(
+    screen
+      .getByRole("tab", { name: /Stockout order/ })
+      .getAttribute("aria-selected"),
+  ).toBe("true");
   fireEvent.click(
     within(verdict).getByRole("button", {
       name: "Tamarind Crossing Sub-County Hospital (Kisumu West)",
     }),
   );
-  expect(document.activeElement?.id).toBe("facility-detail");
+  await vi.waitFor(() =>
+    expect(document.activeElement?.id).toBe("facility-detail"),
+  );
+  expect(
+    screen
+      .getByRole("tab", { name: /Facilities/ })
+      .getAttribute("aria-selected"),
+  ).toBe("true");
   expect(
     screen.getByRole("heading", {
       name: "Tamarind Crossing Sub-County Hospital · SYN-KE-042-F031",

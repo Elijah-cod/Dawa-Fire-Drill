@@ -18,6 +18,9 @@ import { SHOCK_STEPS, useTour } from "../tour/tour";
 import { withDisplayNames } from "../kisumu/names";
 import { runEvents } from "../kisumu/view";
 import { KisumuVerdict } from "./kisumu-verdict";
+import { TabList, type TabItem } from "./tabs";
+
+type View = "overview" | "order" | "funding" | "facilities";
 import {
   ScenarioControls,
   type Compare,
@@ -163,84 +166,83 @@ export function KisumuOverview({
       element.setAttribute("tabindex", "-1");
     element.focus({ preventScroll: true });
   };
-  const facilitySection = useMemo(
-    () => (
-      <section className="panel">
-        <label htmlFor="subcounty-filter">{t("subcounty")}</label>
-        <select
-          id="subcounty-filter"
-          value={subcounty}
-          onChange={(event) => setSubcounty(event.target.value)}
-        >
-          <option value="all">{t("allSubcounties")}</option>
-          {panel.subcounties.map((item) => (
-            <option key={item.id} value={item.id}>
-              {item.name}
-            </option>
-          ))}
-        </select>
-        <button
-          className="mobile-map-toggle"
-          type="button"
-          onClick={() => {
-            dialog.current?.showModal();
-            setMapOpen(true);
-          }}
-        >
-          {t("openFacilityMap")}
-        </button>
-        <div className="desktop-grid">
-          {/* One map at a time: the sheet's copy replaces this hidden one. */}
-          {!mapOpen && (
-            <FacilityMap
-              facilities={facilities}
-              risks={risks}
-              onSelect={setSelected}
-              preShock={preShock}
-              magnitude={run && !previous ? magnitude : undefined}
-            />
-          )}
+  const [tab, setTab] = useState<View>("overview");
+  useEffect(() => {
+    // The navigation's funding link lands on this page with #funding-title.
+    if (window.location.hash === "#funding-title") setTab("funding");
+  }, []);
+  useEffect(() => {
+    // The guided demo opens the tab that holds each step's target.
+    if (step === "funding") setTab("funding");
+    else if (step === "rank") setTab("overview");
+  }, [step]);
+  const show = (view: View, id: string) => {
+    setTab(view);
+    // The panel renders on the next frame; then move focus to the target.
+    requestAnimationFrame(() => reveal(id));
+  };
+  const views: TabItem<View>[] = [
+    { id: "overview", label: t("tabOverview") },
+    ...(canRun
+      ? [
+          {
+            id: "order" as const,
+            label: t("tabOrder"),
+            count: events && !pending ? events.shock.length : undefined,
+          },
+          { id: "funding" as const, label: t("tabFunding") },
+        ]
+      : []),
+    {
+      id: "facilities",
+      label: t("tabFacilities"),
+      count: panel.facilities.length,
+    },
+  ];
+  const mapProps = {
+    facilities,
+    risks,
+    onSelect: (id: string) => {
+      setSelected(id);
+      setTab("facilities");
+    },
+    preShock,
+    magnitude: run && !previous ? magnitude : undefined,
+  };
+  const mapSection = (
+    <section className="panel" aria-label={t("facilityMapTitle")}>
+      <button
+        className="mobile-map-toggle"
+        type="button"
+        onClick={() => {
+          dialog.current?.showModal();
+          setMapOpen(true);
+        }}
+      >
+        {t("openFacilityMap")}
+      </button>
+      <div className="desktop-grid">
+        {/* One map at a time: the sheet's copy replaces this hidden one. */}
+        {!mapOpen && <FacilityMap {...mapProps} onSelect={setSelected} />}
+      </div>
+      <dialog
+        ref={dialog}
+        className="map-sheet"
+        aria-label={t("facilityMapTitle")}
+        onClose={() => setMapOpen(false)}
+      >
+        <div className="map-sheet-header">
+          <h2>{t("facilityMapTitle")}</h2>
+          <button type="button" onClick={() => dialog.current?.close()}>
+            {t("closeMap")}
+          </button>
         </div>
-        <dialog
-          ref={dialog}
-          className="map-sheet"
-          aria-label={t("facilityMapTitle")}
-          onClose={() => setMapOpen(false)}
-        >
-          <div className="map-sheet-header">
-            <h2>{t("facilityMapTitle")}</h2>
-            <button type="button" onClick={() => dialog.current?.close()}>
-              {t("closeMap")}
-            </button>
-          </div>
-          {mapOpen && (
-            <FacilityMap
-              facilities={facilities}
-              risks={risks}
-              onSelect={setSelected}
-              preShock={preShock}
-              magnitude={run && !previous ? magnitude : undefined}
-            />
-          )}
-          <div className="map-drawer" aria-live="polite">
-            {facility
-              ? `${facility.name} · ${facility.id}`
-              : t("selectFacility")}
-          </div>
-        </dialog>
-        <h2>{t("facilities")}</h2>
-        <ul className="county-list">
-          {facilities.map((item) => (
-            <li key={item.id}>
-              <button type="button" onClick={() => setSelected(item.id)}>
-                {item.name} · {item.id}
-              </button>
-            </li>
-          ))}
-        </ul>
-      </section>
-    ),
-    [facilities, risks, subcounty, panel.subcounties, mapOpen, facility, t],
+        {mapOpen && <FacilityMap {...mapProps} onSelect={setSelected} />}
+        <div className="map-drawer" aria-live="polite">
+          {facility ? `${facility.name} · ${facility.id}` : t("selectFacility")}
+        </div>
+      </dialog>
+    </section>
   );
   return (
     <>
@@ -265,10 +267,10 @@ export function KisumuOverview({
           events={events}
           counts={counts}
           busy={pending && status !== "error"}
-          onShowOrder={() => reveal("stockout-order")}
+          onShowOrder={() => show("order", "stockout-order")}
           onShowFacility={(id) => {
             setSelected(id);
-            reveal("facility-detail");
+            show("facilities", "facility-detail");
           }}
         />
       )}
@@ -307,66 +309,148 @@ export function KisumuOverview({
           />
         )}
         <div className="results">
-          {canRun && events && events.shock.length > 0 && !pending && (
-            <section className="panel" aria-labelledby="stockout-order">
-              <h2 id="stockout-order">{t("shockFirst")}</h2>
-              <StockoutOrder
-                events={events.shock}
-                magnitude={magnitude}
-                total={events.all.length}
-                noShock={events.alreadyShort.length}
-              />
+          <TabList
+            label={t("tabsLabel")}
+            items={views}
+            selected={tab}
+            onSelect={setTab}
+          />
+          <div
+            role="tabpanel"
+            id="p-overview"
+            aria-labelledby="t-overview"
+            tabIndex={0}
+            hidden={tab !== "overview"}
+          >
+            <div className="overview">
+              {mapSection}
+              {canRun && rank && magnitude > 0 && pending && (
+                <RankPlaceholder
+                  message={status === "error" ? t("scenarioError") : undefined}
+                />
+              )}
+              {run &&
+                canRun &&
+                rank &&
+                magnitude > 0 &&
+                !pending &&
+                validEvents(shockEvents) &&
+                shockEvents.length > 0 && (
+                  <RankedFixes
+                    key={run.id}
+                    runId={run.id}
+                    events={shockEvents}
+                    routes={routes}
+                    rank={(body) => rank(run.id, body)}
+                  />
+                )}
+            </div>
+          </div>
+          {canRun && (
+            <div
+              role="tabpanel"
+              id="p-order"
+              aria-labelledby="t-order"
+              tabIndex={0}
+              hidden={tab !== "order"}
+            >
+              <section className="panel" aria-labelledby="stockout-order">
+                {events && !pending ? (
+                  <StockoutOrder
+                    panel={panel}
+                    magnitude={magnitude}
+                    total={events.all.length}
+                    shock={events.shock}
+                    alreadyShort={events.alreadyShort}
+                  />
+                ) : (
+                  <>
+                    <h2 id="stockout-order" tabIndex={-1}>
+                      {t("orderTitle")}
+                    </h2>
+                    <p className="state" role="status">
+                      {status === "error"
+                        ? t("scenarioError")
+                        : run && !events
+                          ? t("verdictUnavailable")
+                          : tf("verdictLoading", { n: magnitude })}
+                    </p>
+                  </>
+                )}
+              </section>
+            </div>
+          )}
+          {canRun && (
+            <div
+              role="tabpanel"
+              id="p-funding"
+              aria-labelledby="t-funding"
+              tabIndex={0}
+              hidden={tab !== "funding"}
+            >
+              {trace && (
+                <FundingTrace
+                  flow={panel.demo_cases.stalled_release}
+                  trace={trace}
+                />
+              )}
+            </div>
+          )}
+          <div
+            role="tabpanel"
+            id="p-facilities"
+            aria-labelledby="t-facilities"
+            tabIndex={0}
+            hidden={tab !== "facilities"}
+          >
+            <section className="panel" aria-labelledby="facilities-heading">
+              <h2 id="facilities-heading">{t("facilities")}</h2>
+              <label htmlFor="subcounty-filter">{t("subcounty")}</label>
+              <select
+                id="subcounty-filter"
+                value={subcounty}
+                onChange={(event) => setSubcounty(event.target.value)}
+              >
+                <option value="all">{t("allSubcounties")}</option>
+                {panel.subcounties.map((item) => (
+                  <option key={item.id} value={item.id}>
+                    {item.name}
+                  </option>
+                ))}
+              </select>
+              <ul className="county-list">
+                {facilities.map((item) => (
+                  <li key={item.id}>
+                    <button type="button" onClick={() => setSelected(item.id)}>
+                      {item.name} · {item.id}
+                    </button>
+                  </li>
+                ))}
+              </ul>
             </section>
-          )}
-          {canRun && rank && magnitude > 0 && pending && (
-            <RankPlaceholder
-              message={status === "error" ? t("scenarioError") : undefined}
-            />
-          )}
-          {run &&
-            canRun &&
-            rank &&
-            magnitude > 0 &&
-            !pending &&
-            validEvents(shockEvents) &&
-            shockEvents.length > 0 && (
-              <RankedFixes
-                key={run.id}
-                runId={run.id}
-                events={shockEvents}
-                routes={routes}
-                rank={(body) => rank(run.id, body)}
-              />
-            )}
-          {facilitySection}
-          <section className="panel" id="facility-detail" aria-live="polite">
-            {facility && risk ? (
-              <>
-                <h2>
-                  {facility.name} · {facility.id}
-                </h2>
-                <p>
-                  {t(risk.status)}
-                  {preShock.has(facility.id) &&
-                    ` · ${t("alreadyShort")}`} · {t("drivers")}:{" "}
-                  {risk.drivers.join(", ") || "—"} ·{" "}
-                  {risk.days === null
-                    ? risk.status === "unknown"
-                      ? t("noRiskData")
-                      : t("noStockout")
-                    : `${risk.days} ${t("days")}`}
-                </p>
-              </>
-            ) : (
-              <p>{t("selectFacility")}</p>
-            )}
-          </section>
-          {canRun && trace && (
-            <FundingTrace
-              flow={panel.demo_cases.stalled_release}
-              trace={trace}
-            />
-          )}
+            <section className="panel" id="facility-detail" aria-live="polite">
+              {facility && risk ? (
+                <>
+                  <h2>
+                    {facility.name} · {facility.id}
+                  </h2>
+                  <p>
+                    {t(risk.status)}
+                    {preShock.has(facility.id) &&
+                      ` · ${t("alreadyShort")}`} · {t("drivers")}:{" "}
+                    {risk.drivers.join(", ") || "—"} ·{" "}
+                    {risk.days === null
+                      ? risk.status === "unknown"
+                        ? t("noRiskData")
+                        : t("noStockout")
+                      : `${risk.days} ${t("days")}`}
+                  </p>
+                </>
+              ) : (
+                <p>{t("selectFacility")}</p>
+              )}
+            </section>
+          </div>
         </div>
       </div>
     </>

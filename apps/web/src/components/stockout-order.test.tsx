@@ -1,55 +1,71 @@
 // @vitest-environment jsdom
-import {
-  cleanup,
-  fireEvent,
-  render,
-  screen,
-  within,
-} from "@testing-library/react";
+import { cleanup, render, screen, within } from "@testing-library/react";
 import { afterEach, expect, it } from "vitest";
-import { peakWindow, StockoutOrder } from "./stockout-order";
+import fixture from "../fixtures/kisumu.json";
+import { withDisplayNames } from "../kisumu/names";
+import { runEvents } from "../kisumu/view";
+import { ORDER_PREVIEW, peakWindow, StockoutOrder } from "./stockout-order";
 afterEach(cleanup);
 
-const events = [
-  { facility_id: "F031", commodity_id: "C04", day: 41 },
-  { facility_id: "F019", commodity_id: "C03", day: 43 },
-  { facility_id: "F004", commodity_id: "C04", day: 72 },
-  { facility_id: "F005", commodity_id: "C01", day: 74 },
-  { facility_id: "F006", commodity_id: "C02", day: 76 },
-  { facility_id: "F007", commodity_id: "C02", day: 80 },
-];
+const panel = withDisplayNames(fixture.pilot);
+const events = runEvents({
+  synthetic: true,
+  county_code: "042",
+  ...fixture.risk_runs["40"],
+})!;
 
-it("summarizes counts against no shock, the first stockout and the busiest week", () => {
+it("lists already-short facilities apart from the backend's shock-caused stockouts", () => {
   render(
-    <StockoutOrder events={events} magnitude={40} total={8} noShock={2} />,
+    <StockoutOrder
+      panel={panel}
+      magnitude={40}
+      total={events.all.length}
+      shock={events.shock}
+      alreadyShort={events.alreadyShort}
+    />,
   );
-  expect(document.querySelector(".stockout-summary")?.textContent).toBe(
-    "40% shock: 8 stockouts vs 2 with no shock · 6 caused by the shock. First: F031 · C04 on day 41. Most: days 71–77 (3).",
+  expect(
+    screen.getByText("40% logistics cut: 211 stockouts in total."),
+  ).toBeTruthy();
+  const short = screen.getByRole("heading", {
+    name: "Already short before the shock (2)",
+  }).nextElementSibling as HTMLElement;
+  expect(
+    within(short)
+      .getAllByRole("listitem")
+      .map((li) => li.textContent),
+  ).toEqual([
+    "Acacia Ridge Dispensary (Kisumu Central) · antimalarial tracer 01 · from day 1",
+    "Cedar Ridge Dispensary (Kisumu West) · antimalarial tracer 01 · from day 6",
+  ]);
+  expect(
+    screen.getByRole("heading", { name: "Caused by the shock (209)" }),
+  ).toBeTruthy();
+  const lists = document.querySelectorAll("ol.order");
+  expect(lists[1].children).toHaveLength(ORDER_PREVIEW);
+  expect(lists[1].children[0].textContent).toBe(
+    "Tamarind Crossing Sub-County Hospital (Kisumu West) · family planning tracer 04 · day 41",
   );
-  expect(screen.queryByText(/same day/i)).toBeNull();
+  // The rest sit behind "Show all", numbered on from the preview.
+  expect(screen.getByText("Show all 209")).toBeTruthy();
+  expect(lists[2].getAttribute("start")).toBe(String(ORDER_PREVIEW + 1));
+  expect(lists[1].children.length + lists[2].children.length).toBe(209);
 });
 
-it("keeps the full order behind a disclosure", async () => {
-  render(<StockoutOrder events={events} magnitude={40} />);
-  expect(screen.queryByText(/F007 · C02/)).toBeNull();
-  const details = screen
-    .getByText("Show all 6 shock-caused stockouts in order")
-    .closest("details")!;
-  expect(details.open).toBe(false);
-  fireEvent.click(screen.getByText(/show all 6/i));
-  const items = await within(details).findAllByRole("listitem");
-  expect(items.map((item) => item.textContent)).toEqual(
-    events.map(
-      (e) => `${e.facility_id} · ${e.commodity_id} · ${e.day} days to stockout`,
-    ),
+it("says plainly when nothing runs out because of the shock", () => {
+  render(
+    <StockoutOrder
+      panel={panel}
+      magnitude={0}
+      total={2}
+      shock={[]}
+      alreadyShort={events.alreadyShort}
+    />,
   );
-});
-
-it("omits the comparison when no-shock counts are unavailable", () => {
-  render(<StockoutOrder events={events.slice(0, 1)} magnitude={25} />);
-  expect(document.querySelector(".stockout-summary")?.textContent).toBe(
-    "25% shock: 1 caused by the shock. First: F031 · C04 on day 41. Most: days 36–42 (1).",
-  );
+  expect(screen.getByText("No shock: 2 stockouts in total.")).toBeTruthy();
+  expect(
+    screen.getByText("Nothing runs out because of the shock in this run."),
+  ).toBeTruthy();
 });
 
 it("picks the earliest of equally busy weeks", () => {
