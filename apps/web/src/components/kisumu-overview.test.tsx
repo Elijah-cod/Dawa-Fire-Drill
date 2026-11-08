@@ -410,3 +410,53 @@ it("sorts the facilities table and opens a facility's detail from its row", asyn
       ?.textContent,
   ).toMatch(/^Tamarind Crossing Sub-County Hospital/);
 });
+
+it("filters the facilities by status, sub-county and commodity without changing the verdict", async () => {
+  const { container } = render(
+    <KisumuOverview panel={fixture.pilot} scenario={fixtureScenario()} />,
+  );
+  await vi.waitFor(() =>
+    expect(container.querySelector("#verdict")?.textContent).toContain(
+      "10 Critical · 18 Watch · 12 Stable",
+    ),
+  );
+  fireEvent.click(screen.getByRole("tab", { name: /Facilities/ }));
+  const table = screen.getByRole("region", { name: "Facilities table" });
+  const rows = () => within(table).getAllByRole("row").slice(1);
+  const count = () => container.querySelector(".filter-count")?.textContent;
+  expect(count()).toBe("Showing 40 of 40 facilities.");
+  const critical = screen.getByRole("button", { name: "Critical" });
+  fireEvent.click(critical);
+  expect(critical.getAttribute("aria-pressed")).toBe("true");
+  expect(rows()).toHaveLength(10);
+  expect(rows().every((row) => /Critical/.test(row.textContent ?? ""))).toBe(
+    true,
+  );
+  fireEvent.change(screen.getByLabelText("Sub-county"), {
+    target: { value: "SYN-042-S03" },
+  });
+  expect(rows().length).toBeLessThan(10);
+  expect(rows().every((row) => /Kisumu West/.test(row.textContent ?? ""))).toBe(
+    true,
+  );
+  fireEvent.change(screen.getByLabelText("Sub-county"), {
+    target: { value: "all" },
+  });
+  // One commodity: status and first stockout come from that commodity alone.
+  fireEvent.change(screen.getByLabelText("Commodity"), {
+    target: { value: "SYN-C04" },
+  });
+  expect(count()).toMatch(/^Showing \d+ of 40 facilities\.$/);
+  expect(
+    rows().every((row) =>
+      /— *$|family planning tracer 04$/.test(row.textContent ?? ""),
+    ),
+  ).toBe(true);
+  fireEvent.click(critical);
+  fireEvent.click(screen.getByRole("button", { name: "Stable" }));
+  fireEvent.click(screen.getByRole("button", { name: "Watch" }));
+  expect(rows().length).toBeGreaterThan(0);
+  expect(container.querySelector("#verdict")?.textContent).toContain(
+    "10 Critical · 18 Watch · 12 Stable",
+  );
+});

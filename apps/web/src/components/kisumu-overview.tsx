@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import type { PilotPanel } from "../api/client";
 import { usePreferences } from "../preferences/preferences";
-import { risksForRun } from "../risk/risk";
+import { risksForRun, type Risk } from "../risk/risk";
 import {
   useKisumuScenario,
   type ScenarioApi,
@@ -15,7 +15,7 @@ import { StockoutOrder } from "./stockout-order";
 import type { components } from "../generated/api";
 import { FundingTrace } from "./funding-trace";
 import { SHOCK_STEPS, useTour } from "../tour/tour";
-import { withDisplayNames } from "../kisumu/names";
+import { commodityLabel, withDisplayNames } from "../kisumu/names";
 import { coverage, lateRoutes, runEvents } from "../kisumu/view";
 import { BudgetSentence, KisumuVerdict } from "./kisumu-verdict";
 import { FixesPlaceholder } from "./fixes-placeholder";
@@ -92,7 +92,7 @@ export function KisumuOverview({
     asOf: string,
   ) => Promise<components["schemas"]["FundingTraceResponse"]>;
 }) {
-  const { t, tf } = usePreferences();
+  const { t, tf, locale } = usePreferences();
   // Invented display names replace the generator's numbered names everywhere on this page.
   const panel = useMemo(() => withDisplayNames(generated), [generated]);
   const [shock, setShock] = useState<Shock>(40);
@@ -124,12 +124,32 @@ export function KisumuOverview({
   }, [mapOpen]);
   const risks = useMemo(() => risksForRun(panel, evidence(run)), [panel, run]);
   const preShock = useMemo(() => preShockFacilities(run), [run]);
+  const [commodity, setCommodity] = useState("all");
+  const [statuses, setStatuses] = useState<ReadonlySet<Risk>>(new Set());
+  // With one commodity chosen, the table and map show status for that commodity only;
+  // the verdict's counts always use every commodity.
+  const viewRisks = useMemo(
+    () =>
+      commodity === "all"
+        ? risks
+        : risksForRun(
+            {
+              ...panel,
+              commodities: panel.commodities.filter((c) => c.id === commodity),
+            },
+            evidence(run),
+          ),
+    [risks, commodity, panel, run],
+  );
   const facilities = useMemo(
     () =>
       panel.facilities.filter(
-        (item) => subcounty === "all" || item.subcounty_id === subcounty,
+        (item) =>
+          (subcounty === "all" || item.subcounty_id === subcounty) &&
+          (!statuses.size ||
+            statuses.has(viewRisks[item.id]?.status ?? "unknown")),
       ),
-    [panel, subcounty],
+    [panel, subcounty, statuses, viewRisks],
   );
   const facility = panel.facilities.find((item) => item.id === selected);
   const risk = selected ? risks[selected] : undefined;
@@ -211,7 +231,7 @@ export function KisumuOverview({
   ];
   const mapProps = {
     facilities,
-    risks,
+    risks: viewRisks,
     onSelect: (id: string) => {
       setSelected(id);
       setTab("facilities");
@@ -466,24 +486,90 @@ export function KisumuOverview({
           >
             <section className="panel" aria-labelledby="facilities-heading">
               <h2 id="facilities-heading">{t("facilities")}</h2>
-              <label htmlFor="subcounty-filter">{t("subcounty")}</label>
-              <select
-                id="subcounty-filter"
-                value={subcounty}
-                onChange={(event) => setSubcounty(event.target.value)}
-              >
-                <option value="all">{t("allSubcounties")}</option>
-                {panel.subcounties.map((item) => (
-                  <option key={item.id} value={item.id}>
-                    {item.name}
-                  </option>
-                ))}
-              </select>
+              <fieldset className="filters">
+                <legend>{t("filterLegend")}</legend>
+                <div className="filter-row">
+                  <div>
+                    <span className="field-label" id="status-filter">
+                      {t("filterStatus")}
+                    </span>
+                    <div
+                      className="chips"
+                      role="group"
+                      aria-labelledby="status-filter"
+                    >
+                      {(["critical", "watch", "stable"] as const).map(
+                        (status) => (
+                          <button
+                            key={status}
+                            type="button"
+                            className={`chip status--${status}`}
+                            aria-pressed={statuses.has(status)}
+                            onClick={() => {
+                              const next = new Set(statuses);
+                              if (!next.delete(status)) next.add(status);
+                              setStatuses(next);
+                            }}
+                          >
+                            {t(status)}
+                          </button>
+                        ),
+                      )}
+                    </div>
+                  </div>
+                  <div>
+                    <label className="field-label" htmlFor="subcounty-filter">
+                      {t("subcounty")}
+                    </label>
+                    <select
+                      id="subcounty-filter"
+                      value={subcounty}
+                      onChange={(event) => setSubcounty(event.target.value)}
+                    >
+                      <option value="all">{t("allSubcounties")}</option>
+                      {panel.subcounties.map((item) => (
+                        <option key={item.id} value={item.id}>
+                          {item.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="field-label" htmlFor="commodity-filter">
+                      {t("filterCommodity")}
+                    </label>
+                    <select
+                      id="commodity-filter"
+                      value={commodity}
+                      onChange={(event) => setCommodity(event.target.value)}
+                    >
+                      <option value="all">{t("allCommodities")}</option>
+                      {panel.commodities.map((item) => (
+                        <option key={item.id} value={item.id}>
+                          {commodityLabel(panel.commodities, item.id, locale)}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+                <p className="filter-count" role="status">
+                  {facilities.length
+                    ? tf("filterCount", {
+                        n: facilities.length,
+                        total: panel.facilities.length,
+                      })
+                    : t("filterEmpty")}
+                </p>
+              </fieldset>
               <FacilityTable
                 panel={panel}
                 facilities={facilities}
-                risks={risks}
-                events={allEvents}
+                risks={viewRisks}
+                events={
+                  commodity === "all"
+                    ? allEvents
+                    : allEvents.filter((e) => e.commodity_id === commodity)
+                }
                 selected={selected}
                 onSelect={(id) => {
                   setSelected(id);

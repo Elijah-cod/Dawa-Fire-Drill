@@ -131,6 +131,12 @@ const strings = {
     orderShowAll: "Show all {n}",
     orderNoneShort: "No facility was short before the shock.",
     orderNoneCaused: "Nothing runs out because of the shock in this run.",
+    filterLegend: "Filter facilities",
+    filterStatus: "Status",
+    filterCommodity: "Commodity",
+    allCommodities: "All commodities",
+    filterCount: "Showing {n} of {total} facilities.",
+    filterEmpty: "No facilities match these filters.",
     tableLabel: "Facilities table",
     tableCaption:
       "Status from the shown run: Critical up to day 45, Watch days 46–52, Stable after day 52. Illustrative cutoffs, not a standard.",
@@ -507,6 +513,12 @@ const strings = {
     orderNoneShort: "Hakuna kituo kilichokuwa na upungufu kabla ya mshtuko.",
     orderNoneCaused:
       "Hakuna bidhaa inayoisha kutokana na mshtuko katika jaribio hili.",
+    filterLegend: "Chuja vituo",
+    filterStatus: "Hali",
+    filterCommodity: "Bidhaa",
+    allCommodities: "Bidhaa zote",
+    filterCount: "Inaonyesha vituo {n} kati ya {total}.",
+    filterEmpty: "Hakuna vituo vinavyolingana na vichujio hivi.",
     tableLabel: "Jedwali la vituo",
     tableCaption:
       "Hali kutoka kwa jaribio linaloonyeshwa: Hatari kubwa hadi siku ya 45, Angalizo siku 46–52, Tulivu baada ya siku ya 52. Viwango vya mfano, si kiwango rasmi.",
