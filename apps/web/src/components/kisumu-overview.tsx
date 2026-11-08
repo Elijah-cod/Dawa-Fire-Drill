@@ -251,8 +251,10 @@ export function KisumuOverview({
       day,
     });
     if (search !== window.location.search)
+      // A null state lets Next.js sync its search params, so the navigation highlight
+      // follows in-page tab changes.
       window.history.replaceState(
-        window.history.state,
+        null,
         "",
         `${window.location.pathname}${search}${window.location.hash}`,
       );
