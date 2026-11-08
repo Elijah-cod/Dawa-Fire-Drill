@@ -140,20 +140,24 @@ export function RankedFixes({
   return (
     <section className="panel rank-panel" aria-labelledby="ranked-title">
       <h2 id="ranked-title">{t("doThisFirst")}</h2>
-      <p>{t("rankAssumptions")}</p>
-      <p>{t("rankCandidateAssumptions")}</p>
+      <p className="rank-intro">{t("rankIntro")}</p>
       {!routeMatches && <p role="status">{t("rankTransferUnavailable")}</p>}
-      {fixes.length > 0 && (
-        <p>
-          {t("rankTargets")}:{" "}
-          {fixes
-            .map(
-              ({ event }) =>
-                `${event.facility_id} · ${event.commodity_id} · ${event.day} ${t("days")}`,
-            )
-            .join("; ")}
-        </p>
-      )}
+      <details className="rank-details">
+        <summary>{t("rankDetails")}</summary>
+        <p>{t("rankAssumptions")}</p>
+        <p>{t("rankCandidateAssumptions")}</p>
+        {fixes.length > 0 && (
+          <p>
+            {t("rankTargets")}:{" "}
+            {fixes
+              .map(
+                ({ event }) =>
+                  `${event.facility_id} · ${event.commodity_id} · ${event.day} ${t("days")}`,
+              )
+              .join("; ")}
+          </p>
+        )}
+      </details>
       <label htmlFor="rank-budget">{t("rankBudget")}</label>{" "}
       <input
         id="rank-budget"

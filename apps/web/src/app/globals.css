@@ -169,7 +169,7 @@ p {
   margin-top: 0.5rem;
 }
 .rank-placeholder {
-  min-height: 113.5rem;
+  min-height: 96.25rem;
 }
 .rank-results {
   min-height: 77.25rem;
@@ -249,6 +249,20 @@ body:has(.tour-panel) main {
   padding: 1rem;
   border: 2px solid var(--primary);
   border-radius: 0.5rem;
+}
+.rank-intro {
+  max-width: 70ch;
+}
+.rank-details {
+  margin: 0.5rem 0;
+}
+.rank-details summary {
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  color: var(--primary);
+  font-weight: 600;
 }
 .rank-cost-note {
   color: var(--muted);
@@ -401,7 +415,7 @@ input {
     min-height: 4.5rem;
   }
   .rank-placeholder {
-    min-height: 65.5rem;
+    min-height: 60.25rem;
   }
   .rank-results {
     min-height: 45.5rem;
@@ -414,12 +428,6 @@ input {
   }
 }
 @media (min-width: 1024px) {
-  .rank-placeholder {
-    min-height: 58rem;
-  }
-  .rank-results {
-    min-height: 39.75rem;
-  }
   .shell {
     display: grid;
     grid-template-columns: 240px minmax(0, 1fr);
@@ -440,6 +448,15 @@ input {
   }
   main {
     padding: 2rem;
+  }
+}
+/* The sidebar narrows content between 1024 and 1279 px; wider screens need less height. */
+@media (min-width: 1280px) {
+  .rank-placeholder {
+    min-height: 54.5rem;
+  }
+  .rank-results {
+    min-height: 39.75rem;
   }
 }
 @media (prefers-color-scheme: dark) {

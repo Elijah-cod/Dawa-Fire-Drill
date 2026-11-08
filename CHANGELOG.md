@@ -1,5 +1,7 @@
 # Changelog
 
+- Shortened the “Do this first” intro to two lines and moved the cost assumptions and targeted stockouts behind “How these options are built”.
+
 - The facility map fits all markers with padding that clears the zoom and attribution controls, and refits when it is resized.
 
 - Facilities that are short regardless of the shock (seed 42: SYN-KE-042-F001 and SYN-KE-042-F003) now show “Already short before the shock” next to their risk status in the map tooltip and facility panel.

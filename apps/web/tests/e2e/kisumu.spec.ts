@@ -163,3 +163,22 @@ test("every synthetic facility marker is inside the map and clear of its control
   });
   expect(problems).toEqual([]);
 });
+
+test("the Do this first intro stays within two lines with details on demand", async ({
+  page,
+}) => {
+  await page.goto("http://localhost:3300/kisumu");
+  await page.getByLabel(/Donor logistics support reduction/i).fill("40");
+  const intro = page.locator(".rank-intro");
+  await expect(intro).toBeVisible({ timeout: 30000 });
+  const lines = await intro.evaluate(
+    (element) =>
+      element.getBoundingClientRect().height /
+      parseFloat(getComputedStyle(element).lineHeight),
+  );
+  expect(Math.round(lines)).toBeLessThanOrEqual(2);
+  const details = page.locator(".rank-details");
+  await expect(details).not.toHaveAttribute("open", "");
+  await details.locator("summary").click();
+  await expect(details).toContainText("10 KES and 50 KES");
+});

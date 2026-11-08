@@ -177,6 +177,9 @@ const strings = {
     noStock: "No synthetic stock entries for this facility.",
     noShockStockouts: "No shock-caused stockouts in this illustrative run.",
     doThisFirst: "Do this first",
+    rankIntro:
+      "OR-Tools funds what most delays the earliest stockouts. Costs are illustrative.",
+    rankDetails: "How these options are built",
     rankAssumptions:
       "Costs and benefits are illustrative assumptions, not validated impacts.",
     rankCandidateAssumptions:
@@ -391,6 +394,9 @@ const strings = {
     openingStock: "Akiba ya mwanzo iliyobuniwa",
     noStock: "Hakuna taarifa za akiba zilizobuniwa kwa kituo hiki.",
     doThisFirst: "Fanya hili kwanza",
+    rankIntro:
+      "OR-Tools hufadhili kinachochelewesha zaidi upungufu wa mapema. Gharama ni za mfano.",
+    rankDetails: "Jinsi chaguo hizi zinavyoundwa",
     rankAssumptions:
       "Gharama na manufaa ni makadirio ya mfano, si athari zilizothibitishwa.",
     rankCandidateAssumptions:

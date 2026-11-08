@@ -458,3 +458,28 @@ it("funds what fits the ceiling and names the budget for the rest", async () => 
     ]),
   });
 });
+
+it("keeps the intro short and moves the assumptions behind a disclosure", () => {
+  render(
+    <RankedFixes
+      runId="run-1"
+      events={[{ facility_id: "F001", commodity_id: "C02", day: 48 }]}
+      routes={[route]}
+      rank={vi.fn()}
+    />,
+  );
+  expect(document.querySelector(".rank-intro")?.textContent).toBe(
+    "OR-Tools funds what most delays the earliest stockouts. Costs are illustrative.",
+  );
+  const details = screen
+    .getByText("How these options are built")
+    .closest("details")!;
+  expect(details.open).toBe(false);
+  expect(details.textContent).toMatch(
+    /costs and benefits are illustrative assumptions/i,
+  );
+  expect(details.textContent).toMatch(/10 KES and 50 KES/);
+  expect(details.textContent).toMatch(
+    /Earliest shock-caused stockouts.*F001 · C02 · 48/,
+  );
+});
