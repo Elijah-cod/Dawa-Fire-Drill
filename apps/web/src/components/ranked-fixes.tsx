@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { ApiError } from "../api/client";
+import type { PilotPanel } from "../api/client";
 import type { components } from "../generated/api";
 import { usePreferences } from "../preferences/preferences";
 
@@ -12,13 +13,15 @@ type Target = { facility_id: string; commodity_id: string; day: number };
 export function RankedFixes({
   runId,
   target,
+  transfer,
   rank,
 }: {
   runId: string;
   target: Target;
+  transfer: PilotPanel["demo_cases"]["near_expiry_transfer"];
   rank: (body: Request) => Promise<Result>;
 }) {
-  const { t } = usePreferences();
+  const { t, locale } = usePreferences();
   const [budget, setBudget] = useState(100);
   const [online, setOnline] = useState(true);
   const sequence = useRef(0);
@@ -52,15 +55,40 @@ export function RankedFixes({
   const [status, setStatus] = useState<
     "idle" | "loading" | "error" | "unreachable"
   >("idle");
-  const candidates: Request["candidates"] = [10, 50].map((cost, index) => ({
-    id: index === 0 ? "first-cheap" : "first-costly",
-    kind: "emergency_procurement",
-    cost,
-    facility_id: target.facility_id,
-    commodity_id: target.commodity_id,
-    arrival_day: target.day,
-    quantity: 10000,
-  }));
+  const routeMatches =
+    transfer?.synthetic === true &&
+    transfer.facility_id === target.facility_id &&
+    transfer.commodity_id === target.commodity_id &&
+    transfer.arrival_day <= target.day;
+  const candidates: Request["candidates"] = routeMatches
+    ? [
+        {
+          id: "transfer",
+          kind: "redistribution",
+          cost: 10,
+          facility_id: transfer.facility_id,
+          donor_facility_id: transfer.donor_facility_id,
+          commodity_id: transfer.commodity_id,
+          quantity: transfer.quantity,
+          available_units: transfer.available_units,
+          dispatch_day: transfer.dispatch_day,
+          arrival_day: transfer.arrival_day,
+          expiry_day: transfer.expiry_day,
+          minimum_shelf_days: transfer.minimum_shelf_days,
+          distance_km: transfer.distance_km,
+          max_distance_km: transfer.maximum_distance_km,
+        },
+        {
+          id: "emergency",
+          kind: "emergency_procurement",
+          cost: 50,
+          facility_id: transfer.facility_id,
+          commodity_id: transfer.commodity_id,
+          arrival_day: transfer.arrival_day,
+          quantity: transfer.quantity,
+        },
+      ]
+    : [];
   async function submit(ceiling: number) {
     started.current = true;
     const request = ++sequence.current;
@@ -100,6 +128,7 @@ export function RankedFixes({
       <h2 id="ranked-title">{t("doThisFirst")}</h2>
       <p>{t("rankAssumptions")}</p>
       <p>{t("rankCandidateAssumptions")}</p>
+      {!routeMatches && <p role="status">{t("rankTransferUnavailable")}</p>}
       <p>
         {t("rankTarget")}: {target.facility_id} · {target.commodity_id} ·{" "}
         {target.day} {t("days")}
@@ -119,6 +148,7 @@ export function RankedFixes({
           setResult(null);
           setStatus("idle");
           if (
+            routeMatches &&
             online &&
             started.current &&
             Number.isInteger(next) &&
@@ -136,6 +166,7 @@ export function RankedFixes({
         className="rank-action"
         type="button"
         disabled={
+          !routeMatches ||
           !online ||
           status === "loading" ||
           !Number.isInteger(budget) ||
@@ -159,7 +190,8 @@ export function RankedFixes({
           <ol className="rank-selected">
             {result.selected_ids.map((id) => (
               <li key={id}>
-                {id} · {candidates.find((item) => item.id === id)?.cost} KES ·{" "}
+                {id === "transfer" ? t("rankTransfer") : t("rankEmergency")} ·{" "}
+                {candidates.find((item) => item.id === id)?.cost} KES ·{" "}
                 {t("rankSelected")}
                 {result.effects.find((effect) => effect.id === id) && (
                   <p>
@@ -178,7 +210,8 @@ export function RankedFixes({
           </p>
           {Object.entries(result.excluded_reasons).map(([id, reason]) => (
             <p key={id}>
-              {id} ·{" "}
+              {id === "transfer" ? t("rankTransfer") : t("rankEmergency")} ·{" "}
+              {candidates.find((item) => item.id === id)?.cost} KES ·{" "}
               {reason === "alternative_selected"
                 ? t("rankAlternative")
                 : reason === "cost_exceeds_ceiling"
@@ -193,7 +226,12 @@ export function RankedFixes({
             </p>
           ))}
           <h3>{t("rankExplanation")}</h3>
-          <p>{result.explanation ?? t("rankNoExplanation")}</p>
+          {locale === "sw" && result.explanation && (
+            <p>{t("rankEnglishOnly")}</p>
+          )}
+          <p lang={result.explanation ? "en" : undefined}>
+            {result.explanation ?? t("rankNoExplanation")}
+          </p>
         </>
       )}
     </section>

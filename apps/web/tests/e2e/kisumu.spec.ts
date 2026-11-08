@@ -1,7 +1,9 @@
 import { expect, test } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
 
-test("Kisumu map follows the selected synthetic scenario", async ({ page }) => {
+test("Kisumu map follows the selected synthetic scenario", async ({
+  page,
+}, testInfo) => {
   await page.goto("http://localhost:3300/");
   await page
     .getByRole("region", { name: "County list" })
@@ -11,6 +13,8 @@ test("Kisumu map follows the selected synthetic scenario", async ({ page }) => {
   await expect(
     page.getByRole("heading", { name: "Kisumu synthetic pilot" }),
   ).toBeVisible();
+  if (testInfo.project.name === "mobile")
+    await page.getByRole("button", { name: "Open facility map" }).click();
   await expect(
     page.getByText("Facility locations are synthetic."),
   ).toBeVisible();
@@ -33,12 +37,16 @@ test("Kisumu map follows the selected synthetic scenario", async ({ page }) => {
   });
   await marker.focus();
   await page.keyboard.press("Enter");
+  if (testInfo.project.name === "mobile")
+    await page.getByRole("button", { name: "Close map" }).click();
   await expect(
     page.getByRole("heading", { name: /Synthetic facility 004.*F004/ }),
   ).toBeVisible();
   const slider = page.getByLabel(/Donor logistics support reduction/i);
   await slider.focus();
   await page.keyboard.press("End");
+  if (testInfo.project.name === "mobile")
+    await page.getByRole("button", { name: "Open facility map" }).click();
   const watch = page.locator(
     ".facility-marker[aria-label*='Synthetic facility 004']",
   );
@@ -81,7 +89,11 @@ test("optimizer ranks a synthetic fix for the first shock-caused stockout", asyn
   await expect(
     section.getByRole("heading", { name: "Plain-language explanation" }),
   ).toBeVisible({ timeout: 30000 });
-  await expect(section).toContainText("first-cheap");
+  await expect(section).toContainText("Redistribution transfer");
+  await expect(section).toContainText("Emergency delivery");
+  await expect(section).toContainText(
+    "Another option for this stockout was selected",
+  );
   await expect(section).toContainText("F001");
   await expect(section).toContainText("C02");
   await expect(section).toContainText("Budget cut line");

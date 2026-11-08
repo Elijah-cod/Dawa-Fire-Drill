@@ -5,32 +5,48 @@ import { RankedFixes } from "./ranked-fixes";
 
 afterEach(cleanup);
 
+const route = {
+  synthetic: true,
+  facility_id: "F001",
+  donor_facility_id: "F002",
+  commodity_id: "C02",
+  quantity: 100,
+  available_units: 600,
+  dispatch_day: 45,
+  arrival_day: 46,
+  expiry_day: 90,
+  minimum_shelf_days: 7,
+  distance_km: 7,
+  maximum_distance_km: 30,
+};
+
 it("shows optimizer order, the budget cut line, reasons and the first-stockout target", async () => {
   const rank = vi.fn(async () => ({
     synthetic: true,
     notice: "Illustrative and unvalidated",
     run_id: "run-1",
-    selected_ids: ["first-cheap"],
-    selected_reasons: { "first-cheap": "included_in_optimal_set" },
-    excluded_reasons: { "first-costly": "alternative_selected" },
+    selected_ids: ["transfer"],
+    selected_reasons: { transfer: "included_in_optimal_set" },
+    excluded_reasons: { emergency: "alternative_selected" },
     cut_line: 1,
     total_cost: 10,
     remaining_budget: 90,
     minimum_benefit: 1,
     effects: [
       {
-        id: "first-cheap",
+        id: "transfer",
         baseline_stockout_day: 48,
         counterfactual_stockout_day: null,
         deferred_days: 42,
       },
     ],
-    explanation: "The optimizer selected first-cheap.",
+    explanation: "The optimizer selected transfer.",
   }));
   render(
     <RankedFixes
       runId="run-1"
       target={{ facility_id: "F001", commodity_id: "C02", day: 48 }}
+      transfer={route}
       rank={rank}
     />,
   );
@@ -38,7 +54,7 @@ it("shows optimizer order, the budget cut line, reasons and the first-stockout t
     screen.getByRole("button", { name: /rank feasible actions/i }),
   );
   expect(
-    await screen.findByText(/The optimizer selected first-cheap/),
+    await screen.findByText(/The optimizer selected transfer/),
   ).toBeTruthy();
   expect(screen.getByText(/F001.*C02.*48/)).toBeTruthy();
   expect(screen.getByText(/cut line/i)).toBeTruthy();
@@ -65,6 +81,7 @@ it("reports when the synthetic protection target cannot fit the ceiling", async 
     <RankedFixes
       runId="run-1"
       target={{ facility_id: "F001", commodity_id: "C02", day: 48 }}
+      transfer={route}
       rank={rank}
     />,
   );
@@ -89,7 +106,7 @@ it("re-ranks after the ceiling changes and ignores an older response", async () 
     synthetic: true,
     notice: "Illustrative",
     run_id: "run-1",
-    selected_ids: ["first-cheap"],
+    selected_ids: ["transfer"],
     selected_reasons: {},
     excluded_reasons: {},
     cut_line: 1,
@@ -116,6 +133,7 @@ it("re-ranks after the ceiling changes and ignores an older response", async () 
     <RankedFixes
       runId="run-1"
       target={{ facility_id: "F001", commodity_id: "C02", day: 48 }}
+      transfer={route}
       rank={rank}
     />,
   );
@@ -146,6 +164,7 @@ it("explains that a new ranking requires a connection while offline", () => {
       <RankedFixes
         runId="run-1"
         target={{ facility_id: "F001", commodity_id: "C02", day: 48 }}
+        transfer={route}
         rank={rank}
       />,
     );
@@ -162,4 +181,130 @@ it("explains that a new ranking requires a connection while offline", () => {
     if (original) Object.defineProperty(navigator, "onLine", original);
     else Reflect.deleteProperty(navigator, "onLine");
   }
+});
+
+it("compares the planted transfer and emergency for the first event", async () => {
+  const route = {
+    synthetic: true,
+    facility_id: "F001",
+    donor_facility_id: "F002",
+    commodity_id: "C02",
+    quantity: 100,
+    available_units: 600,
+    dispatch_day: 45,
+    arrival_day: 46,
+    expiry_day: 90,
+    minimum_shelf_days: 7,
+    distance_km: 7,
+    maximum_distance_km: 30,
+  };
+  const rank = vi.fn(async () => ({
+    synthetic: true,
+    notice: "Illustrative",
+    run_id: "run-1",
+    selected_ids: ["transfer"],
+    selected_reasons: { transfer: "included_in_optimal_set" },
+    excluded_reasons: { emergency: "alternative_selected" },
+    cut_line: 1,
+    total_cost: 10,
+    remaining_budget: 90,
+    minimum_benefit: 1,
+    effects: [],
+    explanation: "OR-Tools selected transfer.",
+  }));
+  render(
+    <RankedFixes
+      runId="run-1"
+      target={{ facility_id: "F001", commodity_id: "C02", day: 48 }}
+      transfer={route}
+      rank={rank}
+    />,
+  );
+  fireEvent.click(
+    screen.getByRole("button", { name: /rank feasible actions/i }),
+  );
+  expect(await screen.findByText(/OR-Tools selected transfer/)).toBeTruthy();
+  expect(
+    screen.getByText(/Emergency delivery.*50 KES.*another option/i),
+  ).toBeTruthy();
+  expect(screen.getByText(/Redistribution transfer.*10 KES/i)).toBeTruthy();
+  expect(rank).toHaveBeenCalledWith(
+    expect.objectContaining({
+      candidates: expect.arrayContaining([
+        expect.objectContaining({
+          id: "transfer",
+          kind: "redistribution",
+          donor_facility_id: "F002",
+        }),
+        expect.objectContaining({
+          id: "emergency",
+          kind: "emergency_procurement",
+        }),
+      ]),
+    }),
+  );
+});
+
+it("labels the optimizer explanation as English-only in Swahili", async () => {
+  const { PreferenceControls, PreferencesProvider } =
+    await import("../preferences/preferences");
+  const rank = vi
+    .fn()
+    .mockResolvedValue({
+      synthetic: true,
+      notice: "Illustrative",
+      run_id: "run-1",
+      selected_ids: ["transfer"],
+      selected_reasons: {},
+      excluded_reasons: { emergency: "alternative_selected" },
+      cut_line: 1,
+      total_cost: 10,
+      remaining_budget: 90,
+      minimum_benefit: 1,
+      effects: [],
+      explanation: "OR-Tools selected transfer.",
+    });
+  render(
+    <PreferencesProvider>
+      <PreferenceControls />
+      <RankedFixes
+        runId="run-1"
+        target={{ facility_id: "F001", commodity_id: "C02", day: 48 }}
+        transfer={route}
+        rank={rank}
+      />
+    </PreferencesProvider>,
+  );
+  fireEvent.change(screen.getByLabelText(/Language \/ Lugha/i), {
+    target: { value: "sw" },
+  });
+  fireEvent.click(
+    screen.getByRole("button", { name: /Panga hatua zinazowezekana/i }),
+  );
+  expect(
+    await screen.findByText(/Explanation available in English only/i),
+  ).toBeTruthy();
+  expect(
+    screen.getByText("OR-Tools selected transfer.").getAttribute("lang"),
+  ).toBe("en");
+});
+
+it("refuses a transfer that targets a different first stockout", () => {
+  const rank = vi.fn();
+  render(
+    <RankedFixes
+      runId="run-1"
+      target={{ facility_id: "F001", commodity_id: "C02", day: 48 }}
+      transfer={{ ...route, facility_id: "F003" }}
+      rank={rank}
+    />,
+  );
+  expect(screen.getByText(/planted transfer does not match/i)).toBeTruthy();
+  expect(
+    (
+      screen.getByRole("button", {
+        name: /rank feasible actions/i,
+      }) as HTMLButtonElement
+    ).disabled,
+  ).toBe(true);
 });

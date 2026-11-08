@@ -1,6 +1,7 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import dynamic from "next/dynamic";
 import type { PilotPanel } from "../api/client";
 import { usePreferences } from "../preferences/preferences";
 import { risksForRun } from "../risk/risk";
@@ -11,8 +12,16 @@ import {
 } from "../scenario/use-kisumu-scenario";
 import { FacilityMap } from "./facility-map";
 import { StockoutOrder } from "./stockout-order";
-import { RankedFixes } from "./ranked-fixes";
 import type { components } from "../generated/api";
+
+function RankLoading() {
+  const { t } = usePreferences();
+  return <p role="status">{t("rankLoading")}</p>;
+}
+const RankedFixes = dynamic(
+  () => import("./ranked-fixes").then((module) => module.RankedFixes),
+  { ssr: false, loading: RankLoading },
+);
 
 type Event = { facility_id: string; commodity_id: string; day: number };
 function validEvents(value: unknown): value is Event[] {
@@ -60,6 +69,16 @@ export function KisumuOverview({
   );
   const [subcounty, setSubcounty] = useState("all");
   const [selected, setSelected] = useState<string | null>(null);
+  const dialog = useRef<HTMLDialogElement>(null);
+  const [mapOpen, setMapOpen] = useState(false);
+  useEffect(() => {
+    if (!mapOpen) return;
+    const previous = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = previous;
+    };
+  }, [mapOpen]);
   const risks = useMemo(() => risksForRun(panel, evidence(run)), [panel, run]);
   const facilities = useMemo(
     () =>
@@ -71,6 +90,78 @@ export function KisumuOverview({
   const facility = panel.facilities.find((item) => item.id === selected);
   const risk = selected ? risks[selected] : undefined;
   const shockEvents = run?.result?.shock_caused_stockouts;
+  const facilitySection = useMemo(
+    () => (
+      <section className="panel">
+        <label htmlFor="subcounty-filter">{t("subcounty")}</label>
+        <select
+          id="subcounty-filter"
+          value={subcounty}
+          onChange={(event) => setSubcounty(event.target.value)}
+        >
+          <option value="all">{t("allSubcounties")}</option>
+          {panel.subcounties.map((item) => (
+            <option key={item.id} value={item.id}>
+              {item.name}
+            </option>
+          ))}
+        </select>
+        <button
+          className="mobile-map-toggle"
+          type="button"
+          onClick={() => {
+            dialog.current?.showModal();
+            setMapOpen(true);
+          }}
+        >
+          {t("openFacilityMap")}
+        </button>
+        <div className="desktop-grid">
+          <FacilityMap
+            facilities={facilities}
+            risks={risks}
+            onSelect={setSelected}
+          />
+        </div>
+        <dialog
+          ref={dialog}
+          className="map-sheet"
+          aria-label={t("facilityMapTitle")}
+          onClose={() => setMapOpen(false)}
+        >
+          <div className="map-sheet-header">
+            <h2>{t("facilityMapTitle")}</h2>
+            <button type="button" onClick={() => dialog.current?.close()}>
+              {t("closeMap")}
+            </button>
+          </div>
+          {mapOpen && (
+            <FacilityMap
+              facilities={facilities}
+              risks={risks}
+              onSelect={setSelected}
+            />
+          )}
+          <div className="map-drawer" aria-live="polite">
+            {facility
+              ? `${facility.name} · ${facility.id}`
+              : t("selectFacility")}
+          </div>
+        </dialog>
+        <h2>{t("facilities")}</h2>
+        <ul className="county-list">
+          {facilities.map((item) => (
+            <li key={item.id}>
+              <button type="button" onClick={() => setSelected(item.id)}>
+                {item.name} · {item.id}
+              </button>
+            </li>
+          ))}
+        </ul>
+      </section>
+    ),
+    [facilities, risks, subcounty, panel.subcounties, mapOpen, facility, t],
+  );
   return (
     <>
       <p>
@@ -129,39 +220,11 @@ export function KisumuOverview({
             key={run.id}
             runId={run.id}
             target={shockEvents[0]}
+            transfer={panel.demo_cases.near_expiry_transfer}
             rank={(body) => rank(run.id, body)}
           />
         )}
-      <section className="panel">
-        <label htmlFor="subcounty-filter">{t("subcounty")}</label>
-        <select
-          id="subcounty-filter"
-          value={subcounty}
-          onChange={(event) => setSubcounty(event.target.value)}
-        >
-          <option value="all">{t("allSubcounties")}</option>
-          {panel.subcounties.map((item) => (
-            <option key={item.id} value={item.id}>
-              {item.name}
-            </option>
-          ))}
-        </select>
-        <FacilityMap
-          facilities={facilities}
-          risks={risks}
-          onSelect={setSelected}
-        />
-        <h2>{t("facilities")}</h2>
-        <ul className="county-list">
-          {facilities.map((item) => (
-            <li key={item.id}>
-              <button type="button" onClick={() => setSelected(item.id)}>
-                {item.name} · {item.id}
-              </button>
-            </li>
-          ))}
-        </ul>
-      </section>
+      {facilitySection}
       <section className="panel" aria-live="polite">
         {facility && risk ? (
           <>

@@ -76,22 +76,29 @@ it("returns only the recorded optimizer fixture for the exact synthetic demo inp
     minimum_benefit: 1,
     candidates: [
       {
-        id: "first-cheap",
-        kind: "emergency_procurement" as const,
+        id: "transfer",
+        kind: "redistribution" as const,
         cost: 10,
         facility_id: "SYN-KE-042-F001",
+        donor_facility_id: "SYN-KE-042-F002",
         commodity_id: "SYN-C02",
-        arrival_day: 48,
-        quantity: 10000,
+        quantity: 100,
+        available_units: 600,
+        dispatch_day: 45,
+        arrival_day: 46,
+        expiry_day: 90,
+        minimum_shelf_days: 7,
+        distance_km: 7,
+        max_distance_km: 30,
       },
       {
-        id: "first-costly",
+        id: "emergency",
         kind: "emergency_procurement" as const,
         cost: 50,
         facility_id: "SYN-KE-042-F001",
         commodity_id: "SYN-C02",
-        arrival_day: 48,
-        quantity: 10000,
+        arrival_day: 46,
+        quantity: 100,
       },
     ],
   };
@@ -99,7 +106,7 @@ it("returns only the recorded optimizer fixture for the exact synthetic demo inp
     "00000000-0000-4000-8000-000000000042",
     request,
   );
-  expect(response.selected_ids).toEqual(["first-cheap"]);
+  expect(response.selected_ids).toEqual(["transfer"]);
   await expect(
     mock.rank("00000000-0000-4000-8000-000000000042", {
       ...request,

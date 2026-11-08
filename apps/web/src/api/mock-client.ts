@@ -34,7 +34,7 @@ export function createMockClient(role: Role) {
         county_code: "042",
         seed: 42,
         horizon_days: 90,
-        snapshot_version: 3,
+        snapshot_version: 4,
         simulation_version: 2,
         status: "succeeded",
         result: fixture.run,
@@ -63,7 +63,7 @@ export function createMockClient(role: Role) {
         county_code: "042",
         seed: 42,
         horizon_days: 90,
-        snapshot_version: 3,
+        snapshot_version: 4,
         simulation_version: 2,
         status: "succeeded",
         result: request.magnitude === 0 ? fixture.baseline : fixture.run,
@@ -79,27 +79,46 @@ export function createMockClient(role: Role) {
       request: components["schemas"]["ModeledRequest"],
     ): Promise<components["schemas"]["ModeledResponse"]> {
       if (role !== "planner" && role !== "admin") throw new Error("Forbidden");
+      const route = (await import("../fixtures/kisumu.json")).default.pilot
+        .demo_cases.near_expiry_transfer;
+      const common = {
+        facility_id: route.facility_id,
+        commodity_id: route.commodity_id,
+        quantity: route.quantity,
+        arrival_day: route.arrival_day,
+      };
       const expected = [
-        { id: "first-cheap", cost: 10 },
-        { id: "first-costly", cost: 50 },
+        {
+          id: "transfer",
+          kind: "redistribution",
+          cost: 10,
+          ...common,
+          donor_facility_id: route.donor_facility_id,
+          available_units: route.available_units,
+          dispatch_day: route.dispatch_day,
+          expiry_day: route.expiry_day,
+          minimum_shelf_days: route.minimum_shelf_days,
+          distance_km: route.distance_km,
+          max_distance_km: route.maximum_distance_km,
+        },
+        { id: "emergency", kind: "emergency_procurement", cost: 50, ...common },
       ];
       if (
         runId !== "00000000-0000-4000-8000-000000000042" ||
         request.synthetic_attested !== true ||
         request.budget !== 100 ||
         request.minimum_benefit !== 1 ||
-        request.candidates.length !== 2 ||
+        request.candidates.length !== expected.length ||
         !expected.every((item) =>
-          request.candidates.some(
-            (candidate) =>
-              candidate.id === item.id &&
-              candidate.kind === "emergency_procurement" &&
-              candidate.cost === item.cost &&
-              candidate.facility_id === "SYN-KE-042-F001" &&
-              candidate.commodity_id === "SYN-C02" &&
-              candidate.arrival_day === 48 &&
-              candidate.quantity === 10000,
-          ),
+          request.candidates.some((candidate) => {
+            const actual: Record<string, unknown> = { ...candidate };
+            return (
+              Object.keys(actual).length === Object.keys(item).length &&
+              Object.entries(item).every(
+                ([key, value]) => actual[key] === value,
+              )
+            );
+          }),
         )
       )
         throw new Error(

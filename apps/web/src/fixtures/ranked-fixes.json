@@ -2,15 +2,15 @@
   "synthetic": true,
   "notice": "Illustrative and unvalidated; delivery timing, quantity and cost are supplied assumptions. Days deferred measure the model's first stockout within its horizon.",
   "run_id": "00000000-0000-4000-8000-000000000042",
-  "explanation": "Illustrative and unvalidated. OR-Tools selected first-cheap under the supplied budget and assumed benefits. Excluded candidates: first-costly. The selected set's supplied cost is 10 and the budget is 100.",
+  "explanation": "Illustrative and unvalidated. OR-Tools selected transfer under the supplied budget and assumed benefits. Excluded candidates: emergency. The selected set's supplied cost is 10 and the budget is 100.",
   "selected_ids": [
-    "first-cheap"
+    "transfer"
   ],
   "selected_reasons": {
-    "first-cheap": "included_in_optimal_set"
+    "transfer": "included_in_optimal_set"
   },
   "excluded_reasons": {
-    "first-costly": "alternative_selected"
+    "emergency": "alternative_selected"
   },
   "cut_line": 1,
   "total_cost": 10,
@@ -18,13 +18,13 @@
   "minimum_benefit": 1,
   "effects": [
     {
-      "id": "first-cheap",
+      "id": "transfer",
       "baseline_stockout_day": 48,
       "counterfactual_stockout_day": null,
       "deferred_days": 43
     },
     {
-      "id": "first-costly",
+      "id": "emergency",
       "baseline_stockout_day": 48,
       "counterfactual_stockout_day": null,
       "deferred_days": 43

@@ -52,6 +52,8 @@ const strings = {
     sessionMissing: "Session unavailable.",
     sessionExpired: "Session expired.",
     facilityLocationsSynthetic: "Facility locations are synthetic.",
+    openFacilityMap: "Open facility map",
+    facilityMapTitle: "Synthetic facility map",
     facilityMapUnavailable: "Facility map unavailable; use the facility list.",
     facilityMapPartial: "Some synthetic facility coordinates are unavailable.",
     mapTilesUnavailable:
@@ -85,7 +87,12 @@ const strings = {
     rankAssumptions:
       "Costs and benefits are illustrative assumptions, not validated impacts.",
     rankCandidateAssumptions:
-      "Two synthetic emergency deliveries are supplied: 10,000 units arriving on the stockout day, at assumed costs of 10 KES and 50 KES. The protection target is at least one day of modeled deferral.",
+      "The synthetic transfer and emergency delivery use the same assumed quantity and arrival day, with illustrative costs of 10 KES and 50 KES. The target is at least one day of modeled deferral.",
+    rankTransfer: "Redistribution transfer",
+    rankEmergency: "Emergency delivery",
+    rankTransferUnavailable:
+      "The planted transfer does not match this first stockout; comparison is unavailable for this snapshot.",
+    rankEnglishOnly: "Explanation available in English only.",
     rankTarget: "First shock-caused stockout",
     rankBudget: "Budget ceiling (KES)",
     rankAction: "Rank feasible actions",
@@ -158,6 +165,8 @@ const strings = {
     sessionMissing: "Kipindi hakipatikani.",
     sessionExpired: "Kipindi kimeisha.",
     facilityLocationsSynthetic: "Maeneo ya vituo yamebuniwa.",
+    openFacilityMap: "Fungua ramani ya vituo",
+    facilityMapTitle: "Ramani ya vituo vya mfano",
     facilityMapUnavailable:
       "Ramani ya vituo haipatikani; tumia orodha ya vituo.",
     facilityMapPartial:
@@ -192,7 +201,13 @@ const strings = {
     rankAssumptions:
       "Gharama na manufaa ni makadirio ya mfano, si athari zilizothibitishwa.",
     rankCandidateAssumptions:
-      "Uwasilishaji mbili za dharura za mfano zimetolewa: vipande 10,000 siku bidhaa inapoisha, kwa gharama zinazokadiriwa za KES 10 na KES 50. Lengo ni kuchelewesha kuisha kwa bidhaa kwa angalau siku moja katika mfano.",
+      "Uhamisho na uwasilishaji wa dharura wa mfano hutumia kiasi na siku ileile ya kuwasili, kwa gharama za mfano za KES 10 na KES 50. Lengo ni kuchelewesha kuisha kwa bidhaa kwa angalau siku moja katika mfano.",
+    rankTransfer: "Uhamisho wa bidhaa",
+    rankEmergency: "Uwasilishaji wa dharura",
+    rankTransferUnavailable:
+      "Uhamisho wa mfano haulengani na tatizo hili la kwanza; ulinganisho haupatikani kwa picha hii ya data.",
+    rankEnglishOnly:
+      "Maelezo yanapatikana kwa Kiingereza pekee. Explanation available in English only.",
     rankTarget: "Akiba ya kwanza kuisha kutokana na mshtuko",
     rankBudget: "Kikomo cha bajeti (KES)",
     rankAction: "Panga hatua zinazowezekana",
