@@ -11,6 +11,9 @@
  * before trimming, so the UI is unchanged. Do not use this fixture as
  * simulation input.
  *
+ * risk_runs keeps only the stockout lists of the backend runs at 0, 20, 40 and 100% for
+ * map risk tests.
+ *
  * The funding part is the backend trace of the planted stalled-release flow
  * at its own as_of date.
  *
@@ -144,6 +147,13 @@ print(json.dumps({
     "baseline": run(0),
     "run": shock_run,
     "funding": funding,
+    "risk_runs": {
+        str(m): {
+            key: result[key]
+            for key in ("horizon_days", "stockouts", "pre_shock_stockouts", "baseline_stockouts")
+        }
+        for m, result in ((m, run(m)) for m in (0, 20, 40, 100))
+    },
     "ranked": ranked,
 }))
 `;

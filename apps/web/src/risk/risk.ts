@@ -31,6 +31,49 @@ type RiskRun = {
   stockouts: { facility_id: string; commodity_id: string; day: number }[];
 };
 
+/** Worst first; Unknown is more cautious than Stable when a result is missing. */
+export const RISK_PRIORITY: Readonly<Record<Risk, number>> = Object.freeze({
+  critical: 4,
+  watch: 3,
+  unknown: 2,
+  stable: 1,
+});
+
+/** The most severe status in a group, e.g. a map cluster. */
+export function worstStatus(statuses: Risk[]): Risk {
+  return statuses.reduce<Risk>(
+    (worst, status) =>
+      RISK_PRIORITY[status] > RISK_PRIORITY[worst] ? status : worst,
+    statuses.length ? "stable" : "unknown",
+  );
+}
+
+export type RiskSummary = Record<Risk, number> & {
+  total: number;
+  alreadyShort: number;
+};
+
+/** Counts per status for the given facilities, plus those short regardless of the shock. */
+export function riskSummary(
+  facilityIds: string[],
+  risks: Record<string, FacilityRisk>,
+  preShock: ReadonlySet<string> = new Set(),
+): RiskSummary {
+  const summary: RiskSummary = {
+    critical: 0,
+    watch: 0,
+    stable: 0,
+    unknown: 0,
+    total: facilityIds.length,
+    alreadyShort: 0,
+  };
+  for (const id of facilityIds) {
+    summary[risks[id]?.status ?? "unknown"]++;
+    if (preShock.has(id)) summary.alreadyShort++;
+  }
+  return summary;
+}
+
 export function classifyDays(days: number | null | undefined): Risk {
   if (
     days === undefined ||
@@ -45,13 +88,7 @@ export function classifyDays(days: number | null | undefined): Risk {
 export function facilityRisk(commodities: CommodityRisk[]): FacilityRisk {
   if (!commodities.length)
     return { status: "unknown", drivers: [], days: null };
-  // Unknown is more cautious than stable when any tracer lacks a result.
-  const priority: Record<Risk, number> = {
-    critical: 4,
-    watch: 3,
-    unknown: 2,
-    stable: 1,
-  };
+  const priority = RISK_PRIORITY;
   const classified = commodities.map((item) => ({
     ...item,
     status: classifyDays(item.days),
