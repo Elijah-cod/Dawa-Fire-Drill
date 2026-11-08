@@ -364,8 +364,11 @@ test("every facility marker is inside the map and clear of its controls", async 
             r.top < c.bottom &&
             r.bottom > c.top,
         );
+        // Report the edges crossed, so a failure says where.
         return outside || covered
-          ? [marker.getAttribute("aria-label") ?? "marker"]
+          ? [
+              `${marker.getAttribute("aria-label") ?? "marker"} [${Math.round(r.left - box.left)} ${Math.round(box.right - r.right)} ${Math.round(r.top - box.top)} ${Math.round(box.bottom - r.bottom)}${covered ? " covered" : ""}]`,
+            ]
           : [];
       },
     );

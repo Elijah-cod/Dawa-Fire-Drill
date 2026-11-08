@@ -345,6 +345,7 @@ it("fits the map to every marker with padding that clears the controls, again on
   // jsdom has no layout, so the container width is 0 and the narrow minimum applies.
   expect(options.padding).toEqual(mapFitPadding(0));
   expect(mapFitPadding(1280)).toEqual({ ...MAP_FIT_PADDING });
+  expect(mapFitPadding(654)).toEqual({ ...MAP_FIT_PADDING });
   const phone = mapFitPadding(358);
   expect(phone.left).toBeLessThan(MAP_FIT_PADDING.left);
   for (const padding of [phone, mapFitPadding(1280)]) {

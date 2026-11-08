@@ -81,7 +81,9 @@ export const MAP_FIT_PADDING = Object.freeze({
 
 /** Narrow maps keep proportionally less side padding so phones are not zoomed far out. */
 export function mapFitPadding(width: number) {
-  const scale = Math.min(1, Math.max(0, width) / 900);
+  // Full padding from 640 px, which clears the zoom controls for the widest cluster label
+  // in the Facilities tab at 1280 px (a 654 px map); phones scale down from there.
+  const scale = Math.min(1, Math.max(0, width) / 640);
   return {
     top: MAP_FIT_PADDING.top,
     bottom: MAP_FIT_PADDING.bottom,
