@@ -104,5 +104,8 @@ test("guided demo exits with Escape and keeps the current screen", async ({
   await expect(page.getByRole("heading", { name: "Kisumu pilot" })).toHaveCount(
     0,
   );
-  await expect(page).toHaveURL("http://localhost:3300/kisumu");
+  // The demo's parameter is gone; the page keeps its own view in the URL.
+  await expect(page).toHaveURL(
+    /^http:\/\/localhost:3300\/kisumu(\?(?!.*tour=).*)?$/,
+  );
 });
