@@ -49,7 +49,7 @@ export function useKisumuScenario(
           ) {
             // Poll quickly at first, since most runs finish within a second.
             await new Promise((resolve) =>
-              setTimeout(resolve, attempt < 4 ? 150 : 500),
+              setTimeout(resolve, attempt < 2 ? 200 : 500),
             );
             if (active) current = await api.read(current.id);
           }
