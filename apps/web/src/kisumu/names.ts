@@ -64,6 +64,7 @@ export function commodityLabel(
 ) {
   const commodity = commodities.find((item) => item.id === id);
   if (!commodity) return id;
+  if (!commodity.category) return commodity.name ?? id;
   const names: Record<string, string> = CATEGORIES[locale];
   const category = names[commodity.category] ?? commodity.category;
   const number = id.slice(-2);

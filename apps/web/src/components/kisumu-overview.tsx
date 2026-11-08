@@ -22,6 +22,7 @@ import { FixesPlaceholder } from "./fixes-placeholder";
 import { useRanking } from "../kisumu/use-ranking";
 import type { ShockEvent } from "../api/candidates";
 import { TabList, type TabItem } from "./tabs";
+import { FacilityDetail, FacilityTable } from "./facility-table";
 
 type View = "overview" | "order" | "funding" | "facilities";
 import {
@@ -134,6 +135,11 @@ export function KisumuOverview({
   const risk = selected ? risks[selected] : undefined;
   const pending = !run || previous;
   const events = useMemo(() => runEvents(run?.result), [run]);
+  // Every stockout in the run, for the table and detail, even when other lists are missing.
+  const allEvents = useMemo(
+    () => (pending ? NO_EVENTS : (evidence(run)?.stockouts ?? NO_EVENTS)),
+    [run, pending],
+  );
   const counts = useMemo(() => {
     if (!run || !events) return null;
     const values = Object.values(risks);
@@ -456,6 +462,7 @@ export function KisumuOverview({
             aria-labelledby="t-facilities"
             tabIndex={0}
             hidden={tab !== "facilities"}
+            className="facilities-view"
           >
             <section className="panel" aria-labelledby="facilities-heading">
               <h2 id="facilities-heading">{t("facilities")}</h2>
@@ -472,37 +479,33 @@ export function KisumuOverview({
                   </option>
                 ))}
               </select>
-              <ul className="county-list">
-                {facilities.map((item) => (
-                  <li key={item.id}>
-                    <button type="button" onClick={() => setSelected(item.id)}>
-                      {item.name} · {item.id}
-                    </button>
-                  </li>
-                ))}
-              </ul>
+              <FacilityTable
+                panel={panel}
+                facilities={facilities}
+                risks={risks}
+                events={allEvents}
+                selected={selected}
+                onSelect={(id) => {
+                  setSelected(id);
+                  // On narrow screens the detail sits below the table.
+                  if (!window.matchMedia?.("(min-width: 1536px)").matches)
+                    requestAnimationFrame(() => reveal("facility-detail"));
+                }}
+              />
             </section>
-            <section className="panel" id="facility-detail" aria-live="polite">
-              {facility && risk ? (
-                <>
-                  <h2>
-                    {facility.name} · {facility.id}
-                  </h2>
-                  <p>
-                    {t(risk.status)}
-                    {preShock.has(facility.id) &&
-                      ` · ${t("alreadyShort")}`} · {t("drivers")}:{" "}
-                    {risk.drivers.join(", ") || "—"} ·{" "}
-                    {risk.days === null
-                      ? risk.status === "unknown"
-                        ? t("noRiskData")
-                        : t("noStockout")
-                      : `${risk.days} ${t("days")}`}
-                  </p>
-                </>
-              ) : (
-                <p>{t("selectFacility")}</p>
-              )}
+            <section
+              className="panel facility-detail"
+              id="facility-detail"
+              aria-live="polite"
+            >
+              <FacilityDetail
+                panel={panel}
+                facility={facility}
+                risk={risk}
+                events={allEvents}
+                alreadyShort={!!facility && preShock.has(facility.id)}
+                routes={routes}
+              />
             </section>
           </div>
         </div>

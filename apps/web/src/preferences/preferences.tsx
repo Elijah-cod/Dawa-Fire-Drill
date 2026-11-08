@@ -131,6 +131,20 @@ const strings = {
     orderShowAll: "Show all {n}",
     orderNoneShort: "No facility was short before the shock.",
     orderNoneCaused: "Nothing runs out because of the shock in this run.",
+    tableLabel: "Facilities table",
+    tableCaption:
+      "Status from the shown run: Critical up to day 45, Watch days 46–52, Stable after day 52. Illustrative cutoffs, not a standard.",
+    colFacility: "Facility",
+    colArea: "Area",
+    colStatus: "Status",
+    colFirst: "First stockout",
+    detailLevel: "Level",
+    detailLevelValue: "Level {n}",
+    detailStockouts: "Stockouts in this run ({n})",
+    detailStockout: "{medicine}: day {day}",
+    detailIncoming:
+      "Planted transfer: {medicine} from {donor}, {km} km away, arriving on day {day}.",
+    detailOutgoing: "Planted donor: {medicine} for {recipient}.",
     fixesTitle: "Cheapest fixes",
     fixesCoverEarliest: "the {n} earliest of {total} shock-caused stockouts",
     fixesCoverSome:
@@ -468,7 +482,7 @@ const strings = {
     factsTotal:
       "Jumla ya matukio {total} ya kuisha kwa bidhaa: {caused} yamesababishwa na mshtuko, {short} yalikuwepo kabla yake",
     factsShortItem: "{name} kuanzia siku {day}",
-    factsStatus: "{critical} Hatari · {watch} Tahadhari · {stable} Thabiti",
+    factsStatus: "{critical} Hatari kubwa · {watch} Angalizo · {stable} Tulivu",
     and: "na",
     controlsLabel: "Hali",
     shockPresets: "Kupunguzwa kwa msaada wa usafirishaji wa wafadhili",
@@ -493,6 +507,20 @@ const strings = {
     orderNoneShort: "Hakuna kituo kilichokuwa na upungufu kabla ya mshtuko.",
     orderNoneCaused:
       "Hakuna bidhaa inayoisha kutokana na mshtuko katika jaribio hili.",
+    tableLabel: "Jedwali la vituo",
+    tableCaption:
+      "Hali kutoka kwa jaribio linaloonyeshwa: Hatari kubwa hadi siku ya 45, Angalizo siku 46–52, Tulivu baada ya siku ya 52. Viwango vya mfano, si kiwango rasmi.",
+    colFacility: "Kituo",
+    colArea: "Eneo",
+    colStatus: "Hali",
+    colFirst: "Kuisha kwa kwanza",
+    detailLevel: "Ngazi",
+    detailLevelValue: "Ngazi {n}",
+    detailStockouts: "Matukio ya kuisha katika jaribio hili ({n})",
+    detailStockout: "{medicine}: siku ya {day}",
+    detailIncoming:
+      "Uhamisho uliopangwa: {medicine} kutoka {donor}, umbali wa km {km}, unafika siku ya {day}.",
+    detailOutgoing: "Mtoaji aliyepangwa: {medicine} kwa {recipient}.",
     fixesTitle: "Suluhisho za gharama nafuu zaidi",
     fixesCoverEarliest:
       "matukio {n} ya mapema zaidi kati ya {total} yaliyosababishwa na mshtuko",

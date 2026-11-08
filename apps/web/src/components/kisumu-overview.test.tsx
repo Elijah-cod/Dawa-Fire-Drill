@@ -56,9 +56,14 @@ it("updates a facility's risk and driving tracer with the selected scenario", as
   // Invented display names replace the generator's numbered names.
   fireEvent.click(screen.getByRole("tab", { name: /Facilities/ }));
   fireEvent.click(
-    screen.getByRole("button", { name: /Acacia Ridge Dispensary · F1/ }),
+    screen.getByRole("button", { name: "Acacia Ridge Dispensary" }),
   );
-  expect(await screen.findByText(/Critical.*C01.*7/i)).toBeTruthy();
+  const detail = () => document.getElementById("facility-detail")!;
+  await vi.waitFor(() =>
+    expect(detail().textContent).toMatch(
+      /Critical.*Synthetic tracer · 7 days to stockout/,
+    ),
+  );
   expect(
     (
       await screen.findAllByText(
@@ -67,7 +72,9 @@ it("updates a facility's risk and driving tracer with the selected scenario", as
     ).length,
   ).toBeGreaterThan(0);
   fireEvent.click(screen.getByRole("button", { name: "0%" }));
-  expect(await screen.findByText(/Stable.*C01/i)).toBeTruthy();
+  await vi.waitFor(() =>
+    expect(detail().textContent).toMatch(/Stable.*Synthetic tracer/),
+  );
 });
 
 it("keeps the previous verdict, marked busy, while another shock runs", async () => {
@@ -201,15 +208,18 @@ it("explains Critical at no shock for facilities already short before the shock"
   render(<KisumuOverview panel={panel} scenario={scenario} />);
   fireEvent.click(screen.getByRole("tab", { name: /Facilities/ }));
   fireEvent.click(
-    screen.getByRole("button", { name: /Acacia Ridge Dispensary · F001/ }),
+    screen.getByRole("button", { name: "Acacia Ridge Dispensary" }),
   );
-  expect(
-    await screen.findByText(/Critical · Already short before the shock/),
-  ).toBeTruthy();
+  const detail = () => document.getElementById("facility-detail")!;
+  await vi.waitFor(() =>
+    expect(detail().textContent).toMatch(
+      /Critical · Already short before the shock/,
+    ),
+  );
   fireEvent.click(
-    screen.getByRole("button", { name: /Mvule Ridge Dispensary · F004/ }),
+    screen.getByRole("button", { name: "Mvule Ridge Dispensary" }),
   );
-  expect(await screen.findByText(/^Stable/)).toBeTruthy();
+  await vi.waitFor(() => expect(detail().textContent).toMatch(/StatusStable/));
   expect(document.getElementById("facility-detail")?.textContent).not.toMatch(
     /Already short/,
   );
@@ -357,4 +367,46 @@ it("opens the scenario controls from Change scenario on phones", () => {
   fireEvent.click(toggle);
   expect(toggle.getAttribute("aria-expanded")).toBe("true");
   expect(controls.dataset.open).toBe("true");
+});
+
+it("sorts the facilities table and opens a facility's detail from its row", async () => {
+  render(<KisumuOverview panel={fixture.pilot} scenario={fixtureScenario()} />);
+  fireEvent.click(screen.getByRole("tab", { name: /Facilities/ }));
+  const table = screen.getByRole("region", { name: "Facilities table" });
+  expect(table.tabIndex).toBe(0);
+  await vi.waitFor(() =>
+    expect(within(table).getAllByRole("row")[1].textContent).toMatch(
+      /Critical/,
+    ),
+  );
+  // Worst status first by default; then soonest first stockout.
+  fireEvent.click(
+    within(table).getByRole("button", { name: /First stockout/ }),
+  );
+  const rows = () => within(table).getAllByRole("row").slice(1);
+  expect(rows()[0].textContent).toContain(
+    "Acacia Ridge DispensaryKisumu CentralCritical1 · antimalarial tracer 01",
+  );
+  expect(
+    within(table)
+      .getByRole("columnheader", { name: /First stockout/ })
+      .getAttribute("aria-sort"),
+  ).toBe("ascending");
+  fireEvent.click(
+    within(table).getByRole("button", {
+      name: "Tamarind Crossing Sub-County Hospital",
+    }),
+  );
+  const detail = document.getElementById("facility-detail")!;
+  expect(detail.textContent).toContain(
+    "Tamarind Crossing Sub-County Hospital · SYN-KE-042-F031",
+  );
+  expect(detail.textContent).toContain("Family planning tracer 04: day 41");
+  expect(detail.textContent).toMatch(
+    /Planted transfer: family planning tracer 04 from .+, \d+(\.\d+)? km away, arriving on day \d+\./,
+  );
+  expect(
+    rows().find((row) => row.getAttribute("aria-selected") === "true")
+      ?.textContent,
+  ).toMatch(/^Tamarind Crossing Sub-County Hospital/);
 });
