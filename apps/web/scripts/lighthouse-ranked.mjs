@@ -10,7 +10,15 @@ const browser = await puppeteer.launch({
 });
 try {
   const page = await browser.newPage();
-  await page.setViewport({ width: 390, height: 844, deviceScaleFactor: 1 });
+  // Match Lighthouse's default mobile emulation so starting the timespan does
+  // not resize the page and record a reflow as a layout shift.
+  await page.setViewport({
+    width: 412,
+    height: 823,
+    deviceScaleFactor: 1.75,
+    isMobile: true,
+    hasTouch: true,
+  });
   await page.goto("http://localhost:3300/kisumu", {
     waitUntil: "networkidle2",
   });
@@ -58,7 +66,7 @@ try {
         category.score,
       ]),
     );
-    console.log(step.name, JSON.stringify(scores));
+    console.log(step.name, step.lhr.gatherMode, JSON.stringify(scores));
     if (scores.accessibility !== undefined && scores.accessibility < 0.9)
       throw new Error("Ranked-state accessibility budget failed");
     if (
@@ -66,7 +74,13 @@ try {
       scores["best-practices"] < 0.9
     )
       throw new Error("Ranked-state best-practices budget failed");
-    if (scores.performance !== undefined && scores.performance < 0.8)
+    // Snapshot steps have no weighted performance audits, so Lighthouse reports
+    // 0; the budget applies to the measured interaction (timespan) step.
+    if (
+      step.lhr.gatherMode !== "snapshot" &&
+      scores.performance !== undefined &&
+      scores.performance < 0.8
+    )
       throw new Error("Ranked-flow performance budget failed");
   }
 } finally {

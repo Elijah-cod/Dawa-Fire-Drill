@@ -1,5 +1,7 @@
 # Changelog
 
+- The interactive Lighthouse flow applies its performance budget to the measured interaction only and matches Lighthouse's mobile viewport; results are recorded in progress notes.
+
 - Began the funding trace for the synthetic stalled-release flow: stage amounts, backend-aged delayed amounts, bottleneck inspection, and loading, error, empty and offline states.
 
 - The shock-caused stockout panel now names other commodities at the first facility that run out on the same day.
