@@ -61,23 +61,33 @@ export function KisumuVerdict({
       n: magnitude,
       h: horizon,
       count: (
-        <button type="button" className="inline-control" onClick={onShowOrder}>
+        <a
+          className="inline-control"
+          href="#stockout-order"
+          onClick={(event) => {
+            event.preventDefault();
+            onShowOrder();
+          }}
+        >
           {tf(count === 1 ? "verdictStockout" : "verdictStockouts", {
             n: count,
           })}
-        </button>
+        </a>
       ),
       place: (
-        <button
-          type="button"
+        <a
           className="inline-control"
-          onClick={() => onShowFacility(first.facility_id)}
+          href="#facility-detail"
+          onClick={(event) => {
+            event.preventDefault();
+            onShowFacility(first.facility_id);
+          }}
         >
           {tf("verdictPlace", {
             name: facility(first.facility_id)?.name ?? first.facility_id,
             area: area(first.facility_id),
           })}
-        </button>
+        </a>
       ),
       medicine: commodityLabel(
         panel.commodities,
@@ -199,13 +209,16 @@ export function BudgetSentence({
       {tn("verdictBudget", {
         b: rankedBudget,
         funded: (
-          <button
-            type="button"
+          <a
             className="inline-control"
-            onClick={onShowFunded}
+            href="#pairs"
+            onClick={(event) => {
+              event.preventDefault();
+              onShowFunded();
+            }}
           >
             {tf(noun, { n })}
-          </button>
+          </a>
         ),
         cost: result.total_cost,
         hold: holds

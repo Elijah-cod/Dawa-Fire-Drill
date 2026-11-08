@@ -185,7 +185,7 @@ test("the budget slider funds three transfers at 30, four at 100 and none at 5",
     "OR-Tools selected the transfer to Tamarind Crossing Sub-County Hospital",
   );
   // "3 transfers" in the verdict jumps to the funded fixes.
-  await verdict(page).getByRole("button", { name: "3 transfers" }).click();
+  await verdict(page).getByRole("link", { name: "3 transfers" }).click();
   await expect(fixes.locator(".option--funded").first()).toBeFocused();
   await noSeriousAxe(page);
 });
@@ -209,13 +209,13 @@ test("tabs follow the ARIA pattern and the verdict's phrases open them", async (
   await expect(page.getByRole("tab", { name: /Facilities/ })).toBeFocused();
   await page.keyboard.press("Home");
   await expect(first).toBeFocused();
-  await verdict(page).getByRole("button", { name: "209 stockouts" }).click();
+  await verdict(page).getByRole("link", { name: "209 stockouts" }).click();
   await expect(order).toHaveAttribute("aria-selected", "true");
   const panel = page.getByRole("tabpanel", { name: /Stockout order/ });
   await expect(panel).toContainText("Already short before the shock (2)");
   await expect(panel).toContainText("Caused by the shock (209)");
   await verdict(page)
-    .getByRole("button", {
+    .getByRole("link", {
       name: "Tamarind Crossing Sub-County Hospital (Kisumu West)",
     })
     .click();

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 export type ScenarioRun = {
   id: string;
@@ -20,6 +20,7 @@ export function useKisumuScenario(
   initial = 0,
 ) {
   const [magnitude, setMagnitude] = useState(initial);
+  const first = useRef(true);
   const [run, setRun] = useState<ScenarioRun | null>(null);
   const [runMagnitude, setRunMagnitude] = useState<number | null>(null);
   const [status, setStatus] = useState<"idle" | "running" | "ready" | "error">(
@@ -32,6 +33,9 @@ export function useKisumuScenario(
     }
     let active = true;
     setStatus("running");
+    // The first run starts at once; later changes wait briefly so rapid clicks submit once.
+    const delay = first.current ? 0 : 300;
+    first.current = false;
     const timer = setTimeout(() => {
       void (async () => {
         try {
@@ -43,7 +47,10 @@ export function useKisumuScenario(
             attempt < 120;
             attempt++
           ) {
-            await new Promise((resolve) => setTimeout(resolve, 500));
+            // Poll quickly at first, since most runs finish within a second.
+            await new Promise((resolve) =>
+              setTimeout(resolve, attempt < 4 ? 150 : 500),
+            );
             if (active) current = await api.read(current.id);
           }
           if (!active) return;
@@ -56,7 +63,7 @@ export function useKisumuScenario(
           if (active) setStatus("error");
         }
       })();
-    }, 300);
+    }, delay);
     return () => {
       active = false;
       clearTimeout(timer);

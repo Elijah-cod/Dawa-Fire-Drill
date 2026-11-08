@@ -292,7 +292,7 @@ it("makes the verdict's highlighted phrases real controls", async () => {
   const verdict = await screen.findByRole("region", {
     name: "What breaks first",
   });
-  const count = await within(verdict).findByRole("button", {
+  const count = await within(verdict).findByRole("link", {
     name: "209 stockouts",
   });
   fireEvent.click(count);
@@ -305,7 +305,7 @@ it("makes the verdict's highlighted phrases real controls", async () => {
       .getAttribute("aria-selected"),
   ).toBe("true");
   fireEvent.click(
-    within(verdict).getByRole("button", {
+    within(verdict).getByRole("link", {
       name: "Tamarind Crossing Sub-County Hospital (Kisumu West)",
     }),
   );

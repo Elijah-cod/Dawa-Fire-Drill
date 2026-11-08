@@ -646,6 +646,46 @@ input {
 .verdict[data-busy] {
   opacity: 0.6;
 }
+/* The verdict keeps the 40% scenario's measured height while the run loads, so the page
+   below does not move when it arrives (measured in English, 320–1536 px). */
+.verdict {
+  min-height: 305px;
+}
+@media (max-width: 767px) {
+  .verdict {
+    min-height: 325px;
+  }
+}
+@media (max-width: 719px) {
+  .verdict {
+    min-height: 380px;
+  }
+}
+@media (max-width: 535px) {
+  .verdict {
+    min-height: 430px;
+  }
+}
+@media (max-width: 463px) {
+  .verdict {
+    min-height: 460px;
+  }
+}
+@media (max-width: 399px) {
+  .verdict {
+    min-height: 490px;
+  }
+}
+@media (max-width: 367px) {
+  .verdict {
+    min-height: 510px;
+  }
+}
+@media (max-width: 343px) {
+  .verdict {
+    min-height: 560px;
+  }
+}
 .verdict-line {
   margin: 0;
   color: var(--ink);
