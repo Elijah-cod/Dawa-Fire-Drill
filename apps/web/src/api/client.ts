@@ -93,6 +93,15 @@ export function validFundingTrace(
   );
 }
 
+export type CaptureRead = components["schemas"]["CaptureRead"];
+export type BinCardFields = components["schemas"]["BinCardFields"];
+export type CaptureConfirmed = {
+  synthetic: true;
+  capture_id: string;
+  facility_id: string;
+  fields: BinCardFields;
+};
+
 /** Response types are generated from the backend OpenAPI schema. */
 export function createApiClient() {
   return {
@@ -156,6 +165,53 @@ export function createApiClient() {
         `/counties/042/runs/${encodeURIComponent(id)}`,
         role,
       ),
+    uploadCapture: async (
+      facilityId: string,
+      file: File,
+      key: string,
+      role?: DemoRole,
+    ) => {
+      const body = new FormData();
+      body.set("synthetic_attested", "true");
+      body.set("file", file);
+      const headers = new Headers({ "Idempotency-Key": key });
+      if (role) headers.set("X-Demo-Role", role);
+      const response = await fetch(
+        `/api/counties/042/facilities/${encodeURIComponent(facilityId)}/captures?seed=42`,
+        { method: "POST", headers, body, cache: "no-store" },
+      );
+      if (!response.ok) throw new ApiError(response.status);
+      const result = (await response.json()) as CaptureRead;
+      if (
+        result?.synthetic !== true ||
+        result.facility_id !== facilityId ||
+        typeof result.id !== "string" ||
+        !result.fields ||
+        typeof result.fields !== "object"
+      )
+        throw new Error("Invalid synthetic capture");
+      return result;
+    },
+    confirmCapture: async (
+      facilityId: string,
+      captureId: string,
+      fields: BinCardFields,
+      role?: DemoRole,
+    ) => {
+      const result = await post<CaptureConfirmed>(
+        `/counties/042/facilities/${encodeURIComponent(facilityId)}/captures/${encodeURIComponent(captureId)}/confirm`,
+        { reviewed: true, fields },
+        crypto.randomUUID(),
+        role,
+      );
+      if (
+        result?.synthetic !== true ||
+        result.capture_id !== captureId ||
+        result.facility_id !== facilityId
+      )
+        throw new Error("Invalid capture confirmation");
+      return result;
+    },
     fundingTrace: async (flowId: string, asOf: string, role?: DemoRole) => {
       const result = await get<components["schemas"]["FundingTraceResponse"]>(
         `/counties/042/funding/${encodeURIComponent(flowId)}/trace?seed=42&as_of=${encodeURIComponent(asOf)}`,

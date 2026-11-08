@@ -169,3 +169,71 @@ it("rejects a funding trace that is not synthetic or is malformed", async () => 
     ).rejects.toThrow("Invalid funding trace");
   }
 });
+
+it("uploads a synthetic bin card as multipart with the facility demo role", async () => {
+  const send = vi.fn().mockResolvedValue(
+    Response.json({
+      id: "capture-1",
+      facility_id: "SYN-KE-042-F001",
+      fields: {},
+      status: "pending",
+      synthetic: true,
+    }),
+  );
+  vi.stubGlobal("fetch", send);
+  const file = new File(["png"], "card.png", { type: "image/png" });
+  await createApiClient().uploadCapture(
+    "SYN-KE-042-F001",
+    file,
+    "key-1",
+    "facility",
+  );
+  const [url, init] = send.mock.calls[0];
+  expect(url).toBe(
+    "/api/counties/042/facilities/SYN-KE-042-F001/captures?seed=42",
+  );
+  expect(init.headers.get("Idempotency-Key")).toBe("key-1");
+  expect(init.headers.get("X-Demo-Role")).toBe("facility");
+  expect(init.body.get("synthetic_attested")).toBe("true");
+  expect(init.body.get("file")).toBeInstanceOf(File);
+});
+
+it("rejects a capture or confirmation for another facility", async () => {
+  vi.stubGlobal(
+    "fetch",
+    vi.fn().mockResolvedValue(
+      Response.json({
+        id: "capture-1",
+        facility_id: "SYN-KE-042-F002",
+        fields: {},
+        synthetic: true,
+      }),
+    ),
+  );
+  await expect(
+    createApiClient().uploadCapture(
+      "SYN-KE-042-F001",
+      new File(["png"], "card.png", { type: "image/png" }),
+      "key-1",
+    ),
+  ).rejects.toThrow("Invalid synthetic capture");
+  vi.stubGlobal(
+    "fetch",
+    vi.fn().mockResolvedValue(
+      Response.json({
+        synthetic: true,
+        capture_id: "capture-1",
+        facility_id: "SYN-KE-042-F002",
+        fields: {},
+      }),
+    ),
+  );
+  await expect(
+    createApiClient().confirmCapture("SYN-KE-042-F001", "capture-1", {
+      commodity_name: "Synthetic tracer",
+      opening_balance: 1,
+      closing_balance: 1,
+      record_date: "2026-11-01",
+    }),
+  ).rejects.toThrow("Invalid capture confirmation");
+});

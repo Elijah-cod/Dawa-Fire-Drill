@@ -1,3 +1,4 @@
+import { ApiError } from "./client";
 import type { Role, Session } from "../auth/auth-provider";
 import type { components } from "../generated/api";
 
@@ -125,6 +126,46 @@ export function createMockClient(role: Role) {
           "Synthetic ranking fixture unavailable for these inputs",
         );
       return (await import("../fixtures/ranked-fixes.json")).default;
+    },
+    /** No extraction provider in fixture mode: fields come back empty for manual entry. */
+    async uploadCapture(
+      facilityId: string,
+      file: File,
+    ): Promise<components["schemas"]["CaptureRead"]> {
+      if (role !== "facility" || facilityId !== "SYN-KE-042-F001")
+        throw new Error("Forbidden");
+      if (!["image/png", "image/jpeg", "image/webp"].includes(file.type))
+        throw new ApiError(422, "Invalid image");
+      return {
+        id: "00000000-0000-4000-8000-0000000000c1",
+        country_code: "KE",
+        facility_id: facilityId,
+        fields: {
+          commodity_name: null,
+          opening_balance: null,
+          closing_balance: null,
+          record_date: null,
+        },
+        provider_status: "manual_unavailable",
+        status: "pending" as const,
+        created_at: "2026-11-08T00:00:00Z",
+        synthetic: true,
+        notice: "Synthetic capture; no extraction provider in fixture mode",
+      };
+    },
+    async confirmCapture(
+      facilityId: string,
+      captureId: string,
+      fields: components["schemas"]["BinCardFields"],
+    ) {
+      if (role !== "facility" || facilityId !== "SYN-KE-042-F001")
+        throw new Error("Forbidden");
+      return {
+        synthetic: true as const,
+        capture_id: captureId,
+        facility_id: facilityId,
+        fields,
+      };
     },
     async fundingTrace(
       flowId: string,

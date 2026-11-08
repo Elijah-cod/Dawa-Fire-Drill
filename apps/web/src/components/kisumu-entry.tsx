@@ -116,7 +116,43 @@ function KisumuContent({
       ) : loaded.error ? (
         <p role="status">{t("overviewError")}</p>
       ) : loaded.facility ? (
-        <FacilitySelf data={loaded.facility} />
+        <FacilitySelf
+          data={loaded.facility}
+          capture={
+            mode === "demo"
+              ? {
+                  upload: (file, key) =>
+                    api.uploadCapture(
+                      loaded.facility!.facility.id,
+                      file,
+                      key,
+                      selectedRole,
+                    ),
+                  confirm: (id, fields) =>
+                    api.confirmCapture(
+                      loaded.facility!.facility.id,
+                      id,
+                      fields,
+                      selectedRole,
+                    ),
+                }
+              : mode === "mock"
+                ? {
+                    upload: (file) =>
+                      createMockClient("facility").uploadCapture(
+                        loaded.facility!.facility.id,
+                        file,
+                      ),
+                    confirm: (id, fields) =>
+                      createMockClient("facility").confirmCapture(
+                        loaded.facility!.facility.id,
+                        id,
+                        fields,
+                      ),
+                  }
+                : undefined
+          }
+        />
       ) : loaded.panel ? (
         <KisumuOverview
           key={scope}

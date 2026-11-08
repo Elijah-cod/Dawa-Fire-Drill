@@ -221,6 +221,41 @@ body:has(.tour-panel) main {
   outline: 3px solid var(--primary);
   outline-offset: 4px;
 }
+.capture-review {
+  display: grid;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+.capture-review img {
+  width: 100%;
+  max-height: 24rem;
+  object-fit: contain;
+  border: 1px solid var(--border);
+  border-radius: 0.5rem;
+}
+.capture-field {
+  margin-bottom: 0.75rem;
+}
+.capture-field input[aria-invalid="true"] {
+  border: 2px solid var(--primary);
+  background: var(--soft);
+}
+.capture-check {
+  display: flex;
+  gap: 0.5rem;
+  align-items: flex-start;
+  margin-bottom: 0.75rem;
+}
+.capture-check input {
+  width: 1.5rem;
+  min-height: 1.5rem;
+}
+.capture-confirm {
+  margin-top: 1rem;
+  padding: 1rem;
+  border: 2px solid var(--primary);
+  border-radius: 0.5rem;
+}
 .rank-cost-note {
   color: var(--muted);
   font-size: 0.875rem;
@@ -359,6 +394,9 @@ input {
   margin-top: 1rem;
 }
 @media (min-width: 768px) {
+  .capture-review {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  }
   .tour-panel {
     inset: auto 1rem 1rem auto;
     max-width: 26rem;

@@ -74,6 +74,9 @@ test("guided demo walks overview to capture by keyboard", async ({ page }) => {
   await expect(
     page.getByRole("heading", { name: /Synthetic facility 001.*F001/ }),
   ).toBeVisible({ timeout: 15000 });
+  await expect(
+    page.getByRole("region", { name: "Capture a bin card" }),
+  ).toHaveAttribute("data-tour-active", "true", { timeout: 15000 });
 
   await page.getByRole("button", { name: "Finish demo" }).click();
   await expect(

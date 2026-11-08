@@ -1,11 +1,31 @@
 "use client";
 
-import type { FacilityView } from "../api/client";
+import type {
+  BinCardFields,
+  CaptureConfirmed,
+  CaptureRead,
+  FacilityView,
+} from "../api/client";
 import { useCallback, useRef } from "react";
 import { usePreferences } from "../preferences/preferences";
+import { BinCardCapture } from "./bin-card-capture";
 import { FacilityMap } from "./facility-map";
 
-export function FacilitySelf({ data }: { data: FacilityView }) {
+export type CaptureApi = {
+  upload: (file: File, key: string) => Promise<CaptureRead>;
+  confirm: (
+    captureId: string,
+    fields: BinCardFields,
+  ) => Promise<CaptureConfirmed>;
+};
+
+export function FacilitySelf({
+  data,
+  capture,
+}: {
+  data: FacilityView;
+  capture?: CaptureApi;
+}) {
   const { t } = usePreferences();
   const heading = useRef<HTMLHeadingElement>(null);
   const select = useCallback(() => heading.current?.focus(), []);
@@ -15,12 +35,22 @@ export function FacilitySelf({ data }: { data: FacilityView }) {
   return (
     <>
       <p>
-        <a href="/">Kenya</a> / Kisumu
+        <a className="underline" href="/">
+          Kenya
+        </a>{" "}
+        / Kisumu
       </p>
       <h1 ref={heading} tabIndex={-1}>
         {data.facility.name} · {data.facility.id}
       </h1>
       <p>{t("syntheticNote")}</p>
+      {capture && (
+        <BinCardCapture
+          facilityId={data.facility.id}
+          upload={capture.upload}
+          confirm={capture.confirm}
+        />
+      )}
       <section className="panel">
         <FacilityMap
           facilities={[data.facility]}
