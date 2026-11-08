@@ -10,6 +10,8 @@ Gitleaks v8.30.1 via Docker scanned 113 commits across all refs and a copy of tr
 
 ## Phase 3: Frontend — current
 
+- Phase 3: ranked fixes now shows one row per candidate (transfer 10 KES, emergency 50 KES) with cost, modeled days deferred and status, selected rows above a labeled budget cut line and excluded rows below it with their reason; a missing effect reads "modeled deferral unavailable". Costs carry a single "illustrative assumption" label on the panel. Lint, type-check, formatting and 74 Vitest tests passed (two new). Playwright was not rerun in this step: the running port-3300 production server predates the change and needs a rebuild with the user's demo environment. Next: reserve results space and run the interactive Lighthouse flow.
+
 - Phase 3: recorded that the ranked-fixes panel is committed as WIP in `9ac1e6d` and the user's 2026-11-08 override allowing the funding trace to start before the full ranked-fixes gate. Documentation only; no tests run. Next: candidate rows with an explicit cut line, reserved results space, the interactive Lighthouse run, and a compact Kisumu fixture.
 
 - Added county generator version 4 with a synthetic F002 → F001 C02 transfer aligned with the seed-42 first shock-caused event, preserving version 3 snapshots and coordinates. The demo now compares that transfer with emergency delivery. The backend suite passed 137 tests with one existing warning; Ruff, mypy and Bandit passed. Next: connect the versioned case to the action panel and complete the Lighthouse and screen gate.

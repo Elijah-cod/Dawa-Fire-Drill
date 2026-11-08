@@ -114,6 +114,11 @@ const strings = {
     rankReasonUnavailable: "The exclusion reason is unavailable.",
     rankSelected: "Selected by the optimizer",
     rankDeferred: "modeled days deferred",
+    rankDeferralUnavailable: "modeled deferral unavailable",
+    rankCostNote: "Costs in KES are an illustrative assumption.",
+    rankCutLineDetail: "actions above are selected; actions below are not.",
+    rankAboveCut: "Selected within the budget",
+    rankBelowCut: "Not selected",
     rankUnreachable:
       "No supplied option meets this synthetic target within the budget.",
     shockDetailsUnavailable:
@@ -229,6 +234,12 @@ const strings = {
     rankReasonUnavailable: "Sababu ya kutokuchaguliwa haipatikani.",
     rankSelected: "Imechaguliwa na mfumo wa upangaji",
     rankDeferred: "siku za kuchelewa katika mfano",
+    rankDeferralUnavailable: "kuchelewa katika mfano hakupatikani",
+    rankCostNote: "Gharama kwa KES ni makadirio ya mfano.",
+    rankCutLineDetail:
+      "hatua zilizo juu zimechaguliwa; zilizo chini hazijachaguliwa.",
+    rankAboveCut: "Zilizochaguliwa ndani ya bajeti",
+    rankBelowCut: "Hazijachaguliwa",
     rankUnreachable:
       "Hakuna chaguo lililotolewa linalofikia lengo hili la mfano ndani ya bajeti.",
     shockDetailsUnavailable:

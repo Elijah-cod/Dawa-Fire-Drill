@@ -163,6 +163,21 @@ p {
   padding-top: 0.5rem;
   font-weight: 600;
 }
+.rank-cost-note {
+  color: var(--muted);
+  font-size: 0.875rem;
+}
+.rank-excluded {
+  margin: 0.75rem 0;
+  padding: 0.75rem 0.75rem 0.75rem 2rem;
+  border: 1px solid var(--border);
+  border-radius: 0.5rem;
+  color: var(--muted);
+}
+.rank-selected li + li,
+.rank-excluded li + li {
+  margin-top: 0.5rem;
+}
 label {
   display: block;
   font-weight: 600;

@@ -248,22 +248,20 @@ it("compares the planted transfer and emergency for the first event", async () =
 it("labels the optimizer explanation as English-only in Swahili", async () => {
   const { PreferenceControls, PreferencesProvider } =
     await import("../preferences/preferences");
-  const rank = vi
-    .fn()
-    .mockResolvedValue({
-      synthetic: true,
-      notice: "Illustrative",
-      run_id: "run-1",
-      selected_ids: ["transfer"],
-      selected_reasons: {},
-      excluded_reasons: { emergency: "alternative_selected" },
-      cut_line: 1,
-      total_cost: 10,
-      remaining_budget: 90,
-      minimum_benefit: 1,
-      effects: [],
-      explanation: "OR-Tools selected transfer.",
-    });
+  const rank = vi.fn().mockResolvedValue({
+    synthetic: true,
+    notice: "Illustrative",
+    run_id: "run-1",
+    selected_ids: ["transfer"],
+    selected_reasons: {},
+    excluded_reasons: { emergency: "alternative_selected" },
+    cut_line: 1,
+    total_cost: 10,
+    remaining_budget: 90,
+    minimum_benefit: 1,
+    effects: [],
+    explanation: "OR-Tools selected transfer.",
+  });
   render(
     <PreferencesProvider>
       <PreferenceControls />
@@ -307,4 +305,96 @@ it("refuses a transfer that targets a different first stockout", () => {
       }) as HTMLButtonElement
     ).disabled,
   ).toBe(true);
+});
+
+it("lists each candidate with cost, deferral and status on either side of the cut line", async () => {
+  const rank = vi.fn(async () => ({
+    synthetic: true,
+    notice: "Illustrative",
+    run_id: "run-1",
+    selected_ids: ["transfer"],
+    selected_reasons: { transfer: "included_in_optimal_set" },
+    excluded_reasons: { emergency: "alternative_selected" },
+    cut_line: 1,
+    total_cost: 10,
+    remaining_budget: 90,
+    minimum_benefit: 1,
+    effects: [
+      {
+        id: "transfer",
+        baseline_stockout_day: 48,
+        counterfactual_stockout_day: null,
+        deferred_days: 43,
+      },
+      {
+        id: "emergency",
+        baseline_stockout_day: 48,
+        counterfactual_stockout_day: null,
+        deferred_days: 41,
+      },
+    ],
+    explanation: "OR-Tools selected transfer.",
+  }));
+  render(
+    <RankedFixes
+      runId="run-1"
+      target={{ facility_id: "F001", commodity_id: "C02", day: 48 }}
+      transfer={route}
+      rank={rank}
+    />,
+  );
+  fireEvent.click(
+    screen.getByRole("button", { name: /rank feasible actions/i }),
+  );
+  await screen.findByText(/OR-Tools selected transfer/);
+  const above = screen.getByRole("list", {
+    name: /selected within the budget/i,
+  });
+  const below = screen.getByRole("list", { name: /not selected/i });
+  const cut = screen.getByText(/budget cut line/i);
+  expect(above.textContent).toMatch(
+    /Redistribution transfer · 10 KES · 43 modeled days deferred · Selected by the optimizer/,
+  );
+  expect(below.textContent).toMatch(
+    /Emergency delivery · 50 KES · 41 modeled days deferred · Another option for this stockout was selected/,
+  );
+  expect(
+    above.compareDocumentPosition(cut) & Node.DOCUMENT_POSITION_FOLLOWING,
+  ).toBeTruthy();
+  expect(
+    cut.compareDocumentPosition(below) & Node.DOCUMENT_POSITION_FOLLOWING,
+  ).toBeTruthy();
+  expect(screen.getAllByText(/illustrative assumption\b/i)).toHaveLength(1);
+});
+
+it("marks a missing modeled deferral instead of inventing one", async () => {
+  const rank = vi.fn(async () => ({
+    synthetic: true,
+    notice: "Illustrative",
+    run_id: "run-1",
+    selected_ids: ["transfer"],
+    selected_reasons: {},
+    excluded_reasons: {},
+    cut_line: 1,
+    total_cost: 10,
+    remaining_budget: 90,
+    minimum_benefit: 1,
+    effects: [],
+    explanation: null,
+  }));
+  render(
+    <RankedFixes
+      runId="run-1"
+      target={{ facility_id: "F001", commodity_id: "C02", day: 48 }}
+      transfer={route}
+      rank={rank}
+    />,
+  );
+  fireEvent.click(
+    screen.getByRole("button", { name: /rank feasible actions/i }),
+  );
+  const below = await screen.findByRole("list", { name: /not selected/i });
+  expect(below.textContent).toMatch(
+    /Emergency delivery · 50 KES · modeled deferral unavailable · The exclusion reason is unavailable/,
+  );
 });
