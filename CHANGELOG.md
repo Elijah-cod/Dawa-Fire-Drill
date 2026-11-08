@@ -1,5 +1,7 @@
 # Changelog
 
+- Navigation: "Funding trace" opens the Kisumu Funding trace tab with focus on its heading, "Bin-card capture" works from any page, the sidebar and bottom bar highlight exactly the view the URL shows, and back and forward restore the view and highlight. The sidebar no longer repeats the synthetic note.
+
 - Kisumu: the framing question shows at once while the first run loads; shock, budget, tab and day are kept in the URL so a link recreates the view; the phone tab strip shows that it scrolls; README screenshots and the Swahili review list are refreshed, and the page-load performance gap is documented.
 
 - Kisumu app redesign (from the approved preview): a verdict that answers what breaks first, how far the fixes reach and the cheapest fix; four prepared shocks with a no-shock comparison; tabs for map and fixes, stockout order, funding trace and facilities; a live budget slider in illustrative cost units with a cut line, paired options and "Why these picks?"; a sortable facilities table with filters and a detail panel; a "Where it breaks" timeline with a schematic area map. Invented facility display names, the self-hosted Source Serif 4 display face, a precise About panel and a compact phone header.
