@@ -99,3 +99,4 @@ See [agent rules](AGENTS.md), [current progress](docs/PROGRESS.md), [design appr
 ## Next steps
 
 - Risk from the share of commodities at risk, with per-commodity thresholds from real lead times.
+- Kisumu items cut from the redesign for time: a CSV export of the ranked action list (labeled synthetic), animated before/after transitions between the no-shock and shock runs, micro-interactions (count-up numbers, toasts, a keyboard-shortcut sheet) and a spotlight for the guided demo. The “Copy link” behavior is covered by the URL, which already carries shock, budget, tab and day.
