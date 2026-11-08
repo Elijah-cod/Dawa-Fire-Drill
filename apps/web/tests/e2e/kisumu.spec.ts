@@ -29,33 +29,53 @@ test("Kisumu map follows the selected synthetic scenario", async ({
   await page
     .getByRole("heading", { name: "Facility locations are synthetic." })
     .scrollIntoViewIfNeeded();
-  const marker = page.locator(
-    ".facility-marker[aria-label*='Synthetic facility 004']",
+  const mobile = testInfo.project.name === "mobile";
+  const map = () => page.locator(mobile ? "dialog" : ".desktop-grid").first();
+  await expect(map().locator(".risk-summary")).toHaveText(
+    "0% shock · 40 facilities: 2 Critical · 0 Watch · 38 Stable · 2 already short before the shock",
+    { timeout: 20000 },
   );
-  await expect(marker).toHaveAttribute("aria-label", /Stable/, {
-    timeout: 20000,
-  });
-  await marker.focus();
+  const cluster = map().locator(".facility-cluster").first();
+  await expect(cluster).toHaveAttribute(
+    "aria-label",
+    /^(\d+) · (Critical|Watch|Stable) · \1 synthetic facilities, worst status shown · .*Press Enter to zoom in\.$/,
+  );
+  await cluster.focus();
+  // Each Enter zooms into the focused cluster; on narrow screens a large cluster first
+  // splits into smaller clusters, and focus follows the group's first facility.
+  for (let step = 0; step < 4; step++) {
+    await page.keyboard.press("Enter");
+    await expect(page.locator(".facility-marker:focus")).toHaveCount(1);
+    if (!(await page.locator(".facility-cluster:focus").count())) break;
+  }
+  const focused = page.locator(".facility-marker:not(.facility-cluster):focus");
+  await expect(focused).toHaveAttribute(
+    "aria-label",
+    /^Synthetic facility \d{3} · /,
+  );
+  const name = (await focused.getAttribute("aria-label"))!.split(" · ")[0];
   await page.keyboard.press("Enter");
-  if (testInfo.project.name === "mobile")
-    await page.getByRole("button", { name: "Close map" }).click();
+  if (mobile) await page.getByRole("button", { name: "Close map" }).click();
   await expect(
-    page.getByRole("heading", { name: /Synthetic facility 004.*F004/ }),
+    page.getByRole("heading", { name: new RegExp(`^${name} · `) }),
   ).toBeVisible();
   const slider = page.getByLabel(/Donor logistics support reduction/i);
   await slider.focus();
   await page.keyboard.press("End");
-  if (testInfo.project.name === "mobile")
+  await page
+    .locator(".county-list")
+    .getByRole("button", { name: /Synthetic facility 004/ })
+    .click();
+  await expect(
+    page
+      .getByRole("heading", { name: /Synthetic facility 004.*F004/ })
+      .locator(".."),
+  ).toContainText(/Critical · .*26 days to stockout/, { timeout: 30000 });
+  if (mobile)
     await page.getByRole("button", { name: "Open facility map" }).click();
-  const watch = page.locator(
-    ".facility-marker[aria-label*='Synthetic facility 004']",
-  );
-  await expect(watch).toHaveAttribute(
-    "aria-label",
-    /Critical · 26 days to stockout/,
-    {
-      timeout: 30000,
-    },
+  await expect(map().locator(".risk-summary")).toHaveText(
+    "100% shock · 40 facilities: 40 Critical · 0 Watch · 0 Stable · 2 already short before the shock",
+    { timeout: 30000 },
   );
   expect(
     await page.evaluate(
@@ -131,9 +151,18 @@ test("every synthetic facility marker is inside the map and clear of its control
   const map = page.locator(
     mobile ? "dialog .facility-map" : ".desktop-grid .facility-map",
   );
-  await expect(map.locator(".facility-marker")).toHaveCount(40, {
+  await expect(map.locator(".facility-marker").first()).toBeVisible({
     timeout: 30000,
   });
+  // Each facility is either its own marker or counted in exactly one cluster.
+  expect(
+    await map.evaluate((element) =>
+      [...element.querySelectorAll(".facility-marker")].reduce(
+        (sum, item) => sum + Number((item as HTMLElement).dataset.count ?? 1),
+        0,
+      ),
+    ),
+  ).toBe(40);
   await page.waitForTimeout(1000);
   const problems = await map.evaluate((element) => {
     const box = element.getBoundingClientRect();
@@ -181,4 +210,45 @@ test("the Do this first intro stays within two lines with details on demand", as
   await expect(details).not.toHaveAttribute("open", "");
   await details.locator("summary").click();
   await expect(details).toContainText("10 KES and 50 KES");
+});
+
+test("the map summary matches the backend counts at each shock", async ({
+  page,
+}, testInfo) => {
+  test.setTimeout(90000);
+  await page.goto("http://localhost:3300/kisumu");
+  const mobile = testInfo.project.name === "mobile";
+  const slider = page.getByLabel(/Donor logistics support reduction/i);
+  await expect(slider).toBeEnabled({ timeout: 30000 });
+  for (const [magnitude, counts] of [
+    [0, "2 Critical · 0 Watch · 38 Stable"],
+    [20, "2 Critical · 5 Watch · 33 Stable"],
+    [40, "10 Critical · 18 Watch · 12 Stable"],
+    [100, "40 Critical · 0 Watch · 0 Stable"],
+  ] as const) {
+    if (mobile && (await page.locator("dialog[open]").count()))
+      await page.getByRole("button", { name: "Close map" }).click();
+    await slider.fill(String(magnitude));
+    if (mobile)
+      await page.getByRole("button", { name: "Open facility map" }).click();
+    const map = page.locator(mobile ? "dialog" : ".desktop-grid").first();
+    await expect(map.locator(".risk-summary")).toHaveText(
+      `${magnitude}% shock · 40 facilities: ${counts} · 2 already short before the shock`,
+      { timeout: 30000 },
+    );
+    const clusters = map.locator(".facility-cluster");
+    await expect(clusters.first()).toBeVisible();
+    for (const label of await clusters.evaluateAll((items) =>
+      items.map((item) => item.getAttribute("aria-label") ?? ""),
+    ))
+      expect(label).toMatch(
+        /^(\d+) · (Critical|Watch|Stable) · \1 synthetic facilities, worst status shown · /,
+      );
+  }
+  const result = await new AxeBuilder({ page }).analyze();
+  expect(
+    result.violations.filter((item) =>
+      ["serious", "critical"].includes(item.impact ?? ""),
+    ),
+  ).toEqual([]);
 });

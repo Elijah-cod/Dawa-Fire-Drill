@@ -68,13 +68,14 @@ export function facilityMarkers(
 }
 
 /**
- * Room around the markers: half a 44 px marker plus a margin on every side, and extra space
- * on the right (zoom controls) and bottom (attribution) so no marker sits under them.
+ * Room around the markers: half of a cluster pill (about 130 px wide, “6 · Critical”) plus a
+ * margin left and right, half a 44 px marker plus a margin above and below, and extra space on
+ * the right (zoom controls) and bottom (attribution) so nothing sits under them.
  */
 export const MAP_FIT_PADDING = Object.freeze({
   top: 40,
-  left: 40,
-  right: 72,
+  left: 80,
+  right: 112,
   bottom: 56,
 });
 
@@ -190,8 +191,17 @@ export function FacilityMap({
               duration: 0,
             });
           fit();
-          // Keep every marker in view when the container changes size (e.g. the mobile sheet).
-          map.on("resize", fit);
+          // Keep every marker in view when the container resizes (e.g. the mobile sheet),
+          // but never undo a zoom or pan the user made, such as opening a cluster.
+          let followBounds = true;
+          map.on("resize", () => {
+            if (followBounds) fit();
+          });
+          for (const type of ["zoomstart", "dragstart"] as const)
+            map.on(type, (event) => {
+              if ("originalEvent" in event && event.originalEvent)
+                followBounds = false;
+            });
           map.addControl(
             new library.NavigationControl({ visualizePitch: false }),
           );
@@ -255,7 +265,8 @@ export function FacilityMap({
                   .filter((status) => counts[status])
                   .map((status) => `${counts[status]} ${t(status)}`)
                   .join(", ");
-                const label = `${members.length} ${t("clusterFacilities")} · ${t("clusterWorst")}: ${t(worst)} · ${breakdown}. ${t("clusterZoom")}`;
+                // Starts with the visible text so the accessible name contains it.
+                const label = `${members.length} · ${t(worst)} · ${members.length} ${t("clusterFacilities")}, ${t("clusterWorst")} · ${breakdown}. ${t("clusterZoom")}`;
                 button.className = `facility-marker facility-cluster facility-marker--${worst}`;
                 button.dataset.count = String(members.length);
                 button.setAttribute("aria-label", label);
@@ -269,6 +280,7 @@ export function FacilityMap({
                 for (const item of members)
                   area.extend([item.longitude, item.latitude]);
                 button.addEventListener("click", () => {
+                  followBounds = false;
                   focusId = members[0].facility.id;
                   map?.fitBounds(area, {
                     padding: MAP_FIT_PADDING,
@@ -321,6 +333,7 @@ export function FacilityMap({
       <div
         className="facility-map"
         ref={container}
+        role="group"
         aria-label={t("facilityLocationsSynthetic")}
       />
       <section aria-label={t("riskLegend")}>

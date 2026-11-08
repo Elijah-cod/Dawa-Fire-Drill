@@ -327,6 +327,9 @@ it("fits the map to every marker with padding that clears the controls, again on
   expect(options.padding.bottom).toBeGreaterThan(options.padding.top);
   act(() => handlers.get("resize")!({}));
   expect(fits).toHaveLength(2);
+  act(() => handlers.get("zoomstart")!({ originalEvent: new Event("wheel") }));
+  act(() => handlers.get("resize")!({}));
+  expect(fits).toHaveLength(2);
 });
 
 it("clusters nearby facilities with count and worst status, then separates them on activation", async () => {
@@ -352,7 +355,7 @@ it("clusters nearby facilities with count and worst status, then separates them 
     />,
   );
   const cluster = await screen.findByRole("button", {
-    name: "3 synthetic facilities · worst: Critical · 1 Critical, 1 Watch, 1 Stable. Press Enter to zoom in.",
+    name: "3 · Critical · 3 synthetic facilities, worst status shown · 1 Critical, 1 Watch, 1 Stable. Press Enter to zoom in.",
   });
   expect(cluster.textContent).toBe("!3 · Critical");
   expect(cluster.dataset.count).toBe("3");
