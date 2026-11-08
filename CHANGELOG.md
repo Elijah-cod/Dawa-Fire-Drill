@@ -1,5 +1,7 @@
 # Changelog
 
+- The facility map shows “Map tiles are unavailable” only after a basemap tile actually fails and none has loaded; aborted tile requests and non-tile map errors no longer trigger it.
+
 - Kisumu generator version 5 keeps every invented facility location on land; earlier versions placed 12 seed-42 markers in Lake Victoria.
 
 - Added Kisumu generator version 5 with varied synthetic opening cover so 40% shock stockouts spread over several weeks instead of nearly all landing on day 48; versions 1–4 are unchanged.

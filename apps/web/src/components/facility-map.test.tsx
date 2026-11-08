@@ -10,13 +10,15 @@ import { afterEach, expect, it, vi } from "vitest";
 import oldFacilities from "../fixtures/kisumu-v2-facilities.json";
 import { FacilityMap, facilityMarkers } from "./facility-map";
 
+const handlers = vi.hoisted(() => new Map<string, (event: unknown) => void>());
 vi.mock("maplibre-gl", () => {
   class Map {
     container: HTMLElement;
     constructor(options: { container: HTMLElement }) {
       this.container = options.container;
     }
-    on() {
+    on(type: string, handler: (event: unknown) => void) {
+      handlers.set(type, handler);
       return this;
     }
     fitBounds() {
@@ -169,4 +171,55 @@ it("defers loading map markers until the map approaches the viewport", async () 
   } finally {
     vi.unstubAllGlobals();
   }
+});
+
+it("reports unavailable tiles only after a real basemap tile failure", async () => {
+  handlers.clear();
+  render(
+    <FacilityMap
+      facilities={[
+        {
+          id: "F1",
+          name: "Synthetic facility one",
+          latitude: -0.07,
+          longitude: 34.76,
+          coordinates_synthetic: true,
+        },
+      ]}
+      risks={{}}
+    />,
+  );
+  await vi.waitFor(() => expect(handlers.has("error")).toBe(true));
+  const notice = () => screen.queryByText(/map tiles are unavailable/i);
+  act(() =>
+    handlers.get("error")!({ error: new Error("Worker failed to load") }),
+  );
+  act(() =>
+    handlers.get("error")!({
+      sourceId: "osm",
+      tile: {},
+      error: Object.assign(new Error("aborted"), { name: "AbortError" }),
+    }),
+  );
+  expect(notice()).toBeNull();
+  act(() =>
+    handlers.get("error")!({
+      sourceId: "osm",
+      tile: {},
+      error: new Error("503"),
+    }),
+  );
+  expect(notice()).not.toBeNull();
+  act(() =>
+    handlers.get("data")!({ dataType: "source", sourceId: "osm", tile: {} }),
+  );
+  expect(notice()).toBeNull();
+  act(() =>
+    handlers.get("error")!({
+      sourceId: "osm",
+      tile: {},
+      error: new Error("404"),
+    }),
+  );
+  expect(notice()).toBeNull();
 });

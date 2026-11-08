@@ -127,7 +127,29 @@ export function FacilityMap({
             center: [markers[0].longitude, markers[0].latitude],
             zoom: 9,
           });
-          map.on("error", () => setTilesUnavailable(true));
+          // Only failed basemap tiles count; aborted requests (e.g. after fitBounds) and
+          // non-tile errors do not. A tile that loads clears the message.
+          let tilesLoaded = 0;
+          map.on("data", (event) => {
+            if (
+              event.dataType === "source" &&
+              "sourceId" in event &&
+              event.sourceId === "osm" &&
+              "tile" in event &&
+              event.tile
+            ) {
+              tilesLoaded++;
+              setTilesUnavailable(false);
+            }
+          });
+          map.on("error", (event) => {
+            const tileError =
+              ("sourceId" in event && event.sourceId === "osm") ||
+              ("tile" in event && Boolean(event.tile));
+            const name = (event.error as { name?: unknown } | undefined)?.name;
+            if (!tileError || name === "AbortError") return;
+            if (!tilesLoaded) setTilesUnavailable(true);
+          });
           map.fitBounds(bounds, { padding: 35, maxZoom: 12, duration: 0 });
           map.addControl(
             new library.NavigationControl({ visualizePitch: false }),
