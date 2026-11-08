@@ -64,10 +64,13 @@ export function FacilityMap({
   facilities,
   risks,
   onSelect,
+  preShock,
 }: {
   facilities: MapFacility[];
   risks: Record<string, FacilityRisk>;
   onSelect?: (id: string) => void;
+  /** Facilities short regardless of the shock (pre-shock gaps or no-shock stockouts). */
+  preShock?: ReadonlySet<string>;
 }) {
   const { t, locale } = usePreferences();
   const container = useRef<HTMLDivElement>(null);
@@ -164,7 +167,10 @@ export function FacilityMap({
                 : marker.result.days === null
                   ? t("noStockout")
                   : `${marker.result.days} ${t("days")}`;
-            const description = `${marker.facility.name} · ${t(marker.risk)} · ${time} · ${t("drivers")}: ${marker.result.drivers.join(", ") || "—"}`;
+            const short = preShock?.has(marker.facility.id)
+              ? ` · ${t("alreadyShort")}`
+              : "";
+            const description = `${marker.facility.name} · ${t(marker.risk)}${short} · ${time} · ${t("drivers")}: ${marker.result.drivers.join(", ") || "—"}`;
             button.setAttribute("aria-label", description);
             button.title = `${description}. ${riskLegend(locale).join("; ")}`;
             const symbol = document.createElement("span");
@@ -187,7 +193,7 @@ export function FacilityMap({
       removed = true;
       map?.remove();
     };
-  }, [markers, locale, onSelect, t, mapNearViewport]);
+  }, [markers, locale, onSelect, t, mapNearViewport, preShock]);
 
   if (!markers.length) return <p>{t("facilityMapUnavailable")}</p>;
   return (

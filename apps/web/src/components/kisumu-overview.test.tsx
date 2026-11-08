@@ -138,3 +138,63 @@ it("renders a single facility map while the mobile sheet is open", async () => {
     1,
   );
 });
+
+it("explains Critical at no shock for facilities already short before the shock", async () => {
+  const panel = {
+    synthetic: true,
+    county_code: "042",
+    country_code: "KE",
+    seed: 42,
+    facilities: [
+      { id: "F001", name: "Synthetic one", subcounty_id: "S1", level: 2 },
+      { id: "F004", name: "Synthetic four", subcounty_id: "S1", level: 2 },
+    ],
+    subcounties: [{ id: "S1", name: "Synthetic group" }],
+    commodities: [{ id: "C01", name: "Synthetic tracer" }],
+    consumption: [
+      {
+        facility_id: "F001",
+        commodity_id: "C01",
+        month_index: 23,
+        quantity: 5,
+      },
+      {
+        facility_id: "F004",
+        commodity_id: "C01",
+        month_index: 23,
+        quantity: 5,
+      },
+    ],
+    stock: [
+      { facility_id: "F001", commodity_id: "C01", opening_stock: 0 },
+      { facility_id: "F004", commodity_id: "C01", opening_stock: 10 },
+    ],
+    demo_cases: {},
+  } as unknown as PilotPanel;
+  const scenario = {
+    submit: vi.fn(async () => ({
+      id: "0",
+      status: "succeeded",
+      horizon_days: 90,
+      result: {
+        synthetic: true,
+        county_code: "042",
+        stockouts: [{ facility_id: "F001", commodity_id: "C01", day: 1 }],
+        pre_shock_stockouts: [
+          { facility_id: "F001", commodity_id: "C01", day: 1 },
+        ],
+        baseline_stockouts: [],
+        shock_caused_stockouts: [],
+      },
+    })),
+    read: vi.fn(),
+  };
+  render(<KisumuOverview panel={panel} scenario={scenario} />);
+  fireEvent.click(screen.getByRole("button", { name: /Synthetic one/ }));
+  expect(
+    await screen.findByText(/Critical · Already short before the shock/),
+  ).toBeTruthy();
+  fireEvent.click(screen.getByRole("button", { name: /Synthetic four/ }));
+  expect(await screen.findByText(/^Stable/)).toBeTruthy();
+  expect(screen.queryByText(/Already short/)).toBeNull();
+});

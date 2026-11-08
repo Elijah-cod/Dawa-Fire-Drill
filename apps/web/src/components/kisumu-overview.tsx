@@ -48,6 +48,14 @@ function validEvents(value: unknown): value is Event[] {
     )
   );
 }
+/** Facilities short regardless of the shock: opening gaps or stockouts that occur with no shock. */
+function preShockFacilities(run: ScenarioRun | null): ReadonlySet<string> {
+  const rows = [
+    run?.result?.pre_shock_stockouts,
+    run?.result?.baseline_stockouts,
+  ].flatMap((value) => (validEvents(value) ? value : []));
+  return new Set(rows.map((row) => row.facility_id));
+}
 /** Events that also happen without the shock: pre-shock gaps plus baseline stockouts. */
 function noShockCount(run: ScenarioRun | null) {
   const pre = run?.result?.pre_shock_stockouts;
@@ -109,6 +117,7 @@ export function KisumuOverview({
     };
   }, [mapOpen]);
   const risks = useMemo(() => risksForRun(panel, evidence(run)), [panel, run]);
+  const preShock = useMemo(() => preShockFacilities(run), [run]);
   const facilities = useMemo(
     () =>
       panel.facilities.filter(
@@ -153,6 +162,7 @@ export function KisumuOverview({
               facilities={facilities}
               risks={risks}
               onSelect={setSelected}
+              preShock={preShock}
             />
           )}
         </div>
@@ -173,6 +183,7 @@ export function KisumuOverview({
               facilities={facilities}
               risks={risks}
               onSelect={setSelected}
+              preShock={preShock}
             />
           )}
           <div className="map-drawer" aria-live="polite">
@@ -283,8 +294,9 @@ export function KisumuOverview({
               {facility.name} · {facility.id}
             </h2>
             <p>
-              {t(risk.status)} · {t("drivers")}:{" "}
-              {risk.drivers.join(", ") || "—"} ·{" "}
+              {t(risk.status)}
+              {preShock.has(facility.id) && ` · ${t("alreadyShort")}`} ·{" "}
+              {t("drivers")}: {risk.drivers.join(", ") || "—"} ·{" "}
               {risk.days === null
                 ? risk.status === "unknown"
                   ? t("noRiskData")

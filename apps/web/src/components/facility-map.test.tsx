@@ -223,3 +223,42 @@ it("reports unavailable tiles only after a real basemap tile failure", async () 
   );
   expect(notice()).toBeNull();
 });
+
+it("labels facilities that were short before the shock in the marker tooltip", async () => {
+  const facilities = [
+    {
+      id: "F001",
+      name: "Synthetic one",
+      latitude: -0.1,
+      longitude: 34.8,
+      coordinates_synthetic: true,
+    },
+    {
+      id: "F002",
+      name: "Synthetic two",
+      latitude: -0.2,
+      longitude: 34.9,
+      coordinates_synthetic: true,
+    },
+  ];
+  render(
+    <FacilityMap
+      facilities={facilities}
+      risks={{
+        F001: { status: "critical", drivers: ["C01"], days: 0 },
+        F002: { status: "stable", drivers: ["C01"], days: null },
+      }}
+      preShock={new Set(["F001"])}
+    />,
+  );
+  expect(
+    await screen.findByRole("button", {
+      name: "Synthetic one · Critical · Already short before the shock · 0 days to stockout · Driving commodities: C01",
+    }),
+  ).toBeTruthy();
+  expect(
+    screen
+      .getByRole("button", { name: /Synthetic two/ })
+      .getAttribute("aria-label"),
+  ).not.toContain("Already short");
+});
