@@ -120,3 +120,46 @@ test("optimizer ranks a synthetic fix for the first shock-caused stockout", asyn
     fullPage: true,
   });
 });
+
+test("every synthetic facility marker is inside the map and clear of its controls", async ({
+  page,
+}, testInfo) => {
+  await page.goto("http://localhost:3300/kisumu");
+  const mobile = testInfo.project.name === "mobile";
+  if (mobile)
+    await page.getByRole("button", { name: "Open facility map" }).click();
+  const map = page.locator(
+    mobile ? "dialog .facility-map" : ".desktop-grid .facility-map",
+  );
+  await expect(map.locator(".facility-marker")).toHaveCount(40, {
+    timeout: 30000,
+  });
+  await page.waitForTimeout(1000);
+  const problems = await map.evaluate((element) => {
+    const box = element.getBoundingClientRect();
+    const controls = [...element.querySelectorAll(".maplibregl-ctrl")].map(
+      (item) => item.getBoundingClientRect(),
+    );
+    return [...element.querySelectorAll(".facility-marker")].flatMap(
+      (marker) => {
+        const r = marker.getBoundingClientRect();
+        const outside =
+          r.left < box.left ||
+          r.right > box.right ||
+          r.top < box.top ||
+          r.bottom > box.bottom;
+        const covered = controls.some(
+          (c) =>
+            r.left < c.right &&
+            r.right > c.left &&
+            r.top < c.bottom &&
+            r.bottom > c.top,
+        );
+        return outside || covered
+          ? [marker.getAttribute("aria-label") ?? "marker"]
+          : [];
+      },
+    );
+  });
+  expect(problems).toEqual([]);
+});

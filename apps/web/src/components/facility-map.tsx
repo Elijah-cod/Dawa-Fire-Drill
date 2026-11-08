@@ -60,6 +60,17 @@ export function facilityMarkers(
   });
 }
 
+/**
+ * Room around the markers: half a 44 px marker plus a margin on every side, and extra space
+ * on the right (zoom controls) and bottom (attribution) so no marker sits under them.
+ */
+export const MAP_FIT_PADDING = Object.freeze({
+  top: 40,
+  left: 40,
+  right: 72,
+  bottom: 56,
+});
+
 export function FacilityMap({
   facilities,
   risks,
@@ -153,7 +164,15 @@ export function FacilityMap({
             if (!tileError || name === "AbortError") return;
             if (!tilesLoaded) setTilesUnavailable(true);
           });
-          map.fitBounds(bounds, { padding: 35, maxZoom: 12, duration: 0 });
+          const fit = () =>
+            map?.fitBounds(bounds, {
+              padding: MAP_FIT_PADDING,
+              maxZoom: 12,
+              duration: 0,
+            });
+          fit();
+          // Keep every marker in view when the container changes size (e.g. the mobile sheet).
+          map.on("resize", fit);
           map.addControl(
             new library.NavigationControl({ visualizePitch: false }),
           );

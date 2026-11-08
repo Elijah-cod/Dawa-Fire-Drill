@@ -8,9 +8,10 @@ import {
 } from "@testing-library/react";
 import { afterEach, expect, it, vi } from "vitest";
 import oldFacilities from "../fixtures/kisumu-v2-facilities.json";
-import { FacilityMap, facilityMarkers } from "./facility-map";
+import { FacilityMap, facilityMarkers, MAP_FIT_PADDING } from "./facility-map";
 
 const handlers = vi.hoisted(() => new Map<string, (event: unknown) => void>());
+const fits = vi.hoisted(() => [] as { bounds: unknown; options: unknown }[]);
 vi.mock("maplibre-gl", () => {
   class Map {
     container: HTMLElement;
@@ -21,7 +22,8 @@ vi.mock("maplibre-gl", () => {
       handlers.set(type, handler);
       return this;
     }
-    fitBounds() {
+    fitBounds(bounds: unknown, options: unknown) {
+      fits.push({ bounds, options });
       return this;
     }
     addControl() {
@@ -45,7 +47,9 @@ vi.mock("maplibre-gl", () => {
     }
   }
   class LngLatBounds {
-    extend() {
+    points: [number, number][] = [];
+    extend(point: [number, number]) {
+      this.points.push(point);
       return this;
     }
   }
@@ -261,4 +265,48 @@ it("labels facilities that were short before the shock in the marker tooltip", a
       .getByRole("button", { name: /Synthetic two/ })
       .getAttribute("aria-label"),
   ).not.toContain("Already short");
+});
+
+it("fits the map to every marker with padding that clears the controls, again on resize", async () => {
+  fits.length = 0;
+  handlers.clear();
+  const facilities = [
+    {
+      id: "W",
+      name: "West",
+      latitude: -0.09,
+      longitude: 34.54,
+      coordinates_synthetic: true,
+    },
+    {
+      id: "E",
+      name: "East",
+      latitude: -0.15,
+      longitude: 35.15,
+      coordinates_synthetic: true,
+    },
+    {
+      id: "S",
+      name: "South",
+      latitude: -0.34,
+      longitude: 35.02,
+      coordinates_synthetic: true,
+    },
+  ];
+  render(<FacilityMap facilities={facilities} risks={{}} />);
+  await vi.waitFor(() => expect(fits).toHaveLength(1));
+  const { bounds, options } = fits[0] as {
+    bounds: { points: [number, number][] };
+    options: { padding: typeof MAP_FIT_PADDING };
+  };
+  expect(bounds.points).toEqual(
+    facilities.map((f) => [f.longitude, f.latitude]),
+  );
+  expect(options.padding).toEqual(MAP_FIT_PADDING);
+  for (const side of ["top", "left", "right", "bottom"] as const)
+    expect(options.padding[side]).toBeGreaterThan(22);
+  expect(options.padding.right).toBeGreaterThan(options.padding.left);
+  expect(options.padding.bottom).toBeGreaterThan(options.padding.top);
+  act(() => handlers.get("resize")!({}));
+  expect(fits).toHaveLength(2);
 });
