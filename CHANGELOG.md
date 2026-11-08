@@ -1,5 +1,7 @@
 # Changelog
 
+- Refreshed README screenshots, demo script and limitations; listed all Swahili strings for review and added a Checkpoint C checklist.
+
 - Added a favicon. Browser tests now cover the guided demo, funding trace, bin-card capture and clustered map in Swahili with the dark theme, including accessibility checks and the English-only note on the optimizer explanation.
 
 - Bin-card capture moves focus to the first empty field when extraction returns empty or partial values, and styles “Confirm and save” as the primary button.
