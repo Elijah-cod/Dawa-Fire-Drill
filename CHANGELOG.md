@@ -1,5 +1,7 @@
 # Changelog
 
+- Kisumu app redesign (from the approved preview): a verdict that answers what breaks first, how far the fixes reach and the cheapest fix; four prepared shocks with a no-shock comparison; tabs for map and fixes, stockout order, funding trace and facilities; a live budget slider in illustrative cost units with a cut line, paired options and "Why these picks?"; a sortable facilities table with filters and a detail panel; a "Where it breaks" timeline with a schematic area map. Invented facility display names, the self-hosted Source Serif 4 display face, a precise About panel and a compact phone header.
+
 - Kisumu preview: the verdict and fixes header state how many shock-caused stockouts the options address; costs are labelled KES (illustrative); the loading verdict no longer states a result; the budget control stays visible and disabled when there is nothing to rank.
 
 - Kisumu preview: page title, section headings and verdict use self-hosted Source Serif 4 (OFL) with a metric-matched fallback; the verdict and budget status reserve their space so changing the budget no longer moves the page.
