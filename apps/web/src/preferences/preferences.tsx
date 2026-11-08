@@ -131,6 +131,77 @@ const strings = {
     orderShowAll: "Show all {n}",
     orderNoneShort: "No facility was short before the shock.",
     orderNoneCaused: "Nothing runs out because of the shock in this run.",
+    fixesTitle: "Cheapest fixes",
+    fixesCoverEarliest: "the {n} earliest of {total} shock-caused stockouts",
+    fixesCoverSome:
+      "{n} of {total} shock-caused stockouts (days {first} to {last})",
+    fixesScope:
+      "These options address {coverage}; the others have no option in this demo.",
+    fixesHow:
+      "OR-Tools picks what fits the budget. Costs are illustrative units, not calibrated to real prices.",
+    fixesBudget: "Budget (illustrative units)",
+    fixesBudgetNumber: "Budget in illustrative units",
+    units: "{n} units",
+    fixesLoading: "Loading the ranked fixes…",
+    fixesFirstRank: "Ranking fixes for {b} units…",
+    fixesInFlight:
+      "Updating the ranking for {b} units… Showing {r} units until it arrives.",
+    fixesUsed: "{used} of {b} units used.",
+    fixesNothingFits:
+      "Nothing fits {b} units. The cheapest fix costs {c} units.",
+    fixesFailed:
+      "The ranking for {b} units could not be updated. The fixes below are for {r} units, the last budget that ranked.",
+    fixesFailedFirst: "The ranking for {b} units could not be loaded.",
+    fixesRefreshFailed:
+      "The ranking for {b} units could not be refreshed. The fixes below are from the last ranking that arrived.",
+    fixesRetry: "Try again",
+    pairTitle: "{name}: {medicine}",
+    pairMeta: "{area} · runs out on day {day}",
+    pairSame: "if funded, either option keeps it {effect}",
+    effectHolds: "stocked through day {h}",
+    effectMoves: "stockout moves to day {day}",
+    effectUnknown: "modeled effect unavailable",
+    optionTransfer: "Transfer",
+    optionVia: "from {name}, {km} km away",
+    optionEmergency: "Emergency delivery",
+    funded: "Funded",
+    notFunded: "Not funded: {reason}",
+    ifFunded: "if funded, {effect}",
+    reasonAlternative: "A cheaper option already covers this stockout",
+    reasonOverBudget: "Costs more than the whole budget",
+    reasonRemaining: "Does not fit in what is left of the budget",
+    reasonNotSelected: "Not in the optimizer's best set",
+    reasonDonor: "The donor and recipient choices conflict",
+    reasonInventory: "The shared synthetic inventory would be exceeded",
+    reasonUnknown: "reason unavailable",
+    whyTitle: "Why these picks?",
+    whySame:
+      "Transfers and emergency deliveries give the same delay here, so the cheaper transfers are funded first.",
+    whyNone:
+      "Nothing is funded: the cheapest option costs {c} units, more than the {b}-unit budget.",
+    whyGeneral:
+      "The optimizer funds the set of options that delays stockouts the most within the budget.",
+    whyTransferTo: "the transfer to {to}",
+    whyEmergencyTo: "emergency delivery to {to}",
+    fixesNoShockTitle: "With no shock, nothing to fix.",
+    fixesNoShock: "No stockouts are caused by the shock.",
+    fixesLateTitle: "No transfer can arrive in time at this shock.",
+    budgetUnusedNone:
+      "The budget is not used: no stockouts are caused by the shock.",
+    budgetUnusedLate:
+      "The budget is not used at this shock: no transfer can arrive in time.",
+    verdictBudget:
+      "At {b} units (illustrative) the optimizer funds {funded} ({cost} units){hold}.",
+    verdictTransfers: "{n} transfers",
+    verdictTransfer: "{n} transfer",
+    verdictFixesN: "{n} fixes",
+    verdictFixN: "{n} fix",
+    verdictHoldEach: ", each keeping its facility stocked through day {h}",
+    verdictHoldOne: ", keeping its facility stocked through day {h}",
+    verdictCutOne: "{name} (day {day}) does not fit what is left.",
+    verdictCutMany: "{n} other transfers do not fit what is left.",
+    verdictNothingFits:
+      "At {b} units (illustrative), nothing fits the budget; the cheapest fix costs {c} units.",
     shockLabel: "Donor logistics support reduction",
     baseline: "No-shock baseline",
     scenarioRunning: "Running illustrative scenario…",
@@ -422,6 +493,80 @@ const strings = {
     orderNoneShort: "Hakuna kituo kilichokuwa na upungufu kabla ya mshtuko.",
     orderNoneCaused:
       "Hakuna bidhaa inayoisha kutokana na mshtuko katika jaribio hili.",
+    fixesTitle: "Suluhisho za gharama nafuu zaidi",
+    fixesCoverEarliest:
+      "matukio {n} ya mapema zaidi kati ya {total} yaliyosababishwa na mshtuko",
+    fixesCoverSome:
+      "matukio {n} kati ya {total} yaliyosababishwa na mshtuko (siku {first} hadi {last})",
+    fixesScope:
+      "Chaguo hizi zinashughulikia {coverage}; mengine hayana chaguo katika onyesho hili.",
+    fixesHow:
+      "OR-Tools huchagua kinachotosha ndani ya bajeti. Gharama ni vipimo vya mfano, havijapimwa kwa bei halisi.",
+    fixesBudget: "Bajeti (vipimo vya mfano)",
+    fixesBudgetNumber: "Bajeti kwa vipimo vya mfano",
+    units: "vipimo {n}",
+    fixesLoading: "Inapakia suluhisho zilizopangwa…",
+    fixesFirstRank: "Inapanga suluhisho kwa vipimo {b}…",
+    fixesInFlight:
+      "Inasasisha mpangilio kwa vipimo {b}… Inaonyesha vipimo {r} hadi ufike.",
+    fixesUsed: "Vipimo {used} kati ya {b} vimetumika.",
+    fixesNothingFits:
+      "Hakuna kinachotosha vipimo {b}. Suluhisho la bei nafuu zaidi linagharimu vipimo {c}.",
+    fixesFailed:
+      "Mpangilio wa vipimo {b} haukuweza kusasishwa. Suluhisho zilizo hapa chini ni za vipimo {r}, bajeti ya mwisho iliyopangwa.",
+    fixesFailedFirst: "Mpangilio wa vipimo {b} haukuweza kupakiwa.",
+    fixesRefreshFailed:
+      "Mpangilio wa vipimo {b} haukuweza kuonyeshwa upya. Suluhisho zilizo hapa chini ni za mpangilio wa mwisho uliofika.",
+    fixesRetry: "Jaribu tena",
+    pairTitle: "{name}: {medicine}",
+    pairMeta: "{area} · inaisha siku ya {day}",
+    pairSame: "ikifadhiliwa, chaguo lolote linaiweka {effect}",
+    effectHolds: "na akiba hadi siku ya {h}",
+    effectMoves: "kuisha kunasogea hadi siku ya {day}",
+    effectUnknown: "athari iliyoigwa haipatikani",
+    optionTransfer: "Uhamisho",
+    optionVia: "kutoka {name}, umbali wa km {km}",
+    optionEmergency: "Uwasilishaji wa dharura",
+    funded: "Imefadhiliwa",
+    notFunded: "Haikufadhiliwa: {reason}",
+    ifFunded: "ikifadhiliwa, {effect}",
+    reasonAlternative: "Chaguo la bei nafuu tayari linashughulikia tukio hili",
+    reasonOverBudget: "Inagharimu zaidi ya bajeti yote",
+    reasonRemaining: "Haitoshi ndani ya bajeti iliyobaki",
+    reasonNotSelected: "Haimo katika seti bora ya kiboreshaji",
+    reasonDonor: "Chaguo za mtoaji na mpokeaji zinakinzana",
+    reasonInventory: "Akiba ya pamoja ya mfano ingezidiwa",
+    reasonUnknown: "sababu haipatikani",
+    whyTitle: "Kwa nini chaguo hizi?",
+    whySame:
+      "Uhamisho na uwasilishaji wa dharura vinatoa ucheleweshaji uleule hapa, kwa hivyo uhamisho wa bei nafuu unafadhiliwa kwanza.",
+    whyNone:
+      "Hakuna kilichofadhiliwa: chaguo la bei nafuu zaidi linagharimu vipimo {c}, zaidi ya bajeti ya vipimo {b}.",
+    whyGeneral:
+      "Kiboreshaji kinafadhili seti ya chaguo inayochelewesha kuisha kwa bidhaa zaidi ndani ya bajeti.",
+    whyTransferTo: "the transfer to {to}",
+    whyEmergencyTo: "emergency delivery to {to}",
+    fixesNoShockTitle: "Bila mshtuko, hakuna cha kurekebisha.",
+    fixesNoShock: "Hakuna bidhaa zinazoisha kutokana na mshtuko.",
+    fixesLateTitle:
+      "Hakuna uhamisho unaoweza kufika kwa wakati katika mshtuko huu.",
+    budgetUnusedNone:
+      "Bajeti haitumiki: hakuna bidhaa zinazoisha kutokana na mshtuko.",
+    budgetUnusedLate:
+      "Bajeti haitumiki katika mshtuko huu: hakuna uhamisho unaoweza kufika kwa wakati.",
+    verdictBudget:
+      "Kwa vipimo {b} (vya mfano) kiboreshaji kinafadhili {funded} (vipimo {cost}){hold}.",
+    verdictTransfers: "uhamisho {n}",
+    verdictTransfer: "uhamisho {n}",
+    verdictFixesN: "suluhisho {n}",
+    verdictFixN: "suluhisho {n}",
+    verdictHoldEach:
+      ", kila mmoja ukiweka kituo chake na akiba hadi siku ya {h}",
+    verdictHoldOne: ", ukiweka kituo chake na akiba hadi siku ya {h}",
+    verdictCutOne: "{name} (siku ya {day}) haitoshi katika kilichobaki.",
+    verdictCutMany: "Uhamisho mwingine {n} hautoshi katika kilichobaki.",
+    verdictNothingFits:
+      "Kwa vipimo {b} (vya mfano), hakuna kinachotosha bajeti; suluhisho la bei nafuu zaidi linagharimu vipimo {c}.",
     shockLabel: "Kupungua kwa msaada wa usafirishaji wa wafadhili",
     baseline: "Msingi bila mshtuko",
     scenarioRunning: "Inaendesha uigaji wa mfano…",

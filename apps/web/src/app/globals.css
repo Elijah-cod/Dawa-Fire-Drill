@@ -351,33 +351,7 @@ p {
   padding: 1rem;
   margin-bottom: 1rem;
 }
-.rank-action {
-  min-width: 44px;
-  padding: 0.65rem 1rem;
-  margin: 0.5rem 0;
-  border: 1px solid var(--primary);
-  border-radius: 0.5rem;
-  color: var(--primary);
-  font-weight: 600;
-}
-.rank-selected {
-  margin: 0.75rem 0;
-  padding: 0.75rem 0.75rem 0.75rem 2rem;
-  background: var(--soft);
-  border-radius: 0.5rem;
-}
-.rank-cut {
-  border-top: 2px dashed var(--border);
-  padding-top: 0.5rem;
-  font-weight: 600;
-}
 /* Reserved from measured fixture-run heights so arriving results do not shift the page. */
-.rank-placeholder {
-  min-height: 96.25rem;
-}
-.rank-results {
-  min-height: 77.25rem;
-}
 .tour-start,
 .tour-actions button {
   min-height: 44px;
@@ -455,20 +429,6 @@ body:has(.tour-panel) main {
   border: 2px solid var(--primary);
   border-radius: 0.5rem;
 }
-.rank-intro {
-  max-width: 70ch;
-}
-.rank-details {
-  margin: 0.5rem 0;
-}
-.rank-details summary {
-  min-height: 44px;
-  display: flex;
-  align-items: center;
-  cursor: pointer;
-  color: var(--primary);
-  font-weight: 600;
-}
 .funding-stages {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr));
@@ -513,21 +473,6 @@ body:has(.tour-panel) main {
   background: var(--primary);
   border-color: var(--primary);
   color: var(--surface);
-}
-.rank-cost-note {
-  color: var(--muted);
-  font-size: 0.875rem;
-}
-.rank-excluded {
-  margin: 0.75rem 0;
-  padding: 0.75rem 0.75rem 0.75rem 2rem;
-  border: 1px solid var(--border);
-  border-radius: 0.5rem;
-  color: var(--muted);
-}
-.rank-selected li + li,
-.rank-excluded li + li {
-  margin-top: 0.5rem;
 }
 label {
   display: block;
@@ -715,6 +660,11 @@ input {
   font-size: var(--text-md);
   line-height: 1.45;
 }
+/* Reserved for the longest budget sentence at every budget (measured: 5 lines at 390 px,
+   3 lines from 768 px), so a ranking that arrives later never moves the page. */
+.verdict-fix {
+  min-height: calc(5 * 1.45em);
+}
 .verdict-fix:empty {
   display: none;
 }
@@ -772,7 +722,7 @@ input {
 .change-scenario {
   width: 100%;
   justify-content: space-between;
-  margin-bottom: var(--space-3);
+  margin-top: var(--space-3);
   border-color: var(--primary);
   color: var(--primary-strong);
 }
@@ -938,6 +888,209 @@ input {
   color: var(--ink);
   font-size: var(--text-sm);
 }
+/* Shared action button (funding trace, bin-card capture). */
+.rank-action {
+  min-width: 44px;
+  min-height: 44px;
+  padding: 0.65rem 1rem;
+  margin: 0.5rem 0;
+  border: 1px solid var(--primary);
+  border-radius: 0.5rem;
+  background: var(--surface);
+  color: var(--primary-strong);
+  font-weight: 600;
+}
+/* Fixes: budget slider, cut line and paired options */
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+.icon--sm {
+  width: 16px;
+  height: 16px;
+}
+.field-label {
+  display: block;
+  margin-bottom: var(--space-2);
+  font-size: var(--text-sm);
+  font-weight: 700;
+}
+.budget-control {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 96px;
+  align-items: center;
+  gap: var(--space-3);
+}
+.budget-control input[type="range"] {
+  width: 100%;
+  min-height: 44px;
+  padding: 0;
+  border: 0;
+  background: none;
+}
+.budget-control input[type="number"] {
+  width: 100%;
+}
+.budget-control input:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+.budget-bar {
+  position: relative;
+  height: 28px;
+  margin: var(--space-2) 0 var(--space-6);
+  border-radius: var(--radius-sm);
+  background: var(--surface-2);
+}
+.budget-bar .seg {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  border-right: 2px solid var(--surface);
+  background: var(--primary);
+}
+.budget-bar .cut {
+  position: absolute;
+  top: -6px;
+  bottom: -6px;
+  border-left: 2px dashed var(--ink);
+  transition: left 240ms var(--ease-out);
+}
+.budget-bar .cut span {
+  position: absolute;
+  top: 100%;
+  margin-top: 2px;
+  font-size: var(--text-xs);
+  font-weight: 700;
+  white-space: nowrap;
+  transform: translateX(-50%);
+}
+/* One slot for every budget status, sized for the longest, so nothing below it moves. */
+.budget-status-slot {
+  min-height: calc(3 * 1.5em + 2 * var(--space-3) + var(--space-3));
+  font-size: var(--text-sm);
+}
+.state--error {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  background: var(--critical-soft);
+  color: var(--critical);
+}
+.state--error > span {
+  flex: 1 1 16rem;
+}
+.finding {
+  padding: var(--space-4);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface-2);
+  color: var(--ink);
+}
+.finding strong {
+  display: block;
+  margin-bottom: var(--space-1);
+  font-size: var(--text-lg);
+}
+.pairs,
+.options {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.pair {
+  padding: var(--space-3) 0;
+  border-top: 1px solid var(--border);
+}
+.pair:first-child {
+  border-top: 0;
+}
+.pair h3 {
+  margin: 0;
+  font-size: var(--text-md);
+  font-weight: 700;
+}
+.pair .meta {
+  margin: 2px 0 var(--space-2);
+  font-size: var(--text-sm);
+}
+.option {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 2px var(--space-3);
+  align-items: baseline;
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-sm);
+}
+.option + .option {
+  margin-top: var(--space-1);
+}
+.option--funded {
+  background: var(--stable-soft);
+}
+.option--funded:focus-visible {
+  outline: 3px solid var(--focus);
+}
+.option--cut {
+  background: var(--surface-2);
+}
+.option .name {
+  font-weight: 600;
+}
+.option .via {
+  display: block;
+  font-weight: 400;
+  font-size: var(--text-sm);
+  color: var(--muted);
+}
+.option .cost {
+  font-weight: 700;
+  white-space: nowrap;
+}
+.option .why {
+  grid-column: 1 / -1;
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-1);
+  font-size: var(--text-sm);
+}
+.option--funded .why {
+  color: var(--stable);
+  font-weight: 700;
+}
+#pairs[aria-busy="true"] .why {
+  opacity: 0.6;
+}
+.explain {
+  margin: var(--space-4) 0 0;
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--border);
+  font-size: var(--text-sm);
+}
+.explain-summary {
+  margin: 0 0 var(--space-2);
+  color: var(--ink);
+}
+.explain summary {
+  display: flex;
+  align-items: center;
+  min-height: 44px;
+  color: var(--primary-strong);
+  font-weight: 700;
+  cursor: pointer;
+}
+.skeleton {
+  height: 14px;
+  margin-bottom: var(--space-2);
+  border-radius: var(--radius-sm);
+  background: var(--surface-2);
+}
 @media (min-width: 768px) {
   .bottom-nav {
     display: none;
@@ -962,11 +1115,8 @@ input {
     font-size: var(--text-xl);
     line-height: 1.35;
   }
-  .rank-placeholder {
-    min-height: 60.25rem;
-  }
-  .rank-results {
-    min-height: 45.5rem;
+  .verdict-fix {
+    min-height: calc(3 * 1.35em);
   }
   .mobile-map-toggle {
     display: none;
@@ -1036,12 +1186,6 @@ input {
   .overview {
     grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
     align-items: start;
-  }
-  .rank-placeholder {
-    min-height: 54.5rem;
-  }
-  .rank-results {
-    min-height: 39.75rem;
   }
 }
 @media (prefers-color-scheme: dark) {

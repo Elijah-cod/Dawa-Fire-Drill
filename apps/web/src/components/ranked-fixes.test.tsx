@@ -1,485 +1,340 @@
 // @vitest-environment jsdom
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import {
+  act,
+  cleanup,
+  fireEvent,
+  render,
+  renderHook,
+  screen,
+  waitFor,
+  within,
+} from "@testing-library/react";
 import { afterEach, expect, it, vi } from "vitest";
+import { ApiError } from "../api/client";
+import { createMockClient, MOCK_RUN_IDS } from "../api/mock-client";
+import fixture from "../fixtures/kisumu.json";
+import { withDisplayNames } from "../kisumu/names";
+import {
+  DEFAULT_BUDGET,
+  RANK_DEBOUNCE_MS,
+  snapBudget,
+  useRanking,
+  type Ranking,
+} from "../kisumu/use-ranking";
+import { coverage, runEvents } from "../kisumu/view";
+import {
+  PreferencesProvider,
+  usePreferences,
+} from "../preferences/preferences";
+import { BudgetSentence } from "./kisumu-verdict";
 import { RankedFixes } from "./ranked-fixes";
 
-afterEach(cleanup);
+afterEach(() => {
+  cleanup();
+  vi.useRealTimers();
+});
 
-const route = {
+const panel = withDisplayNames(fixture.pilot);
+const routes = fixture.pilot.demo_cases.transfer_routes;
+const events = runEvents({
   synthetic: true,
-  facility_id: "F001",
-  donor_facility_id: "F002",
-  commodity_id: "C02",
-  quantity: 100,
-  available_units: 600,
-  dispatch_day: 45,
-  arrival_day: 46,
-  expiry_day: 90,
-  minimum_shelf_days: 7,
-  distance_km: 7,
-  maximum_distance_km: 30,
-};
+  county_code: "042",
+  ...fixture.risk_runs["40"],
+})!.shock;
+const runId = MOCK_RUN_IDS[40];
+/** The recorded backend rankings (OR-Tools via rank_kisumu) behind the mock client. */
+const recorded = (
+  body: Parameters<ReturnType<typeof createMockClient>["rank"]>[1],
+) => createMockClient("planner").rank(runId, body);
 
-it("shows optimizer order, the budget cut line, reasons and the first-stockout target", async () => {
-  const rank = vi.fn(async () => ({
-    synthetic: true,
-    notice: "Illustrative and unvalidated",
-    run_id: "run-1",
-    selected_ids: ["transfer-1"],
-    selected_reasons: { "transfer-1": "included_in_optimal_set" },
-    excluded_reasons: { "emergency-1": "alternative_selected" },
-    cut_line: 1,
-    total_cost: 10,
-    remaining_budget: 90,
-    minimum_benefit: 1,
-    effects: [
-      {
-        id: "transfer-1",
-        baseline_stockout_day: 48,
-        counterfactual_stockout_day: null,
-        deferred_days: 42,
-      },
-    ],
-    explanation: "The optimizer selected transfer.",
-  }));
-  render(
-    <RankedFixes
-      runId="run-1"
-      events={[{ facility_id: "F001", commodity_id: "C02", day: 48 }]}
-      routes={[route]}
-      rank={rank}
-    />,
-  );
-  fireEvent.click(
-    screen.getByRole("button", { name: /rank feasible actions/i }),
-  );
-  expect(
-    await screen.findByText(/The optimizer selected transfer/),
-  ).toBeTruthy();
-  expect(
-    screen.getByText(/Earliest shock-caused stockouts.*F001 · C02 · 48/),
-  ).toBeTruthy();
-  expect((rank.mock.calls as unknown[][])[0][0]).not.toHaveProperty(
-    "minimum_benefit",
-  );
-  expect(screen.getByText(/cut line/i)).toBeTruthy();
-  expect(screen.getByText(/42 modeled days deferred/i)).toBeTruthy();
-  expect(
-    screen.getByText(/another option for this stockout was selected/i),
-  ).toBeTruthy();
-  expect(
-    screen.getByText(/costs and benefits are illustrative assumptions/i),
-  ).toBeTruthy();
-  expect(rank).toHaveBeenCalledWith(expect.objectContaining({ budget: 30 }));
-});
-
-it("reports when the synthetic protection target cannot fit the ceiling", async () => {
-  const { ApiError } = await import("../api/client");
-  const rank = vi
-    .fn()
-    .mockRejectedValue(
-      new ApiError(409, "Benefit target cannot be met within the budget"),
-    );
-  render(
-    <RankedFixes
-      runId="run-1"
-      events={[{ facility_id: "F001", commodity_id: "C02", day: 48 }]}
-      routes={[route]}
-      rank={rank}
-    />,
-  );
-  fireEvent.change(screen.getByLabelText(/budget ceiling/i), {
-    target: { value: "1" },
-  });
-  fireEvent.click(
-    screen.getByRole("button", { name: /rank feasible actions/i }),
-  );
-  expect(
-    await screen.findByText(
-      /no supplied option meets this synthetic target within the budget/i,
-    ),
-  ).toBeTruthy();
-});
-
-it("re-ranks after the ceiling changes and ignores an older response", async () => {
-  let finishOld: (
-    value: import("../generated/api").components["schemas"]["ModeledResponse"],
-  ) => void = () => {};
-  const result = {
-    synthetic: true,
-    notice: "Illustrative",
-    run_id: "run-1",
-    selected_ids: ["transfer-1"],
-    selected_reasons: {},
-    excluded_reasons: {},
-    cut_line: 1,
-    total_cost: 10,
-    remaining_budget: 90,
-    minimum_benefit: 1,
-    effects: [],
-    explanation: "Old budget result",
-  };
-  const rank = vi
-    .fn()
-    .mockImplementationOnce(
-      () =>
-        new Promise((resolve) => {
-          finishOld = resolve;
-        }),
-    )
-    .mockResolvedValue({
-      ...result,
-      remaining_budget: 40,
-      explanation: "New budget result",
-    });
-  render(
-    <RankedFixes
-      runId="run-1"
-      events={[{ facility_id: "F001", commodity_id: "C02", day: 48 }]}
-      routes={[route]}
-      rank={rank}
-    />,
-  );
-  fireEvent.click(
-    screen.getByRole("button", { name: /rank feasible actions/i }),
-  );
-  fireEvent.change(screen.getByLabelText(/budget ceiling/i), {
-    target: { value: "50" },
-  });
-  expect(await screen.findByText("New budget result")).toBeTruthy();
-  finishOld(result);
-  await new Promise((resolve) => setTimeout(resolve, 0));
-  expect(screen.queryByText("Old budget result")).toBeNull();
-  expect(rank).toHaveBeenLastCalledWith(
-    expect.objectContaining({ budget: 50 }),
-  );
-});
-
-it("explains that a new ranking requires a connection while offline", () => {
-  const original = Object.getOwnPropertyDescriptor(navigator, "onLine");
-  Object.defineProperty(navigator, "onLine", {
-    configurable: true,
-    value: false,
-  });
-  const rank = vi.fn();
-  try {
-    render(
+function Harness({
+  rank = recorded,
+  locale,
+}: {
+  rank?: typeof recorded;
+  locale?: "sw";
+}) {
+  const ranking = useRanking({ runId, events, routes, rank });
+  const { setLocale } = usePreferences();
+  return (
+    <>
+      {locale && (
+        <button type="button" onClick={() => setLocale(locale)}>
+          locale
+        </button>
+      )}
+      <p data-testid="sentence">
+        <BudgetSentence
+          panel={panel}
+          ranking={ranking}
+          onShowFunded={() => {}}
+        />
+      </p>
       <RankedFixes
-        runId="run-1"
-        events={[{ facility_id: "F001", commodity_id: "C02", day: 48 }]}
-        routes={[route]}
-        rank={rank}
-      />,
-    );
-    expect(screen.getByText(/go online to recalculate/i)).toBeTruthy();
-    expect(
-      (
-        screen.getByRole("button", {
-          name: /rank feasible actions/i,
-        }) as HTMLButtonElement
-      ).disabled,
-    ).toBe(true);
-    expect(rank).not.toHaveBeenCalled();
-  } finally {
-    if (original) Object.defineProperty(navigator, "onLine", original);
-    else Reflect.deleteProperty(navigator, "onLine");
-  }
-});
-
-it("compares the planted transfer and emergency for the first event", async () => {
-  const route = {
-    synthetic: true,
-    facility_id: "F001",
-    donor_facility_id: "F002",
-    commodity_id: "C02",
-    quantity: 100,
-    available_units: 600,
-    dispatch_day: 45,
-    arrival_day: 46,
-    expiry_day: 90,
-    minimum_shelf_days: 7,
-    distance_km: 7,
-    maximum_distance_km: 30,
-  };
-  const rank = vi.fn(async () => ({
-    synthetic: true,
-    notice: "Illustrative",
-    run_id: "run-1",
-    selected_ids: ["transfer-1"],
-    selected_reasons: { "transfer-1": "included_in_optimal_set" },
-    excluded_reasons: { "emergency-1": "alternative_selected" },
-    cut_line: 1,
-    total_cost: 10,
-    remaining_budget: 90,
-    minimum_benefit: 1,
-    effects: [],
-    explanation: "OR-Tools selected transfer.",
-  }));
-  render(
-    <RankedFixes
-      runId="run-1"
-      events={[{ facility_id: "F001", commodity_id: "C02", day: 48 }]}
-      routes={[route]}
-      rank={rank}
-    />,
+        panel={panel}
+        ranking={ranking}
+        coverage={coverage(events, routes)}
+      />
+    </>
   );
-  fireEvent.click(
-    screen.getByRole("button", { name: /rank feasible actions/i }),
-  );
-  expect(await screen.findByText(/OR-Tools selected transfer/)).toBeTruthy();
-  expect(
-    screen.getByText(/Emergency delivery.*50 KES.*another option/i),
-  ).toBeTruthy();
-  expect(screen.getByText(/Redistribution transfer.*10 KES/i)).toBeTruthy();
-  expect(rank).toHaveBeenCalledWith(
-    expect.objectContaining({
-      candidates: expect.arrayContaining([
-        expect.objectContaining({
-          id: "transfer-1",
-          kind: "redistribution",
-          donor_facility_id: "F002",
-        }),
-        expect.objectContaining({
-          id: "emergency-1",
-          kind: "emergency_procurement",
-        }),
-      ]),
-    }),
-  );
-});
-
-it("labels the optimizer explanation as English-only in Swahili", async () => {
-  const { PreferenceControls, PreferencesProvider } =
-    await import("../preferences/preferences");
-  const rank = vi.fn().mockResolvedValue({
-    synthetic: true,
-    notice: "Illustrative",
-    run_id: "run-1",
-    selected_ids: ["transfer-1"],
-    selected_reasons: {},
-    excluded_reasons: { "emergency-1": "alternative_selected" },
-    cut_line: 1,
-    total_cost: 10,
-    remaining_budget: 90,
-    minimum_benefit: 1,
-    effects: [],
-    explanation: "OR-Tools selected transfer.",
-  });
+}
+const renderFixes = (props: Parameters<typeof Harness>[0] = {}) =>
   render(
     <PreferencesProvider>
-      <PreferenceControls />
-      <RankedFixes
-        runId="run-1"
-        events={[{ facility_id: "F001", commodity_id: "C02", day: 48 }]}
-        routes={[route]}
-        rank={rank}
-      />
+      <Harness {...props} />
     </PreferencesProvider>,
   );
-  fireEvent.change(screen.getByLabelText(/Language \/ Lugha/i), {
-    target: { value: "sw" },
-  });
-  fireEvent.click(
-    screen.getByRole("button", { name: /Panga hatua zinazowezekana/i }),
-  );
-  expect(
-    await screen.findByText(/Explanation available in English only/i),
-  ).toBeTruthy();
-  expect(
-    screen.getByText("OR-Tools selected transfer.").getAttribute("lang"),
-  ).toBe("en");
-});
+const status = () => document.getElementById("budget-status")!;
 
-it("refuses a transfer that targets a different first stockout", () => {
-  const rank = vi.fn();
-  render(
-    <RankedFixes
-      runId="run-1"
-      events={[{ facility_id: "F001", commodity_id: "C02", day: 48 }]}
-      routes={[{ ...route, facility_id: "F003" }]}
-      rank={rank}
-    />,
+it("ranks at once at 30 units: three transfers funded, the fourth cut", async () => {
+  renderFixes();
+  await waitFor(() =>
+    expect(status().textContent).toBe("30 of 30 units used."),
   );
-  expect(screen.getByText(/no planted transfer matches/i)).toBeTruthy();
-  expect(
-    (
-      screen.getByRole("button", {
-        name: /rank feasible actions/i,
-      }) as HTMLButtonElement
-    ).disabled,
-  ).toBe(true);
-});
-
-it("lists each candidate with cost, deferral and status on either side of the cut line", async () => {
-  const rank = vi.fn(async () => ({
-    synthetic: true,
-    notice: "Illustrative",
-    run_id: "run-1",
-    selected_ids: ["transfer-1"],
-    selected_reasons: { "transfer-1": "included_in_optimal_set" },
-    excluded_reasons: { "emergency-1": "alternative_selected" },
-    cut_line: 1,
-    total_cost: 10,
-    remaining_budget: 90,
-    minimum_benefit: 1,
-    effects: [
-      {
-        id: "transfer-1",
-        baseline_stockout_day: 48,
-        counterfactual_stockout_day: null,
-        deferred_days: 43,
-      },
-      {
-        id: "emergency-1",
-        baseline_stockout_day: 48,
-        counterfactual_stockout_day: null,
-        deferred_days: 41,
-      },
-    ],
-    explanation: "OR-Tools selected transfer.",
-  }));
-  render(
-    <RankedFixes
-      runId="run-1"
-      events={[{ facility_id: "F001", commodity_id: "C02", day: 48 }]}
-      routes={[route]}
-      rank={rank}
-    />,
+  const pairs = screen
+    .getAllByRole("listitem")
+    .filter((li) => li.className === "pair");
+  expect(pairs).toHaveLength(4);
+  expect(within(pairs[0]).getByRole("heading").textContent).toBe(
+    "Tamarind Crossing Sub-County Hospital: family planning tracer 04",
   );
-  fireEvent.click(
-    screen.getByRole("button", { name: /rank feasible actions/i }),
+  expect(pairs[0].querySelector(".meta")?.textContent).toBe(
+    "Kisumu West · runs out on day 41 · if funded, either option keeps it stocked through day 90",
   );
-  await screen.findByText(/OR-Tools selected transfer/);
-  const above = screen.getByRole("list", {
-    name: /selected within the budget/i,
-  });
-  const below = screen.getByRole("list", { name: /not selected/i });
-  const cut = screen.getByText(/budget cut line/i);
-  expect(above.textContent).toMatch(
-    /Redistribution transfer → F001 · C02 · 10 KES · 43 modeled days deferred · Selected by the optimizer/,
+  expect(pairs[0].querySelector(".option--funded")?.textContent).toMatch(
+    /^Transferfrom .+, \d+(\.\d+)? km away10 unitsFunded$/,
   );
-  expect(below.textContent).toMatch(
-    /Emergency delivery → F001 · C02 · 50 KES · 41 modeled days deferred · Another option for this stockout was selected/,
+  expect(pairs[0].querySelector(".option--cut")?.textContent).toBe(
+    "Emergency delivery50 unitsNot funded: Costs more than the whole budget",
   );
-  expect(
-    above.compareDocumentPosition(cut) & Node.DOCUMENT_POSITION_FOLLOWING,
-  ).toBeTruthy();
-  expect(
-    cut.compareDocumentPosition(below) & Node.DOCUMENT_POSITION_FOLLOWING,
-  ).toBeTruthy();
-  expect(screen.getAllByText(/illustrative assumption\b/i)).toHaveLength(1);
-});
-
-it("marks a missing modeled deferral instead of inventing one", async () => {
-  const rank = vi.fn(async () => ({
-    synthetic: true,
-    notice: "Illustrative",
-    run_id: "run-1",
-    selected_ids: ["transfer-1"],
-    selected_reasons: {},
-    excluded_reasons: {},
-    cut_line: 1,
-    total_cost: 10,
-    remaining_budget: 90,
-    minimum_benefit: 1,
-    effects: [],
-    explanation: null,
-  }));
-  render(
-    <RankedFixes
-      runId="run-1"
-      events={[{ facility_id: "F001", commodity_id: "C02", day: 48 }]}
-      routes={[route]}
-      rank={rank}
-    />,
+  expect(pairs[3].querySelector(".option--cut")?.textContent).toContain(
+    "Not funded: Does not fit in what is left of the budget",
   );
-  fireEvent.click(
-    screen.getByRole("button", { name: /rank feasible actions/i }),
-  );
-  const below = await screen.findByRole("list", { name: /not selected/i });
-  expect(below.textContent).toMatch(
-    /Emergency delivery → F001 · C02 · 50 KES · modeled deferral unavailable · The exclusion reason is unavailable/,
-  );
-});
-
-it("funds what fits the ceiling and names the budget for the rest", async () => {
-  const second = { ...route, facility_id: "F019", commodity_id: "C03" };
-  const rank = vi.fn(async () => ({
-    synthetic: true,
-    notice: "Illustrative",
-    run_id: "run-1",
-    selected_ids: ["transfer-1"],
-    selected_reasons: { "transfer-1": "included_in_optimal_set" },
-    excluded_reasons: {
-      "emergency-1": "cost_exceeds_ceiling",
-      "transfer-2": "remaining_budget_exceeded",
-      "emergency-2": "cost_exceeds_ceiling",
-    },
-    cut_line: 1,
-    total_cost: 10,
-    remaining_budget: 5,
-    minimum_benefit: null,
-    effects: [],
-    explanation: "OR-Tools selected transfer-1.",
-  }));
-  render(
-    <RankedFixes
-      runId="run-1"
-      events={[
-        { facility_id: "F001", commodity_id: "C02", day: 48 },
-        { facility_id: "F019", commodity_id: "C03", day: 50 },
-      ]}
-      routes={[route, second]}
-      rank={rank}
-    />,
-  );
-  fireEvent.change(screen.getByLabelText(/budget ceiling/i), {
-    target: { value: "15" },
-  });
-  fireEvent.click(
-    screen.getByRole("button", { name: /rank feasible actions/i }),
-  );
-  const below = await screen.findByRole("list", { name: /not selected/i });
-  expect(below.textContent).toMatch(
-    /Redistribution transfer → F019 · C03 · 10 KES · modeled deferral unavailable · Not funded: it does not fit in the remaining budget\./,
-  );
-  expect(below.textContent).toMatch(
-    /Emergency delivery → F001 · C02 · 50 KES · modeled deferral unavailable · The assumed cost exceeds the ceiling\./,
+  expect(document.querySelectorAll(".budget-bar .seg")).toHaveLength(3);
+  expect(screen.getByTestId("sentence").textContent).toBe(
+    "At 30 units (illustrative) the optimizer funds 3 transfers (30 units), each keeping its facility stocked through day 90. Jacaranda Ridge Sub-County Hospital (day 44) does not fit what is left.",
   );
   expect(
     screen.getByText(
-      /Earliest shock-caused stockouts.*F001 · C02 · 48 .*; F019 · C03 · 50/,
+      "These options address the 4 earliest of 209 shock-caused stockouts; the others have no option in this demo. OR-Tools picks what fits the budget. Costs are illustrative units, not calibrated to real prices.",
     ),
   ).toBeTruthy();
-  expect((rank.mock.calls as unknown[][])[0][0]).toMatchObject({
-    budget: 15,
-    candidates: expect.arrayContaining([
-      expect.objectContaining({ id: "transfer-2", facility_id: "F019" }),
-    ]),
-  });
+  expect(document.body.textContent).not.toMatch(/KES/);
 });
 
-it("keeps the intro short and moves the assumptions behind a disclosure", () => {
+it("funds four at 100 units and none at 5, saying so plainly", async () => {
+  renderFixes();
+  await waitFor(() =>
+    expect(status().textContent).toBe("30 of 30 units used."),
+  );
+  fireEvent.change(screen.getByLabelText("Budget (illustrative units)"), {
+    target: { value: "100" },
+  });
+  await waitFor(() =>
+    expect(status().textContent).toBe("40 of 100 units used."),
+  );
+  expect(document.querySelectorAll(".option--funded")).toHaveLength(4);
+  expect(screen.getByTestId("sentence").textContent).toBe(
+    "At 100 units (illustrative) the optimizer funds 4 transfers (40 units), each keeping its facility stocked through day 90.",
+  );
+  expect(document.querySelector(".pair .option--cut")?.textContent).toContain(
+    "A cheaper option already covers this stockout",
+  );
+  fireEvent.change(screen.getByLabelText("Budget (illustrative units)"), {
+    target: { value: "5" },
+  });
+  await waitFor(() =>
+    expect(status().textContent).toBe(
+      "Nothing fits 5 units. The cheapest fix costs 10 units.",
+    ),
+  );
+  expect(document.querySelectorAll(".option--funded")).toHaveLength(0);
+  expect(screen.getByTestId("sentence").textContent).toBe(
+    "At 5 units (illustrative), nothing fits the budget; the cheapest fix costs 10 units.",
+  );
+  expect(document.querySelector(".explain-summary")?.textContent).toBe(
+    "Nothing is funded: the cheapest option costs 10 units, more than the 5-unit budget.",
+  );
+});
+
+it("summarizes the picks above a disclosure that holds the optimizer's own text", async () => {
+  renderFixes();
+  await waitFor(() =>
+    expect(status().textContent).toBe("30 of 30 units used."),
+  );
+  const explain = document.querySelector(".explain")!;
+  expect(explain.querySelector(".explain-summary")?.textContent).toBe(
+    "Transfers and emergency deliveries give the same delay here, so the cheaper transfers are funded first.",
+  );
+  const details = explain.querySelector("details")!;
+  expect(details.open).toBe(false);
+  expect(details.querySelector("summary")?.textContent).toBe(
+    "Why these picks?",
+  );
+  const text = details.querySelector('p[lang="en"]')!.textContent!;
+  expect(text).toMatch(
+    /^OR-Tools selected the transfer to Tamarind Crossing Sub-County Hospital \(family planning tracer 04\), /,
+  );
+  expect(text).not.toMatch(/Illustrative and unvalidated|transfer-\d/);
+});
+
+it("keeps the English-only note on the explanation in Swahili", async () => {
+  renderFixes({ locale: "sw" });
+  fireEvent.click(screen.getByRole("button", { name: "locale" }));
+  await waitFor(() =>
+    expect(status().textContent).toBe("Vipimo 30 kati ya 30 vimetumika."),
+  );
+  const details = document.querySelector(".explain details")!;
+  expect(details.textContent).toContain(
+    "Explanation available in English only.",
+  );
+  expect(details.querySelector('p[lang="en"]')?.textContent).toMatch(
+    /^OR-Tools selected/,
+  );
+});
+
+it("debounces budget changes, shows the last ranking meanwhile and ignores an older response", async () => {
+  const resolvers: ((value: Ranking) => void)[] = [];
+  const rank = vi.fn((body: Parameters<typeof recorded>[0]) =>
+    body.budget === DEFAULT_BUDGET
+      ? recorded(body)
+      : new Promise<Ranking>((resolve) => resolvers.push(resolve)),
+  );
+  renderFixes({ rank });
+  await waitFor(() =>
+    expect(status().textContent).toBe("30 of 30 units used."),
+  );
+  vi.useFakeTimers();
+  const slider = screen.getByLabelText("Budget (illustrative units)");
+  fireEvent.change(slider, { target: { value: "35" } });
+  fireEvent.change(slider, { target: { value: "40" } });
+  expect(status().textContent).toBe(
+    "Updating the ranking for 40 units… Showing 30 units until it arrives.",
+  );
+  expect(document.querySelectorAll(".option--funded")).toHaveLength(3);
+  await act(async () => vi.advanceTimersByTime(RANK_DEBOUNCE_MS));
+  expect(rank).toHaveBeenCalledTimes(2);
+  expect(rank).toHaveBeenLastCalledWith(
+    expect.objectContaining({ budget: 40 }),
+  );
+  fireEvent.change(slider, { target: { value: "100" } });
+  await act(async () => vi.advanceTimersByTime(RANK_DEBOUNCE_MS));
+  vi.useRealTimers();
+  const ranked = (budget: string) =>
+    recorded({ ...rank.mock.calls[0][0], budget: Number(budget) });
+  // The 100-unit ranking arrives first; the older 40-unit one must not replace it.
+  await act(async () => resolvers[1](await ranked("100")));
+  await act(async () => resolvers[0](await ranked("40")));
+  expect(status().textContent).toBe("40 of 100 units used.");
+});
+
+it("keeps the last ranking and offers a retry when a ranking fails", async () => {
+  let fail = false;
+  const rank = vi.fn((body: Parameters<typeof recorded>[0]) =>
+    fail ? Promise.reject(new ApiError(500)) : recorded(body),
+  );
+  renderFixes({ rank });
+  await waitFor(() =>
+    expect(status().textContent).toBe("30 of 30 units used."),
+  );
+  fail = true;
+  fireEvent.change(screen.getByLabelText("Budget (illustrative units)"), {
+    target: { value: "100" },
+  });
+  const alert = await screen.findByRole("alert");
+  expect(alert.id).toBe("budget-status");
+  expect(alert.textContent).toContain(
+    "The ranking for 100 units could not be updated. The fixes below are for 30 units, the last budget that ranked.",
+  );
+  expect(document.querySelectorAll(".option--funded")).toHaveLength(3);
+  fail = false;
+  fireEvent.click(within(alert).getByRole("button", { name: "Try again" }));
+  await waitFor(() =>
+    expect(status().textContent).toBe("40 of 100 units used."),
+  );
+});
+
+it("asks for a connection while offline instead of ranking", async () => {
+  const online = vi.spyOn(navigator, "onLine", "get").mockReturnValue(false);
+  const rank = vi.fn(recorded);
+  renderFixes({ rank });
+  expect(status().textContent).toBe(
+    "Offline. Go online to recalculate a ranking.",
+  );
+  expect(rank).not.toHaveBeenCalled();
+  online.mockReturnValue(true);
+  await act(async () => window.dispatchEvent(new Event("online")));
+  await waitFor(() =>
+    expect(status().textContent).toBe("30 of 30 units used."),
+  );
+  online.mockRestore();
+});
+
+it("commits the number field on blur and snaps to the 5-unit steps", async () => {
+  const rank = vi.fn(recorded);
+  renderFixes({ rank });
+  await waitFor(() =>
+    expect(status().textContent).toBe("30 of 30 units used."),
+  );
+  const field = screen.getByLabelText("Budget in illustrative units");
+  fireEvent.change(field, { target: { value: "37" } });
+  expect(rank).toHaveBeenCalledTimes(1);
+  fireEvent.blur(field);
+  await waitFor(() =>
+    expect(status().textContent).toBe("30 of 35 units used."),
+  );
+  expect((field as HTMLInputElement).value).toBe("35");
+  expect(snapBudget(500)).toBe(100);
+  expect(snapBudget(-3)).toBe(0);
+  expect(snapBudget(Number.NaN)).toBe(DEFAULT_BUDGET);
+});
+
+it("rejects an optimizer response for another run or unknown options", async () => {
+  const { result } = renderHook(() =>
+    useRanking({
+      runId,
+      events,
+      routes,
+      rank: async (body) => ({ ...(await recorded(body)), run_id: "other" }),
+    }),
+  );
+  await waitFor(() => expect(result.current.status).toBe("error"));
+  expect(result.current.result).toBeNull();
+});
+
+it("shows the budget disabled with the reason when nothing can be ranked", () => {
+  const ranking = {
+    budget: 30,
+    rankedBudget: null,
+    result: null,
+    status: "idle" as const,
+    fixes: [],
+    candidates: [],
+    setBudget: vi.fn(),
+    retry: vi.fn(),
+  };
   render(
     <RankedFixes
-      runId="run-1"
-      events={[{ facility_id: "F001", commodity_id: "C02", day: 48 }]}
-      routes={[route]}
-      rank={vi.fn()}
+      panel={panel}
+      ranking={ranking}
+      coverage={null}
+      noFix={{
+        title: "No transfer can arrive in time at this shock.",
+        text: "None of the 4 listed transfers can arrive in time.",
+        budget:
+          "The budget is not used at this shock: no transfer can arrive in time.",
+      }}
     />,
   );
-  expect(document.querySelector(".rank-intro")?.textContent).toBe(
-    "OR-Tools funds what most delays the earliest stockouts. Costs are illustrative.",
+  const slider = screen.getByLabelText("Budget (illustrative units)");
+  expect((slider as HTMLInputElement).disabled).toBe(true);
+  expect(
+    document.getElementById(slider.getAttribute("aria-describedby")!)
+      ?.textContent,
+  ).toBe(
+    "The budget is not used at this shock: no transfer can arrive in time.",
   );
-  const details = screen
-    .getByText("How these options are built")
-    .closest("details")!;
-  expect(details.open).toBe(false);
-  expect(details.textContent).toMatch(
-    /costs and benefits are illustrative assumptions/i,
-  );
-  expect(details.textContent).toMatch(/10 KES and 50 KES/);
-  expect(details.textContent).toMatch(
-    /Earliest shock-caused stockouts.*F001 · C02 · 48/,
+  expect(screen.getByRole("status").textContent).toContain(
+    "No transfer can arrive in time at this shock.",
   );
 });

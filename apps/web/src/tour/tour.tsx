@@ -20,7 +20,7 @@ export const TOUR_STEPS = [
   { id: "shock", path: "/kisumu", target: "#shock-presets" },
   { id: "stockout", path: "/kisumu", target: "#verdict" },
   { id: "funding", path: "/kisumu", target: "#funding-title" },
-  { id: "rank", path: "/kisumu", target: "#ranked-title" },
+  { id: "rank", path: "/kisumu", target: "#fixes-title" },
   { id: "capture", path: "/kisumu", target: "#capture-title" },
 ] as const;
 export type TourStep = (typeof TOUR_STEPS)[number]["id"];

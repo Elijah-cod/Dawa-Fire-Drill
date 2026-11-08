@@ -16,8 +16,11 @@ import type { components } from "../generated/api";
 import { FundingTrace } from "./funding-trace";
 import { SHOCK_STEPS, useTour } from "../tour/tour";
 import { withDisplayNames } from "../kisumu/names";
-import { runEvents } from "../kisumu/view";
-import { KisumuVerdict } from "./kisumu-verdict";
+import { coverage, lateRoutes, runEvents } from "../kisumu/view";
+import { BudgetSentence, KisumuVerdict } from "./kisumu-verdict";
+import { FixesPlaceholder } from "./fixes-placeholder";
+import { useRanking } from "../kisumu/use-ranking";
+import type { ShockEvent } from "../api/candidates";
 import { TabList, type TabItem } from "./tabs";
 
 type View = "overview" | "order" | "funding" | "facilities";
@@ -27,23 +30,14 @@ import {
   type Shock,
 } from "./scenario-controls";
 
-/** Same footprint as the loaded panel so arriving results do not shift the page. */
-function RankPlaceholder({ message }: { message?: string }) {
-  const { t } = usePreferences();
-  return (
-    <section className="panel rank-panel rank-placeholder" aria-busy="true">
-      <h2>{t("doThisFirst")}</h2>
-      <p role="status">{message ?? t("rankLoading")}</p>
-    </section>
-  );
-}
-function RankLoading() {
-  return <RankPlaceholder />;
+function FixesLoading() {
+  return <FixesPlaceholder />;
 }
 const RankedFixes = dynamic(
   () => import("./ranked-fixes").then((module) => module.RankedFixes),
-  { ssr: false, loading: RankLoading },
+  { ssr: false, loading: FixesLoading },
 );
+const NO_EVENTS: ShockEvent[] = [];
 
 type Event = { facility_id: string; commodity_id: string; day: number };
 function validEvents(value: unknown): value is Event[] {
@@ -138,7 +132,6 @@ export function KisumuOverview({
   );
   const facility = panel.facilities.find((item) => item.id === selected);
   const risk = selected ? risks[selected] : undefined;
-  const shockEvents = run?.result?.shock_caused_stockouts;
   const pending = !run || previous;
   const events = useMemo(() => runEvents(run?.result), [run]);
   const counts = useMemo(() => {
@@ -155,11 +148,22 @@ export function KisumuOverview({
   // Older snapshots have one planted transfer; test panels may have none.
   const cases = panel.demo_cases as
     Partial<PilotPanel["demo_cases"]> | undefined;
-  const routes =
-    cases?.transfer_routes ??
-    (cases?.near_expiry_transfer ? [cases.near_expiry_transfer] : []);
-  const reveal = (id: string) => {
-    const element = document.getElementById(id);
+  const routes = useMemo(
+    () =>
+      cases?.transfer_routes ??
+      (cases?.near_expiry_transfer ? [cases.near_expiry_transfer] : []),
+    [cases],
+  );
+  const shown = events && !pending ? events.shock : NO_EVENTS;
+  const covered = useMemo(() => coverage(shown, routes), [shown, routes]);
+  const ranking = useRanking({
+    runId: run && covered && canRun ? run.id : null,
+    events: shown,
+    routes,
+    rank: rank && run ? (body) => rank(run.id, body) : undefined,
+  });
+  const reveal = (id: string | HTMLElement | null) => {
+    const element = typeof id === "string" ? document.getElementById(id) : id;
     if (!element) return;
     element.scrollIntoView?.({ block: "start" });
     if (!element.hasAttribute("tabindex"))
@@ -176,10 +180,10 @@ export function KisumuOverview({
     if (step === "funding") setTab("funding");
     else if (step === "rank") setTab("overview");
   }, [step]);
-  const show = (view: View, id: string) => {
+  const show = (view: View, id: string | (() => HTMLElement | null)) => {
     setTab(view);
     // The panel renders on the next frame; then move focus to the target.
-    requestAnimationFrame(() => reveal(id));
+    requestAnimationFrame(() => reveal(typeof id === "string" ? id : id()));
   };
   const views: TabItem<View>[] = [
     { id: "overview", label: t("tabOverview") },
@@ -260,27 +264,22 @@ export function KisumuOverview({
         )}
       </div>
       {canRun && (
-        <KisumuVerdict
-          panel={panel}
-          routes={routes}
-          magnitude={runMagnitude}
-          events={events}
-          counts={counts}
-          busy={pending && status !== "error"}
-          onShowOrder={() => show("order", "stockout-order")}
-          onShowFacility={(id) => {
-            setSelected(id);
-            show("facilities", "facility-detail");
-          }}
-        />
-      )}
-      {canRun && (
         <button
           type="button"
           className="btn change-scenario"
           aria-expanded={controlsOpen}
           aria-controls="scenario-controls"
-          onClick={() => setControlsOpen(!controlsOpen)}
+          onClick={() => {
+            const open = !controlsOpen;
+            setControlsOpen(open);
+            // On phones the panel sits below the verdict; bring it into view.
+            if (open)
+              requestAnimationFrame(() =>
+                document
+                  .getElementById("scenario-controls")
+                  ?.scrollIntoView?.({ block: "nearest" }),
+              );
+          }}
         >
           {controlsOpen ? t("hideScenario") : t("changeScenario")}
           <span className="change-scenario-current">
@@ -289,6 +288,34 @@ export function KisumuOverview({
               : tf("scenarioCut", { n: magnitude })}
           </span>
         </button>
+      )}
+      {canRun && (
+        <KisumuVerdict
+          panel={panel}
+          routes={routes}
+          magnitude={runMagnitude}
+          events={events}
+          counts={counts}
+          busy={pending && status !== "error"}
+          budgetLine={
+            rank && covered && !pending ? (
+              <BudgetSentence
+                panel={panel}
+                ranking={ranking}
+                onShowFunded={() =>
+                  show("overview", () =>
+                    document.querySelector<HTMLElement>("#pairs [data-funded]"),
+                  )
+                }
+              />
+            ) : undefined
+          }
+          onShowOrder={() => show("order", "stockout-order")}
+          onShowFacility={(id) => {
+            setSelected(id);
+            show("facilities", "facility-detail");
+          }}
+        />
       )}
       <div className="layout">
         {canRun && (
@@ -324,26 +351,53 @@ export function KisumuOverview({
           >
             <div className="overview">
               {mapSection}
-              {canRun && rank && magnitude > 0 && pending && (
-                <RankPlaceholder
-                  message={status === "error" ? t("scenarioError") : undefined}
-                />
-              )}
-              {run &&
-                canRun &&
+              {canRun &&
                 rank &&
-                magnitude > 0 &&
-                !pending &&
-                validEvents(shockEvents) &&
-                shockEvents.length > 0 && (
-                  <RankedFixes
-                    key={run.id}
-                    runId={run.id}
-                    events={shockEvents}
-                    routes={routes}
-                    rank={(body) => rank(run.id, body)}
+                (pending || !events ? (
+                  <FixesPlaceholder
+                    message={
+                      status === "error"
+                        ? t("scenarioError")
+                        : !pending && run && !events
+                          ? t("verdictUnavailable")
+                          : undefined
+                    }
                   />
-                )}
+                ) : covered ? (
+                  <RankedFixes
+                    panel={panel}
+                    ranking={ranking}
+                    coverage={covered}
+                  />
+                ) : (
+                  <RankedFixes
+                    panel={panel}
+                    ranking={ranking}
+                    coverage={null}
+                    noFix={
+                      events.shock.length === 0
+                        ? {
+                            title: t("fixesNoShockTitle"),
+                            text: t("fixesNoShock"),
+                            budget: t("budgetUnusedNone"),
+                          }
+                        : {
+                            title: t("fixesLateTitle"),
+                            text: (() => {
+                              const late = lateRoutes(events.shock, routes);
+                              return late
+                                ? tf("verdictLate", {
+                                    n: late.routes,
+                                    arrival: late.arrival,
+                                    day: late.day,
+                                  })
+                                : "";
+                            })(),
+                            budget: t("budgetUnusedLate"),
+                          }
+                    }
+                  />
+                ))}
             </div>
           </div>
           {canRun && (

@@ -1,9 +1,8 @@
 // @vitest-environment jsdom
-import { cleanup, render, screen, waitFor } from "@testing-library/react";
+import { cleanup, render, screen } from "@testing-library/react";
 import { afterEach, expect, it, vi } from "vitest";
 import type { PilotPanel } from "../api/client";
 import { KisumuOverview } from "../components/kisumu-overview";
-import { RankedFixes } from "../components/ranked-fixes";
 import { TourProvider } from "./tour";
 
 vi.mock("next/navigation", () => ({
@@ -18,54 +17,6 @@ afterEach(() => {
   window.history.replaceState(null, "", "/");
 });
 Element.prototype.scrollIntoView = vi.fn();
-
-const route = {
-  synthetic: true,
-  facility_id: "F001",
-  donor_facility_id: "F002",
-  commodity_id: "C02",
-  quantity: 100,
-  available_units: 600,
-  dispatch_day: 45,
-  arrival_day: 46,
-  expiry_day: 90,
-  minimum_shelf_days: 7,
-  distance_km: 7,
-  maximum_distance_km: 30,
-};
-
-it("ranks once at the default ceiling when the demo reaches the ranked-fix step", async () => {
-  window.history.replaceState(null, "", "/kisumu?tour=rank");
-  const rank = vi.fn(() => new Promise<never>(() => {}));
-  render(
-    <TourProvider>
-      <RankedFixes
-        runId="run-1"
-        events={[{ facility_id: "F001", commodity_id: "C02", day: 48 }]}
-        routes={[route]}
-        rank={rank}
-      />
-    </TourProvider>,
-  );
-  await waitFor(() => expect(rank).toHaveBeenCalledTimes(1));
-  expect(rank).toHaveBeenCalledWith(expect.objectContaining({ budget: 30 }));
-});
-
-it("does not rank by itself outside the demo", async () => {
-  const rank = vi.fn();
-  render(
-    <TourProvider>
-      <RankedFixes
-        runId="run-1"
-        events={[{ facility_id: "F001", commodity_id: "C02", day: 48 }]}
-        routes={[route]}
-        rank={rank}
-      />
-    </TourProvider>,
-  );
-  await new Promise((resolve) => setTimeout(resolve, 0));
-  expect(rank).not.toHaveBeenCalled();
-});
 
 it("applies the 40% shock during the demo's shock steps", async () => {
   window.history.replaceState(null, "", "/kisumu?tour=shock");

@@ -114,8 +114,8 @@ it("keeps the previous verdict, marked busy, while another shock runs", async ()
   expect(
     screen.getByRole("complementary", { name: "Scenario" }).textContent,
   ).toMatch(/Running the 20% scenario…/);
-  expect(container.querySelector(".rank-placeholder")?.textContent).toMatch(
-    /Do this first.*Ranking feasible actions/,
+  expect(container.querySelector(".fixes-placeholder")?.textContent).toMatch(
+    /Cheapest fixes.*Loading the ranked fixes…/,
   );
 });
 

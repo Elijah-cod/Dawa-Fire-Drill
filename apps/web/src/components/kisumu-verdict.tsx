@@ -5,6 +5,7 @@ import type { PilotPanel } from "../api/client";
 import type { PlantedRoute } from "../api/candidates";
 import { commodityLabel } from "../kisumu/names";
 import { coverage, lateRoutes, type RunEvents } from "../kisumu/view";
+import type { RankingState } from "../kisumu/use-ranking";
 import { usePreferences } from "../preferences/preferences";
 
 export type StatusCounts = { critical: number; watch: number; stable: number };
@@ -142,5 +143,83 @@ export function KisumuVerdict({
         </ul>
       )}
     </section>
+  );
+}
+
+/**
+ * The verdict's budget sentence, restating the ranking on screen: how many fixes the
+ * optimizer funds at the ranked budget and which transfer the cut line leaves out.
+ */
+export function BudgetSentence({
+  panel,
+  ranking,
+  onShowFunded,
+}: {
+  panel: PilotPanel;
+  ranking: RankingState;
+  onShowFunded: () => void;
+}) {
+  const { tf, tn } = usePreferences();
+  const { result, rankedBudget, budget, candidates, fixes, status } = ranking;
+  if (!result || rankedBudget === null)
+    return (
+      <>
+        {status === "error"
+          ? tf("fixesFailedFirst", { b: budget })
+          : tf("fixesFirstRank", { b: budget })}
+      </>
+    );
+  const cheapest = Math.min(...candidates.map((item) => item.cost));
+  const selected = result.selected_ids;
+  if (!selected.length)
+    return <>{tf("verdictNothingFits", { b: rankedBudget, c: cheapest })}</>;
+  const transfers = selected.every((id) => id.startsWith("transfer-"));
+  const holds = selected.every(
+    (id) =>
+      result.effects.find((item) => item.id === id)
+        ?.counterfactual_stockout_day === null,
+  );
+  const n = selected.length;
+  const noun = transfers
+    ? n === 1
+      ? "verdictTransfer"
+      : "verdictTransfers"
+    : n === 1
+      ? "verdictFixN"
+      : "verdictFixesN";
+  const cut = Object.entries(result.excluded_reasons)
+    .filter(
+      ([id, reason]) =>
+        id.startsWith("transfer-") && reason === "remaining_budget_exceeded",
+    )
+    .map(([id]) => fixes.find((fix) => `transfer-${fix.index}` === id))
+    .filter((fix) => fix !== undefined);
+  return (
+    <>
+      {tn("verdictBudget", {
+        b: rankedBudget,
+        funded: (
+          <button
+            type="button"
+            className="inline-control"
+            onClick={onShowFunded}
+          >
+            {tf(noun, { n })}
+          </button>
+        ),
+        cost: result.total_cost,
+        hold: holds
+          ? tf(n === 1 ? "verdictHoldOne" : "verdictHoldEach", { h: 90 })
+          : "",
+      })}
+      {cut.length === 1 &&
+        ` ${tf("verdictCutOne", {
+          name:
+            panel.facilities.find((f) => f.id === cut[0].event.facility_id)
+              ?.name ?? cut[0].event.facility_id,
+          day: cut[0].event.day,
+        })}`}
+      {cut.length > 1 && ` ${tf("verdictCutMany", { n: cut.length })}`}
+    </>
   );
 }
