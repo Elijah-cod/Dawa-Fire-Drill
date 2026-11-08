@@ -50,9 +50,13 @@ test("Kisumu map follows the selected synthetic scenario", async ({
   const watch = page.locator(
     ".facility-marker[aria-label*='Synthetic facility 004']",
   );
-  await expect(watch).toHaveAttribute("aria-label", /Watch.*30 days/, {
-    timeout: 30000,
-  });
+  await expect(watch).toHaveAttribute(
+    "aria-label",
+    /Watch · 26 days to stockout/,
+    {
+      timeout: 30000,
+    },
+  );
   expect(
     await page.evaluate(
       () => document.documentElement.scrollWidth <= innerWidth,

@@ -30,8 +30,8 @@ All screens show synthetic data; every number is illustrative and unvalidated.
 | --- | --- |
 | ![National overview with the guided demo open](docs/screenshots/readme-overview-tour-1280.png) | ![Ranked fixes: funded transfers above the budget cut line, unfunded actions below it](docs/screenshots/readme-ranked-fix-1280.png) |
 | National overview with the guided demo (1280 px) | Ranked fix for the first shock-caused stockout |
-| ![Funding trace for a synthetic stalled release](docs/screenshots/readme-funding-trace-1280.png) | ![Shock-caused stockout order](docs/screenshots/readme-first-stockout-1280.png) |
-| Funding trace: 100,000 KES approved, not released, 90 days | Shock-caused stockout order at 40% |
+| ![Funding trace for a synthetic stalled release](docs/screenshots/readme-funding-trace-1280.png) | ![Shock card with the stockout summary](docs/screenshots/readme-first-stockout-1280.png) |
+| Funding trace: 100,000 KES approved, not released, 90 days | Shock summary at 40%: first stockout and busiest week |
 | ![Guided demo on a phone](docs/screenshots/readme-tour-mobile-390.png) | ![Bin-card capture awaiting human confirmation](docs/screenshots/readme-capture-confirm-390.png) |
 | Guided demo at 390 px | Bin-card capture: nothing is saved until “Confirm and save” |
 
@@ -89,4 +89,4 @@ See [agent rules](AGENTS.md), [current progress](docs/PROGRESS.md), [design appr
 - **Capture is online only and unreviewed for extraction quality.** There is no offline queue. The local stack has no extraction provider, so fields are typed by hand; no real LLM provider has been exercised end to end.
 - **Language.** Swahili strings, and the English-only optimizer explanation, need native-speaker review.
 - **No production sign-in.** The demo uses a server-side proxy with a privileged synthetic token, allowed only in local or staging environments behind external access control.
-- **Performance and design gaps.** The interactive Lighthouse flow meets its performance budget, but layout shift in that flow (0.006–0.203 across runs) is not resolved, and it is not in CI. Bottom navigation, several design states and screenshot review against the approved design are outstanding. See [progress](docs/PROGRESS.md) and [Phase 3 notes](docs/phases/3.md).
+- **Performance and design gaps.** The interactive Lighthouse flow meets its performance budget. Its layout shift ranged from 0.006 to 0.203 in earlier runs; the latest run, after the shock card change, measured 0.001, but one run does not show the issue is resolved. The flow is not in CI. Bottom navigation, several design states and screenshot review against the approved design are outstanding. See [progress](docs/PROGRESS.md) and [Phase 3 notes](docs/phases/3.md).
