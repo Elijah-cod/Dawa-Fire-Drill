@@ -71,13 +71,32 @@ export function FacilityMap({
 }) {
   const { t, locale } = usePreferences();
   const container = useRef<HTMLDivElement>(null);
+  const [mapNearViewport, setMapNearViewport] = useState(false);
   const [tilesUnavailable, setTilesUnavailable] = useState(false);
   const markers = useMemo(
     () => facilityMarkers(facilities, risks),
     [facilities, risks],
   );
   useEffect(() => {
-    if (!container.current || !markers.length) return;
+    if (!container.current || !markers.length || mapNearViewport) return;
+    if (typeof IntersectionObserver === "undefined") {
+      setMapNearViewport(true);
+      return;
+    }
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((entry) => entry.isIntersecting)) {
+          setMapNearViewport(true);
+          observer.disconnect();
+        }
+      },
+      { rootMargin: "100px" },
+    );
+    observer.observe(container.current);
+    return () => observer.disconnect();
+  }, [markers.length, mapNearViewport]);
+  useEffect(() => {
+    if (!container.current || !markers.length || !mapNearViewport) return;
     let removed = false;
     let map: import("maplibre-gl").Map | undefined;
     void import("maplibre-gl")
@@ -146,7 +165,7 @@ export function FacilityMap({
       removed = true;
       map?.remove();
     };
-  }, [markers, locale, onSelect, t]);
+  }, [markers, locale, onSelect, t, mapNearViewport]);
 
   if (!markers.length) return <p>{t("facilityMapUnavailable")}</p>;
   return (

@@ -10,6 +10,9 @@ import {
   type ScenarioRun,
 } from "../scenario/use-kisumu-scenario";
 import { FacilityMap } from "./facility-map";
+import { StockoutOrder } from "./stockout-order";
+import { RankedFixes } from "./ranked-fixes";
+import type { components } from "../generated/api";
 
 type Event = { facility_id: string; commodity_id: string; day: number };
 function validEvents(value: unknown): value is Event[] {
@@ -40,10 +43,15 @@ export function KisumuOverview({
   panel,
   scenario,
   canRun = true,
+  rank,
 }: {
   panel: PilotPanel;
   scenario: ScenarioApi;
   canRun?: boolean;
+  rank?: (
+    runId: string,
+    body: components["schemas"]["ModeledRequest"],
+  ) => Promise<components["schemas"]["ModeledResponse"]>;
 }) {
   const { t } = usePreferences();
   const { magnitude, setMagnitude, run, status, previous } = useKisumuScenario(
@@ -98,6 +106,32 @@ export function KisumuOverview({
         </p>
         {previous && <p>{t("previousRun")}</p>}
       </section>
+      {run && magnitude > 0 && !previous && (
+        <section className="panel">
+          <h2>{t("shockFirst")}</h2>
+          {!validEvents(shockEvents) ? (
+            <p>{t("shockDetailsUnavailable")}</p>
+          ) : shockEvents.length ? (
+            <StockoutOrder events={shockEvents} />
+          ) : (
+            <p>{t("noShockStockouts")}</p>
+          )}
+        </section>
+      )}
+      {run &&
+        canRun &&
+        rank &&
+        magnitude > 0 &&
+        !previous &&
+        validEvents(shockEvents) &&
+        shockEvents.length > 0 && (
+          <RankedFixes
+            key={run.id}
+            runId={run.id}
+            target={shockEvents[0]}
+            rank={(body) => rank(run.id, body)}
+          />
+        )}
       <section className="panel">
         <label htmlFor="subcounty-filter">{t("subcounty")}</label>
         <select
@@ -148,25 +182,6 @@ export function KisumuOverview({
           <p>{t("selectFacility")}</p>
         )}
       </section>
-      {run && magnitude > 0 && !previous && (
-        <section className="panel">
-          <h2>{t("shockFirst")}</h2>
-          {!validEvents(shockEvents) ? (
-            <p>{t("shockDetailsUnavailable")}</p>
-          ) : shockEvents.length ? (
-            <ol>
-              {shockEvents.map((event) => (
-                <li key={`${event.facility_id}-${event.commodity_id}`}>
-                  {event.facility_id} · {event.commodity_id} · {event.day}{" "}
-                  {t("days")}
-                </li>
-              ))}
-            </ol>
-          ) : (
-            <p>{t("noShockStockouts")}</p>
-          )}
-        </section>
-      )}
     </>
   );
 }

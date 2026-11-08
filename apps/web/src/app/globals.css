@@ -143,6 +143,26 @@ p {
   padding: 1rem;
   margin-bottom: 1rem;
 }
+.rank-action {
+  min-width: 44px;
+  padding: 0.65rem 1rem;
+  margin: 0.5rem 0;
+  border: 1px solid var(--primary);
+  border-radius: 0.5rem;
+  color: var(--primary);
+  font-weight: 600;
+}
+.rank-selected {
+  margin: 0.75rem 0;
+  padding: 0.75rem 0.75rem 0.75rem 2rem;
+  background: var(--soft);
+  border-radius: 0.5rem;
+}
+.rank-cut {
+  border-top: 2px dashed var(--border);
+  padding-top: 0.5rem;
+  font-weight: 600;
+}
 label {
   display: block;
   font-weight: 600;

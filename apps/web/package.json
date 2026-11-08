@@ -12,11 +12,13 @@
     "test": "vitest run --passWithNoTests",
     "test:e2e": "playwright test --pass-with-no-tests",
     "test:design-prototype": "node scripts/verify-design-prototype.mjs",
-    "format:check": "prettier --check ."
+    "format:check": "prettier --check .",
+    "test:lighthouse": "lhci autorun"
   },
   "devDependencies": {
     "@axe-core/playwright": "4.14.0",
     "@eslint/js": "^9.39.5",
+    "@lhci/cli": "0.16.0",
     "@playwright/test": "^1.58.0",
     "@testing-library/jest-dom": "7.0.1",
     "@testing-library/react": "16.3.3",
@@ -32,7 +34,8 @@
     "vitest": "^4.0.0"
   },
   "overrides": {
-    "minimatch": "^11.0.1"
+    "minimatch": "^11.0.1",
+    "basic-ftp": "6.2.6"
   },
   "dependencies": {
     "@tailwindcss/postcss": "4.3.5",

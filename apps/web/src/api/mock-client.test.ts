@@ -67,3 +67,49 @@ describe("OpenAPI-typed synthetic mock", () => {
     expect(() => createMockClient("planner")).toThrow("disabled in production");
   });
 });
+
+it("returns only the recorded optimizer fixture for the exact synthetic demo inputs", async () => {
+  const mock = createMockClient("planner");
+  const request = {
+    synthetic_attested: true as const,
+    budget: 100,
+    minimum_benefit: 1,
+    candidates: [
+      {
+        id: "first-cheap",
+        kind: "emergency_procurement" as const,
+        cost: 10,
+        facility_id: "SYN-KE-042-F001",
+        commodity_id: "SYN-C02",
+        arrival_day: 48,
+        quantity: 10000,
+      },
+      {
+        id: "first-costly",
+        kind: "emergency_procurement" as const,
+        cost: 50,
+        facility_id: "SYN-KE-042-F001",
+        commodity_id: "SYN-C02",
+        arrival_day: 48,
+        quantity: 10000,
+      },
+    ],
+  };
+  const response = await mock.rank(
+    "00000000-0000-4000-8000-000000000042",
+    request,
+  );
+  expect(response.selected_ids).toEqual(["first-cheap"]);
+  await expect(
+    mock.rank("00000000-0000-4000-8000-000000000042", {
+      ...request,
+      budget: 1,
+    }),
+  ).rejects.toThrow();
+  await expect(
+    createMockClient("facility").rank(
+      "00000000-0000-4000-8000-000000000042",
+      request,
+    ),
+  ).rejects.toThrow();
+});

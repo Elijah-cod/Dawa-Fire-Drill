@@ -26,7 +26,10 @@ export type FacilityView = {
 };
 
 export class ApiError extends Error {
-  constructor(public readonly status: number) {
+  constructor(
+    public readonly status: number,
+    public readonly detail?: string,
+  ) {
     super(`API request failed (${status})`);
   }
 }
@@ -56,7 +59,17 @@ async function post<T>(
     body: JSON.stringify(body),
     cache: "no-store",
   });
-  if (!response.ok) throw new ApiError(response.status);
+  if (!response.ok) {
+    const payload: unknown = await response.json().catch(() => null);
+    const detail =
+      payload &&
+      typeof payload === "object" &&
+      "detail" in payload &&
+      typeof payload.detail === "string"
+        ? payload.detail
+        : undefined;
+    throw new ApiError(response.status, detail);
+  }
   return (await response.json()) as T;
 }
 
@@ -121,6 +134,17 @@ export function createApiClient() {
     run: (id: string, role?: DemoRole) =>
       get<components["schemas"]["CountyRunRead"]>(
         `/counties/042/runs/${encodeURIComponent(id)}`,
+        role,
+      ),
+    rank: (
+      id: string,
+      body: components["schemas"]["ModeledRequest"],
+      role?: DemoRole,
+    ) =>
+      post<components["schemas"]["ModeledResponse"]>(
+        `/counties/042/runs/${encodeURIComponent(id)}/mitigations`,
+        body,
+        crypto.randomUUID(),
         role,
       ),
   };

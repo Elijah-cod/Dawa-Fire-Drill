@@ -110,3 +110,22 @@ it("rejects a facility response that does not match the requested facility", asy
     createApiClient().facility("SYN-KE-042-F001", 42, "facility"),
   ).rejects.toThrow("Invalid synthetic facility");
 });
+
+it("requests a county-scoped optimizer result without a browser token", async () => {
+  const send = vi.fn().mockResolvedValue(Response.json({ synthetic: true }));
+  vi.stubGlobal("fetch", send);
+  const body = {
+    synthetic_attested: true as const,
+    budget: 100,
+    minimum_benefit: 1,
+    candidates: [],
+  };
+  await createApiClient().rank("run-1", body, "planner");
+  expect(send.mock.calls[0][0]).toBe(
+    "/api/counties/042/runs/run-1/mitigations",
+  );
+  const init = send.mock.calls[0][1] as RequestInit;
+  expect(init.method).toBe("POST");
+  expect((init.headers as Headers).get("Authorization")).toBeNull();
+  expect(JSON.parse(String(init.body))).toEqual(body);
+});

@@ -122,6 +122,13 @@ function KisumuContent({
           panel={loaded.panel}
           scenario={scenario}
           canRun={auth.role === "planner" || auth.role === "admin"}
+          rank={
+            mode === "demo"
+              ? (runId, body) => api.rank(runId, body, selectedRole)
+              : mode === "mock"
+                ? (runId, body) => createMockClient("planner").rank(runId, body)
+                : undefined
+          }
         />
       ) : (
         <p>{t("overviewError")}</p>

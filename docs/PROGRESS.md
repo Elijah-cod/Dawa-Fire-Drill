@@ -4,6 +4,8 @@
 
 Phase 3 is underway on `phase/3-frontend`; Checkpoint C has not been reached. The national and Kisumu views are incomplete. Ranked fixes, funding trace, guided demo, forecast, capture, screenshots and the full phase gate remain. Keep commits local; no push or PR without production authorization. All data is synthetic and results are illustrative and unvalidated.
 
+The in-progress ranked-fixes panel submits the two synthetic first-stockout demo candidates to the county optimizer, and shows its selected order, cut line, exclusions, modeled deferral and explanation. The 40% real-backend flow passes at four viewports; the full existing Playwright suite passed 36 checks, Vitest passed 69 tests, and lint, type-check, formatting, and the production build passed. The fixed development fixture covers only the exact 40% / 100 KES case. npm audit reported zero vulnerabilities after a pinned transitive override. Initial Lighthouse assertions used budgets of 0.80 performance, 0.90 accessibility and 0.90 best practices; Kisumu performance failed at 0.77 in the latest local run. The check currently visits route entry states, not the interactive ranked state, and is not integrated into CI. The action screen still lacks full candidate coverage and complete design/state review. It remains uncommitted pending its requested gate; do not move on to funding until it passes.
+
 Gitleaks v8.30.1 via Docker scanned 113 commits across all refs and a copy of tracked and non-ignored working-tree files: no leaks. Ignored build artifacts and dependencies were excluded from the working-tree copy.
 
 ## Phase 3: Frontend — current

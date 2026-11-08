@@ -1,5 +1,7 @@
 # Changelog
 
+- Began an optimizer-backed first-stockout action panel with a budget ceiling, exclusion reasons, synthetic assumptions, and a recorded development fixture; screen review and performance gate remain open.
+
 - Connected the in-progress Kisumu facility view to scoped synthetic panel data and selected scenario runs, with role-restricted facility access and explicit partial-data messaging.
 
 - Added shared illustrative facility-risk thresholds and a synthetic-coordinate MapLibre component with a no-coordinate fallback.

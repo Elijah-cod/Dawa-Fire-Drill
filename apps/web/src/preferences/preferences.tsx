@@ -76,9 +76,39 @@ const strings = {
     allSubcounties: "All sub-counties",
     selectFacility: "Select a synthetic facility to see its risk.",
     shockFirst: "Shock-caused stockout order",
+    showRemainingPrefix: "Show remaining",
+    showRemainingSuffix: "stockouts",
     openingStock: "Synthetic opening stock",
     noStock: "No synthetic stock entries for this facility.",
     noShockStockouts: "No shock-caused stockouts in this illustrative run.",
+    doThisFirst: "Do this first",
+    rankAssumptions:
+      "Costs and benefits are illustrative assumptions, not validated impacts.",
+    rankCandidateAssumptions:
+      "Two synthetic emergency deliveries are supplied: 10,000 units arriving on the stockout day, at assumed costs of 10 KES and 50 KES. The protection target is at least one day of modeled deferral.",
+    rankTarget: "First shock-caused stockout",
+    rankBudget: "Budget ceiling (KES)",
+    rankAction: "Rank feasible actions",
+    rankLoading: "Ranking feasible actions…",
+    rankOffline: "Offline. Go online to recalculate a ranking.",
+    rankError:
+      "Could not rank actions. Review the target and budget, then try again.",
+    rankUsed: "Budget used",
+    rankRemaining: "Remaining budget",
+    rankCutLine: "Budget cut line",
+    rankExplanation: "Plain-language explanation",
+    rankNoExplanation: "Explanation unavailable.",
+    rankAlternative: "Another option for this stockout was selected.",
+    rankOverBudget: "The assumed cost exceeds the ceiling.",
+    rankDonorConflict: "The donor and recipient choices conflict.",
+    rankInventory:
+      "The shared synthetic inventory constraint would be exceeded.",
+    rankNotSelected: "Not selected in the optimizer's best feasible set.",
+    rankReasonUnavailable: "The exclusion reason is unavailable.",
+    rankSelected: "Selected by the optimizer",
+    rankDeferred: "modeled days deferred",
+    rankUnreachable:
+      "No supplied option meets this synthetic target within the budget.",
     shockDetailsUnavailable:
       "Shock-caused stockout details are unavailable for this run.",
     overviewLoading: "Loading your overview…",
@@ -154,8 +184,38 @@ const strings = {
     allSubcounties: "Kaunti ndogo zote",
     selectFacility: "Chagua kituo kilichobuniwa kuona hatari yake.",
     shockFirst: "Mfuatano wa kuisha kwa bidhaa kutokana na mshtuko",
+    showRemainingPrefix: "Onyesha matukio yaliyobaki",
+    showRemainingSuffix: "ya kuisha kwa bidhaa",
     openingStock: "Akiba ya mwanzo iliyobuniwa",
     noStock: "Hakuna taarifa za akiba zilizobuniwa kwa kituo hiki.",
+    doThisFirst: "Fanya hili kwanza",
+    rankAssumptions:
+      "Gharama na manufaa ni makadirio ya mfano, si athari zilizothibitishwa.",
+    rankCandidateAssumptions:
+      "Uwasilishaji mbili za dharura za mfano zimetolewa: vipande 10,000 siku bidhaa inapoisha, kwa gharama zinazokadiriwa za KES 10 na KES 50. Lengo ni kuchelewesha kuisha kwa bidhaa kwa angalau siku moja katika mfano.",
+    rankTarget: "Akiba ya kwanza kuisha kutokana na mshtuko",
+    rankBudget: "Kikomo cha bajeti (KES)",
+    rankAction: "Panga hatua zinazowezekana",
+    rankLoading: "Inapanga hatua zinazowezekana…",
+    rankOffline: "Hakuna mtandao. Unganisha tena ili kupanga hatua upya.",
+    rankError:
+      "Haikuwezekana kupanga hatua. Kagua lengo na bajeti, kisha ujaribu tena.",
+    rankUsed: "Bajeti iliyotumika",
+    rankRemaining: "Bajeti iliyobaki",
+    rankCutLine: "Mstari wa kikomo cha bajeti",
+    rankExplanation: "Maelezo kwa lugha rahisi",
+    rankNoExplanation: "Maelezo hayapatikani.",
+    rankAlternative: "Chaguo jingine la tatizo hili limechaguliwa.",
+    rankOverBudget: "Gharama inayokadiriwa inazidi kikomo.",
+    rankDonorConflict:
+      "Chaguo za kituo kinachotoa na kinachopokea zinakinzana.",
+    rankInventory: "Kikomo cha akiba ya pamoja ya mfano kingezidiwa.",
+    rankNotSelected: "Haikuchaguliwa katika seti bora inayowezekana.",
+    rankReasonUnavailable: "Sababu ya kutokuchaguliwa haipatikani.",
+    rankSelected: "Imechaguliwa na mfumo wa upangaji",
+    rankDeferred: "siku za kuchelewa katika mfano",
+    rankUnreachable:
+      "Hakuna chaguo lililotolewa linalofikia lengo hili la mfano ndani ya bajeti.",
     shockDetailsUnavailable:
       "Maelezo ya kuisha kwa akiba kutokana na mshtuko hayapatikani kwa jaribio hili.",
     noShockStockouts:

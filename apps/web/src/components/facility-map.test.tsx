@@ -1,5 +1,11 @@
 // @vitest-environment jsdom
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import {
+  act,
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+} from "@testing-library/react";
 import { afterEach, expect, it, vi } from "vitest";
 import oldFacilities from "../fixtures/kisumu-v2-facilities.json";
 import { FacilityMap, facilityMarkers } from "./facility-map";
@@ -113,4 +119,54 @@ it("never renders coordinates without an explicit synthetic marker", () => {
     {},
   );
   expect(markers).toEqual([]);
+});
+
+it("defers loading map markers until the map approaches the viewport", async () => {
+  let notify: IntersectionObserverCallback = () => {};
+  class Observer {
+    constructor(callback: IntersectionObserverCallback) {
+      notify = callback;
+    }
+    observe() {}
+    disconnect() {}
+    unobserve() {}
+    takeRecords(): IntersectionObserverEntry[] {
+      return [];
+    }
+    root = null;
+    rootMargin = "";
+    thresholds = [];
+  }
+  vi.stubGlobal("IntersectionObserver", Observer);
+  try {
+    render(
+      <FacilityMap
+        facilities={[
+          {
+            id: "SYN-1",
+            name: "Synthetic deferred",
+            latitude: -0.1,
+            longitude: 34.8,
+            coordinates_synthetic: true,
+          },
+        ]}
+        risks={{}}
+      />,
+    );
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 20));
+    });
+    expect(
+      screen.queryByRole("button", { name: /Synthetic deferred/ }),
+    ).toBeNull();
+    notify(
+      [{ isIntersecting: true } as IntersectionObserverEntry],
+      {} as IntersectionObserver,
+    );
+    expect(
+      await screen.findByRole("button", { name: /Synthetic deferred/ }),
+    ).toBeTruthy();
+  } finally {
+    vi.unstubAllGlobals();
+  }
 });

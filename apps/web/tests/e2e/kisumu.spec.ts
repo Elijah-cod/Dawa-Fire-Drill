@@ -22,6 +22,9 @@ test("Kisumu map follows the selected synthetic scenario", async ({ page }) => {
   await expect(
     page.getByRole("region", { name: "Illustrative stockout risk" }),
   ).toContainText("8–30 days");
+  await page
+    .getByRole("heading", { name: "Facility locations are synthetic." })
+    .scrollIntoViewIfNeeded();
   const marker = page.locator(
     ".facility-marker[aria-label*='Synthetic facility 004']",
   );
@@ -62,4 +65,40 @@ test("facility role sees only its trusted facility", async ({ page }) => {
     page.getByRole("heading", { name: /Synthetic facility 001.*F001/ }),
   ).toBeVisible();
   await expect(page.getByText(/Synthetic facility 002/)).toHaveCount(0);
+});
+
+test("optimizer ranks a synthetic fix for the first shock-caused stockout", async ({
+  page,
+}, testInfo) => {
+  await page.goto("http://localhost:3300/kisumu");
+  await expect(
+    page.getByRole("heading", { name: "Kisumu synthetic pilot" }),
+  ).toBeVisible();
+  await page.getByLabel(/Donor logistics support reduction/i).fill("40");
+  const section = page.getByRole("region", { name: "Do this first" });
+  await expect(section).toBeVisible({ timeout: 30000 });
+  await section.getByRole("button", { name: "Rank feasible actions" }).click();
+  await expect(
+    section.getByRole("heading", { name: "Plain-language explanation" }),
+  ).toBeVisible({ timeout: 30000 });
+  await expect(section).toContainText("first-cheap");
+  await expect(section).toContainText("F001");
+  await expect(section).toContainText("C02");
+  await expect(section).toContainText("Budget cut line");
+  const accessibility = await new AxeBuilder({ page }).analyze();
+  expect(
+    accessibility.violations.filter((item) =>
+      ["serious", "critical"].includes(item.impact ?? ""),
+    ),
+  ).toEqual([]);
+  expect(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth <= innerWidth,
+    ),
+  ).toBe(true);
+  await section.scrollIntoViewIfNeeded();
+  await page.screenshot({
+    path: testInfo.outputPath("ranked-fixes.png"),
+    fullPage: true,
+  });
 });

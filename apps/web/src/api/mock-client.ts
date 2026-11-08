@@ -74,6 +74,39 @@ export function createMockClient(role: Role) {
       if (role === "facility") throw new Error("Forbidden");
       return (await import("../fixtures/kisumu.json")).default.pilot;
     },
+    async rank(
+      runId: string,
+      request: components["schemas"]["ModeledRequest"],
+    ): Promise<components["schemas"]["ModeledResponse"]> {
+      if (role !== "planner" && role !== "admin") throw new Error("Forbidden");
+      const expected = [
+        { id: "first-cheap", cost: 10 },
+        { id: "first-costly", cost: 50 },
+      ];
+      if (
+        runId !== "00000000-0000-4000-8000-000000000042" ||
+        request.synthetic_attested !== true ||
+        request.budget !== 100 ||
+        request.minimum_benefit !== 1 ||
+        request.candidates.length !== 2 ||
+        !expected.every((item) =>
+          request.candidates.some(
+            (candidate) =>
+              candidate.id === item.id &&
+              candidate.kind === "emergency_procurement" &&
+              candidate.cost === item.cost &&
+              candidate.facility_id === "SYN-KE-042-F001" &&
+              candidate.commodity_id === "SYN-C02" &&
+              candidate.arrival_day === 48 &&
+              candidate.quantity === 10000,
+          ),
+        )
+      )
+        throw new Error(
+          "Synthetic ranking fixture unavailable for these inputs",
+        );
+      return (await import("../fixtures/ranked-fixes.json")).default;
+    },
     async facility(facilityId: string) {
       if (role === "facility" && facilityId !== "SYN-KE-042-F001")
         throw new Error("Forbidden");
