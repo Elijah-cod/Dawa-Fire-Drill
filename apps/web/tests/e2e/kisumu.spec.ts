@@ -237,6 +237,8 @@ test("the map summary matches the backend counts at each shock", async ({
       { timeout: 30000 },
     );
     const clusters = map.locator(".facility-cluster");
+    // The map loads lazily when it nears the viewport.
+    await map.locator(".facility-map").scrollIntoViewIfNeeded();
     await expect(clusters.first()).toBeVisible();
     // Visible mix adds up to the cluster size and the text fits inside its pill.
     for (const cluster of await clusters.evaluateAll((items) =>
