@@ -4,7 +4,7 @@ const H = D.horizon;
 const SHOCKS = [0, 20, 40, 100];
 const q = new URLSearchParams(location.search);
 const state = {
-  shock: SHOCKS.includes(Number(q.get("shock"))) ? Number(q.get("shock")) : 40,
+  shock: q.has("shock") && SHOCKS.includes(Number(q.get("shock"))) ? Number(q.get("shock")) : 40,
   compare: q.get("compare") === "none" ? "none" : "shock",
   budget: Math.min(100, Math.max(0, Math.round(Number(q.get("budget") ?? 30) / 5) * 5)),
   tab: ["overview", "order", "funding", "facilities"].includes(q.get("tab")) ? q.get("tab") : "overview",
@@ -286,7 +286,7 @@ function fixes() {
   const cheapest = Math.min(...r.candidates.map((c) => c.cost));
   let status = "";
   if (failed)
-    status = `<div class="state state--error" role="alert">${icon("i-critical")}<span>The ranking could not be updated. The fixes below are for the last budget that ranked. <button class="btn" type="button" id="retry">Try again</button></span></div>`;
+    status = `<div class="state state--error" role="alert">${icon("i-critical")}<span>The ranking could not be updated. The fixes below are for the last budget that ranked.<br><button class="btn" type="button" id="retry">Try again</button></span></div>`;
   else if (inFlight) status = `<p class="state" role="status" id="budget-status">Updating the ranking for ${state.budget} KES…</p>`;
   else if (!k.selected.length)
     status = `<p class="state" role="status" id="budget-status">Nothing fits ${state.budget} KES. The cheapest fix costs ${cheapest} KES.</p>`;
@@ -304,7 +304,7 @@ function fixes() {
     pairs.push(`<li class="pair">
       <h3>${ev.facility.name}, ${ev.commodity}</h3>
       <p class="meta">${ev.facility.sub} · runs out on day ${ev.day}${same ? ` · either option: ${effectText(k.effects[t.id]).toLowerCase()}` : ""}</p>
-      <ul class="pairs">${option(t, `Transfer from ${byId[t.donor].name}, ${t.km} km`)}${option(e, "Emergency delivery")}</ul>
+      <ul class="pairs">${option(t, `Transfer<span class="via">from ${byId[t.donor].name}, ${t.km} km away</span>`)}${option(e, "Emergency delivery")}</ul>
     </li>`);
   }
   el.innerHTML = `${head}${control}${status}<ol class="pairs" ${inFlight ? 'aria-busy="true"' : ""}>${pairs.join("")}</ol>

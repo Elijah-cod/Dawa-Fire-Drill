@@ -152,6 +152,11 @@ h3 {
   color: var(--primary-strong);
   text-decoration: none;
 }
+@media (max-width: 479px) {
+  .topbar .workspace {
+    display: none;
+  }
+}
 .topbar .workspace {
   color: var(--muted);
   font-size: var(--text-sm);
@@ -317,7 +322,8 @@ h1 {
 }
 .segmented button {
   min-height: 44px;
-  padding: 0 var(--space-3);
+  min-width: 0;
+  padding: 0 var(--space-2);
   border: 0;
   border-right: 1px solid var(--border);
   background: var(--surface);
@@ -640,8 +646,15 @@ h1 {
   font-size: var(--text-sm);
 }
 .state--error {
+  flex-wrap: wrap;
   background: var(--critical-soft);
   color: var(--critical);
+}
+.state--error .btn {
+  margin-top: var(--space-2);
+}
+.state > span {
+  flex: 1 1 0;
 }
 .pairs {
   margin: 0;
@@ -683,6 +696,12 @@ h1 {
 }
 .option .name {
   font-weight: 600;
+}
+.option .via {
+  display: block;
+  font-weight: 400;
+  font-size: var(--text-sm);
+  color: var(--muted);
 }
 .option .cost {
   font-weight: 700;
@@ -898,7 +917,7 @@ tr[aria-selected="true"] {
     padding: var(--space-5) var(--space-6) var(--space-7);
   }
   .layout {
-    grid-template-columns: 248px minmax(0, 1fr);
+    grid-template-columns: 272px minmax(0, 1fr);
     align-items: start;
   }
   .controls {
