@@ -77,6 +77,10 @@ for m in MAGNITUDES:
                            "effects": {e.id: {"baseline": e.baseline_stockout_day, "counterfactual": e.counterfactual_stockout_day, "deferred": e.deferred_days} for e in effects}}
     runs[m] = {
         "stockouts": [[e["facility_id"], e["commodity_id"], e["day"]] for e in r["stockouts"]],
+        # Event-level lists exactly as the backend classifies them.
+        "shockEvents": [[e["facility_id"], e["commodity_id"], e["day"]] for e in r["shock_caused_stockouts"]],
+        "preEvents": [[e["facility_id"], e["commodity_id"], e["day"]] for e in r["pre_shock_stockouts"]],
+        "noShockEvents": [[e["facility_id"], e["commodity_id"], e["day"]] for e in r["baseline_stockouts"]],
         "pre": sorted({e["facility_id"] for e in r["pre_shock_stockouts"]}),
         "noShock": sorted({e["facility_id"] for e in r["baseline_stockouts"]}),
         "shockCaused": len(events),
@@ -86,8 +90,14 @@ for m in MAGNITUDES:
     }
 flow = pilot["demo_cases"]["stalled_release"]
 funding = trace_kisumu_case(pilot, flow_id=flow["id"], as_of=date.fromisoformat(flow["as_of"])).model_dump(mode="json")
+# Funding stage amounts are the inputs the backend's trace_kisumu_case uses (procured and
+# delivered are 0 there for this planted flow).
+stages = [["Approved", flow["approved"]], ["Released", flow["released"]], ["Procured", 0], ["Delivered", 0]]
 data = {"seed": SEED, "generatorVersion": VERSION, "horizon": HORIZON, "facilities": facilities, "runs": runs,
-        "flow": flow, "funding": funding, "commodities": [c["id"] for c in pilot["commodities"]]}
+        "flow": flow, "funding": funding, "fundingStages": stages,
+        "commodities": [{"id": c["id"], "name": c["name"], "category": c["category"]} for c in pilot["commodities"]],
+        "routes": [{"facility_id": r["facility_id"], "commodity_id": r["commodity_id"], "arrival_day": r["arrival_day"],
+                    "donor": r["donor_facility_id"]} for r in routes]}
 out = Path(__file__).with_name("data.js")
 out.write_text("// Exported by export_data.py from backend code: generator v5, seed 42. Do not edit by hand.\n"
                "window.KISUMU_DATA = " + json.dumps(data, separators=(",", ":")) + ";\n")
