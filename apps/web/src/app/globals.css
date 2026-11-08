@@ -299,6 +299,46 @@ body:has(.tour-panel) main {
   color: var(--primary);
   font-weight: 600;
 }
+.funding-stages {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr));
+  gap: 0.5rem;
+  margin: 0.5rem 0 1rem;
+  padding: 0;
+  list-style: none;
+}
+.funding-stage {
+  display: flex;
+  gap: 0.5rem;
+  align-items: flex-start;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: 0.5rem;
+}
+.funding-stage-mark {
+  min-width: 1.5rem;
+  font-weight: 700;
+}
+.funding-stage--done {
+  background: var(--soft);
+}
+.funding-stage--stalled {
+  border: 3px dashed var(--primary);
+  font-weight: 600;
+}
+.funding-detail {
+  display: grid;
+  grid-template-columns: minmax(8rem, max-content) 1fr;
+  gap: 0.25rem 1rem;
+  margin: 0.75rem 0 0;
+}
+.funding-detail dt {
+  color: var(--muted);
+}
+.funding-detail dd {
+  margin: 0;
+  font-weight: 600;
+}
 .rank-cost-note {
   color: var(--muted);
   font-size: 0.875rem;

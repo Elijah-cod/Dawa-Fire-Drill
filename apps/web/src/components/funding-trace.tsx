@@ -16,6 +16,13 @@ const stageKeys = {
   procured_not_delivered: "procured_not_delivered",
 } as const;
 
+/** Index of the stage each backend bottleneck is waiting for. */
+const stalledStage = {
+  approved_not_released: 1,
+  released_not_procured: 2,
+  procured_not_delivered: 3,
+} as const;
+
 /** Synthetic funding stages and the backend's ageing of delayed amounts. */
 export function FundingTrace({
   flow,
@@ -65,6 +72,16 @@ export function FundingTrace({
   const bottlenecks = [...(result?.bottlenecks ?? [])].sort(
     (a, b) => b.age_days - a.age_days,
   );
+  // The oldest bottleneck names the stage money has not reached yet.
+  const stalled = bottlenecks.length
+    ? (stalledStage[bottlenecks[0].stage as keyof typeof stalledStage] ?? null)
+    : null;
+  const stages = [
+    { key: "stageApproved", amount: flow.approved },
+    { key: "stageReleased", amount: flow.released },
+    { key: "stageProcured", amount: 0 },
+    { key: "stageDelivered", amount: 0 },
+  ] as const;
   const chosen: Bottleneck | undefined = bottlenecks.find(
     (item) => item.stage === selected,
   );
@@ -76,19 +93,37 @@ export function FundingTrace({
         {flow.id} · {t("fundingAsOf")} {flow.as_of}
       </p>
       <h3>{t("fundingStages")}</h3>
-      <ol className="funding-stages">
-        <li>
-          {t("stageApproved")} · {amount(flow.approved)}
-        </li>
-        <li>
-          {t("stageReleased")} · {amount(flow.released)}
-        </li>
-        <li>
-          {t("stageProcured")} · {amount(0)}
-        </li>
-        <li>
-          {t("stageDelivered")} · {amount(0)}
-        </li>
+      <ol className="funding-stages" aria-label={t("fundingStages")}>
+        {stages.map((stage, index) => {
+          const stalledHere = index === stalled;
+          const done = stalled !== null && index < stalled;
+          return (
+            <li
+              key={stage.key}
+              className={
+                stalledHere
+                  ? "funding-stage funding-stage--stalled"
+                  : done
+                    ? "funding-stage funding-stage--done"
+                    : "funding-stage"
+              }
+              aria-current={stalledHere ? "step" : undefined}
+            >
+              <span aria-hidden="true" className="funding-stage-mark">
+                {stalledHere ? "⏸" : done ? "✓" : String(index + 1)}
+              </span>
+              <span>
+                {t(stage.key)} · {amount(stage.amount)}
+                {stalledHere && (
+                  <strong className="funding-stage-flag">
+                    {" "}
+                    · {t("fundingStalledHere")}
+                  </strong>
+                )}
+              </span>
+            </li>
+          );
+        })}
       </ol>
       {!online && <p role="status">{t("fundingOffline")}</p>}
       {status === "loading" && <p role="status">{t("fundingLoading")}</p>}

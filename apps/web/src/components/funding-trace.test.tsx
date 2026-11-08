@@ -1,5 +1,11 @@
 // @vitest-environment jsdom
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import {
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+  within,
+} from "@testing-library/react";
 import { afterEach, expect, it, vi } from "vitest";
 import { FundingTrace } from "./funding-trace";
 
@@ -30,12 +36,28 @@ it("shows the four synthetic stages and ages delayed amounts oldest first", asyn
   expect(screen.getByText(/synthetic funding flow/i)).toBeTruthy();
   const stages = screen.getAllByRole("listitem").slice(0, 4);
   expect(stages.map((item) => item.textContent)).toEqual([
-    "Approved · 100,000 KES",
-    "Released · 0 KES",
-    "Procured · 0 KES",
-    "Delivered · 0 KES",
+    "1Approved · 100,000 KES",
+    "2Released · 0 KES",
+    "3Procured · 0 KES",
+    "4Delivered · 0 KES",
   ]);
   await screen.findByText(/delayed amounts, oldest first/i);
+  // The oldest bottleneck (approved, not released) stalls the Released stage: marked by a
+  // symbol, words and aria-current, not colour alone.
+  const bar = screen.getByRole("list", { name: "Funding stages" });
+  const steps = within(bar).getAllByRole("listitem");
+  expect(steps.map((item) => item.textContent)).toEqual([
+    "✓Approved · 100,000 KES",
+    "⏸Released · 0 KES · Stalled here",
+    "3Procured · 0 KES",
+    "4Delivered · 0 KES",
+  ]);
+  expect(steps.map((item) => item.getAttribute("aria-current"))).toEqual([
+    null,
+    "step",
+    null,
+    null,
+  ]);
   const ageing = screen.getAllByRole("listitem").slice(4);
   expect(ageing[0].textContent).toMatch(
     /Approved, not released · 100,000 KES · 90 days waiting/,
@@ -54,6 +76,9 @@ it("shows the selected bottleneck's details", async () => {
   fireEvent.click(button);
   expect(button.getAttribute("aria-pressed")).toBe("true");
   expect(screen.getByText("Selected bottleneck")).toBeTruthy();
+  const detail = document.querySelector("dl.funding-detail")!;
+  expect(detail.querySelectorAll("dt")).toHaveLength(3);
+  expect(detail.querySelectorAll("dd")).toHaveLength(3);
   expect(screen.getByText("2025-01-01")).toBeTruthy();
   expect(screen.getByText(/90 · As of 2025-04-01/)).toBeTruthy();
 });
