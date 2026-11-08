@@ -1,5 +1,7 @@
 # Changelog
 
+- Began the funding trace for the synthetic stalled-release flow: stage amounts, backend-aged delayed amounts, bottleneck inspection, and loading, error, empty and offline states.
+
 - The shock-caused stockout panel now names other commodities at the first facility that run out on the same day.
 
 - Added local-only `scripts/demo-up.sh` and `scripts/demo-down.sh` to start and tear down a synthetic browser demo session with disposable signing material and a 4-hour token passed only by environment.

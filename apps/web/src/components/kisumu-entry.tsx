@@ -129,6 +129,14 @@ function KisumuContent({
                 ? (runId, body) => createMockClient("planner").rank(runId, body)
                 : undefined
           }
+          trace={
+            mode === "demo"
+              ? (flowId, asOf) => api.fundingTrace(flowId, asOf, selectedRole)
+              : mode === "mock"
+                ? (flowId, asOf) =>
+                    createMockClient("planner").fundingTrace(flowId, asOf)
+                : undefined
+          }
         />
       ) : (
         <p>{t("overviewError")}</p>

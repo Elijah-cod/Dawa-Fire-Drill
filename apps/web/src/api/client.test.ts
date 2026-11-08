@@ -129,3 +129,43 @@ it("requests a county-scoped optimizer result without a browser token", async ()
   expect((init.headers as Headers).get("Authorization")).toBeNull();
   expect(JSON.parse(String(init.body))).toEqual(body);
 });
+
+it("requests the synthetic funding trace through the county-scoped proxy", async () => {
+  const send = vi.fn().mockResolvedValue(
+    Response.json({
+      synthetic: true,
+      notice: "Illustrative and unvalidated",
+      currency: "KES",
+      bottlenecks: [
+        { stage: "approved_not_released", amount: 100000, age_days: 90 },
+      ],
+    }),
+  );
+  vi.stubGlobal("fetch", send);
+  const result = await createApiClient().fundingTrace(
+    "SYN-042-FLOW-01",
+    "2025-04-01",
+    "planner",
+  );
+  expect(result.bottlenecks[0].age_days).toBe(90);
+  expect(send.mock.calls[0][0]).toBe(
+    "/api/counties/042/funding/SYN-042-FLOW-01/trace?seed=42&as_of=2025-04-01",
+  );
+});
+
+it("rejects a funding trace that is not synthetic or is malformed", async () => {
+  for (const body of [
+    { synthetic: false, currency: "KES", bottlenecks: [] },
+    { synthetic: true, currency: "USD", bottlenecks: [] },
+    {
+      synthetic: true,
+      currency: "KES",
+      bottlenecks: [{ stage: "approved_not_released", amount: "lots" }],
+    },
+  ]) {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(Response.json(body)));
+    await expect(
+      createApiClient().fundingTrace("SYN-042-FLOW-01", "2025-04-01"),
+    ).rejects.toThrow("Invalid funding trace");
+  }
+});

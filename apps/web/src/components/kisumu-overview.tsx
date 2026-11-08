@@ -13,6 +13,7 @@ import {
 import { FacilityMap } from "./facility-map";
 import { StockoutOrder } from "./stockout-order";
 import type { components } from "../generated/api";
+import { FundingTrace } from "./funding-trace";
 
 /** Same footprint as the loaded panel so arriving results do not shift the page. */
 function RankPlaceholder({ message }: { message?: string }) {
@@ -62,6 +63,7 @@ export function KisumuOverview({
   scenario,
   canRun = true,
   rank,
+  trace,
 }: {
   panel: PilotPanel;
   scenario: ScenarioApi;
@@ -70,6 +72,10 @@ export function KisumuOverview({
     runId: string,
     body: components["schemas"]["ModeledRequest"],
   ) => Promise<components["schemas"]["ModeledResponse"]>;
+  trace?: (
+    flowId: string,
+    asOf: string,
+  ) => Promise<components["schemas"]["FundingTraceResponse"]>;
 }) {
   const { t } = usePreferences();
   const { magnitude, setMagnitude, run, status, previous } = useKisumuScenario(
@@ -264,6 +270,9 @@ export function KisumuOverview({
           <p>{t("selectFacility")}</p>
         )}
       </section>
+      {canRun && trace && (
+        <FundingTrace flow={panel.demo_cases.stalled_release} trace={trace} />
+      )}
     </>
   );
 }

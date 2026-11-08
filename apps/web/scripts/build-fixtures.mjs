@@ -11,6 +11,9 @@
  * before trimming, so the UI is unchanged. Do not use this fixture as
  * simulation input.
  *
+ * The funding part is the backend trace of the planted stalled-release flow
+ * at its own as_of date.
+ *
  * Always regenerate from backend county generator version 4 with seed 42;
  * never hand-edit. Usage, from apps/web (requires uv):
  *   node scripts/build-fixtures.mjs
@@ -30,6 +33,8 @@ const api = resolve(import.meta.dirname, "../../api");
 const output = resolve(import.meta.dirname, "../src/fixtures/kisumu.json");
 const python = `
 import json
+from datetime import date
+from dawa_api.finance_flow.application import trace_kisumu_case
 from dawa_api.ingestion.county_planning import generate_county_planning
 from dawa_api.ingestion.kisumu import generate_kisumu_panel
 from dawa_api.scenarios.schemas import ScenarioCreate
@@ -50,11 +55,17 @@ def run(magnitude):
         simulation_version=${SIMULATION_VERSION},
     )
 
+flow = pilot["demo_cases"]["stalled_release"]
+funding = trace_kisumu_case(
+    pilot, flow_id=flow["id"], as_of=date.fromisoformat(flow["as_of"])
+).model_dump(mode="json")
+
 print(json.dumps({
     "planning": generate_county_planning(seed=${SEED}),
     "pilot": pilot,
     "baseline": run(0),
     "run": run(${SHOCK_MAGNITUDE}),
+    "funding": funding,
 }))
 `;
 
@@ -69,7 +80,7 @@ if (result.status !== 0) {
   process.exit(1);
 }
 const fixture = JSON.parse(result.stdout);
-for (const part of ["planning", "pilot", "baseline", "run"])
+for (const part of ["planning", "pilot", "baseline", "run", "funding"])
   if (fixture[part]?.synthetic !== true)
     throw new Error(`Generated ${part} is not marked synthetic`);
 const last = Math.max(

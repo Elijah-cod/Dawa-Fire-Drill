@@ -73,6 +73,26 @@ async function post<T>(
   return (await response.json()) as T;
 }
 
+export function validFundingTrace(
+  value: unknown,
+): value is components["schemas"]["FundingTraceResponse"] {
+  if (!value || typeof value !== "object") return false;
+  const trace = value as Record<string, unknown>;
+  return (
+    trace.synthetic === true &&
+    trace.currency === "KES" &&
+    Array.isArray(trace.bottlenecks) &&
+    trace.bottlenecks.every(
+      (item: unknown) =>
+        !!item &&
+        typeof item === "object" &&
+        typeof (item as Record<string, unknown>).stage === "string" &&
+        Number.isInteger((item as Record<string, unknown>).amount) &&
+        Number.isInteger((item as Record<string, unknown>).age_days),
+    )
+  );
+}
+
 /** Response types are generated from the backend OpenAPI schema. */
 export function createApiClient() {
   return {
@@ -136,6 +156,14 @@ export function createApiClient() {
         `/counties/042/runs/${encodeURIComponent(id)}`,
         role,
       ),
+    fundingTrace: async (flowId: string, asOf: string, role?: DemoRole) => {
+      const result = await get<components["schemas"]["FundingTraceResponse"]>(
+        `/counties/042/funding/${encodeURIComponent(flowId)}/trace?seed=42&as_of=${encodeURIComponent(asOf)}`,
+        role,
+      );
+      if (!validFundingTrace(result)) throw new Error("Invalid funding trace");
+      return result;
+    },
     rank: (
       id: string,
       body: components["schemas"]["ModeledRequest"],

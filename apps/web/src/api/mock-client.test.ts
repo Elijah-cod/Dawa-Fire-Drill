@@ -120,3 +120,22 @@ it("returns only the recorded optimizer fixture for the exact synthetic demo inp
     ),
   ).rejects.toThrow();
 });
+
+it("serves the backend-generated funding trace only for the planted flow and planners", async () => {
+  const trace = await createMockClient("planner").fundingTrace(
+    "SYN-042-FLOW-01",
+    "2025-04-01",
+  );
+  expect(trace.synthetic).toBe(true);
+  expect(trace.bottlenecks[0]).toEqual({
+    stage: "approved_not_released",
+    amount: 100000,
+    age_days: 90,
+  });
+  await expect(
+    createMockClient("planner").fundingTrace("SYN-042-FLOW-01", "2025-05-01"),
+  ).rejects.toThrow();
+  await expect(
+    createMockClient("facility").fundingTrace("SYN-042-FLOW-01", "2025-04-01"),
+  ).rejects.toThrow("Forbidden");
+});

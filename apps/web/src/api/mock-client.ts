@@ -126,6 +126,19 @@ export function createMockClient(role: Role) {
         );
       return (await import("../fixtures/ranked-fixes.json")).default;
     },
+    async fundingTrace(
+      flowId: string,
+      asOf: string,
+    ): Promise<components["schemas"]["FundingTraceResponse"]> {
+      if (role !== "planner" && role !== "admin") throw new Error("Forbidden");
+      const fixture = (await import("../fixtures/kisumu.json")).default;
+      const flow = fixture.pilot.demo_cases.stalled_release;
+      if (flowId !== flow.id || asOf !== flow.as_of)
+        throw new Error(
+          "Synthetic funding fixture unavailable for these inputs",
+        );
+      return fixture.funding;
+    },
     async facility(facilityId: string) {
       if (role === "facility" && facilityId !== "SYN-KE-042-F001")
         throw new Error("Forbidden");

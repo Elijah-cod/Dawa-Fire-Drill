@@ -15,6 +15,7 @@ it("contains only synthetic seed-42 data with the last three consumption months"
     fixture.pilot,
     fixture.baseline,
     fixture.run,
+    fixture.funding,
   ])
     expect(part.synthetic).toBe(true);
   expect(fixture.pilot.seed).toBe(42);
