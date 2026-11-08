@@ -1,8 +1,10 @@
 /** Planner-selected illustrative thresholds; not clinical or operational standards. */
-// Sized for county generator version 5, whose first 40% shock stockout is on day 41.
+// Tuned on 2026-11-08 to make the seed-42 generator version 5 scenario readable (first
+// 40% shock stockout on day 41); relative to the 90-day horizon, not a standard.
 export const RISK_THRESHOLDS = Object.freeze({
   criticalDays: 45,
-  watchDays: 75,
+  watchDays: 52,
+  horizonDays: 90,
 });
 export type Risk = "critical" | "watch" | "stable" | "unknown";
 export type CommodityRisk = {
@@ -126,6 +128,7 @@ export function riskLegend(locale: "en" | "sw" = "en"): string[] {
       `Angalizo: siku ${RISK_THRESHOLDS.criticalDays + 1}–${RISK_THRESHOLDS.watchDays}`,
       `Tulivu: bidhaa haitaisha ndani ya siku ${RISK_THRESHOLDS.watchDays}`,
       "Haijulikani: hakuna utabiri au uigaji",
+      `Lebo zinahusiana na kipindi cha uigaji cha siku ${RISK_THRESHOLDS.horizonDays}. Viwango vilirekebishwa ili mfano huu wa kubuni usomeke; si kiwango rasmi.`,
       "Viwango ni vya mfano, si viwango vya kitabibu au kiutendaji.",
     ];
   }
@@ -134,6 +137,7 @@ export function riskLegend(locale: "en" | "sw" = "en"): string[] {
     `Watch: ${RISK_THRESHOLDS.criticalDays + 1}–${RISK_THRESHOLDS.watchDays} days`,
     `Stable: no stockout within ${RISK_THRESHOLDS.watchDays} days`,
     "Unknown: no forecast or run is available",
+    `Labels are relative to the ${RISK_THRESHOLDS.horizonDays}-day simulation horizon. The cutoffs were tuned to make this synthetic scenario readable; they are not a standard.`,
     "Illustrative thresholds, not clinical or operational standards.",
   ];
 }

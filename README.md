@@ -89,4 +89,9 @@ See [agent rules](AGENTS.md), [current progress](docs/PROGRESS.md), [design appr
 - **Capture is online only and unreviewed for extraction quality.** There is no offline queue. The local stack has no extraction provider, so fields are typed by hand; no real LLM provider has been exercised end to end.
 - **Language.** Swahili strings, and the English-only optimizer explanation, need native-speaker review.
 - **No production sign-in.** The demo uses a server-side proxy with a privileged synthetic token, allowed only in local or staging environments behind external access control.
+- **Risk cutoffs are tuned, not a standard.** Map labels use Critical within 45 days, Watch 46–52 and Stable beyond 52. These cutoffs were tuned to make this synthetic scenario readable, are relative to the 90-day simulation horizon, and are not a standard. A facility takes the status of its worst commodity.
 - **Performance and design gaps.** The interactive Lighthouse flow meets its performance budget. Its layout shift ranged from 0.006 to 0.203 in earlier runs; the latest run, after the shock card change, measured 0.001, but one run does not show the issue is resolved. The flow is not in CI. Bottom navigation, several design states and screenshot review against the approved design are outstanding. See [progress](docs/PROGRESS.md) and [Phase 3 notes](docs/phases/3.md).
+
+## Next steps
+
+- Risk from the share of commodities at risk, with per-commodity thresholds from real lead times.

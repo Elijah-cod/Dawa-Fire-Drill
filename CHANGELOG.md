@@ -1,6 +1,6 @@
 # Changelog
 
-- Changed the illustrative facility risk cutoffs to Critical within 45 days, Watch 46–75 days and Stable beyond 75 days to fit generator version 5.
+- Changed the illustrative facility risk cutoffs to Critical within 45 days, Watch 46–52 days and Stable beyond 52 days, chosen from real generator version 5 runs; the legend now says the cutoffs are relative to the 90-day horizon and were tuned for readability, not a standard.
 
 - Moved the stockout summary into the shock card's reserved space and removed the separate stockout panel.
 

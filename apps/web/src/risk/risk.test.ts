@@ -6,8 +6,8 @@ describe("illustrative facility stockout risk", () => {
     [0, "critical"],
     [45, "critical"],
     [46, "watch"],
-    [75, "watch"],
-    [76, "stable"],
+    [52, "watch"],
+    [53, "stable"],
     [null, "stable"],
     [undefined, "unknown"],
   ] as const)("classifies %s days as %s", (days, status) =>
@@ -16,13 +16,13 @@ describe("illustrative facility stockout risk", () => {
   it("uses the worst commodity and reports its identifier and days", () => {
     expect(
       facilityRisk([
-        { commodityId: "C1", days: 76 },
+        { commodityId: "C1", days: 53 },
         { commodityId: "C2", days: 45 },
       ]),
     ).toEqual({ status: "critical", drivers: ["C2"], days: 45 });
     expect(
       facilityRisk([
-        { commodityId: "C1", days: 76 },
+        { commodityId: "C1", days: 53 },
         { commodityId: "C2", days: undefined },
       ]).status,
     ).toBe("unknown");
@@ -79,9 +79,12 @@ describe("illustrative facility stockout risk", () => {
     expect(riskLegend()).toContain(
       "Critical: already stocked out or within 45 days",
     );
-    expect(riskLegend()).toContain("Watch: 46–75 days");
-    expect(riskLegend()).toContain("Stable: no stockout within 75 days");
-    expect(riskLegend("sw")).toContain("Angalizo: siku 46–75");
+    expect(riskLegend()).toContain("Watch: 46–52 days");
+    expect(riskLegend()).toContain("Stable: no stockout within 52 days");
+    expect(riskLegend("sw")).toContain("Angalizo: siku 46–52");
+    expect(riskLegend()).toContain(
+      "Labels are relative to the 90-day simulation horizon. The cutoffs were tuned to make this synthetic scenario readable; they are not a standard.",
+    );
     expect(riskLegend()).toContain(
       "Illustrative thresholds, not clinical or operational standards.",
     );
