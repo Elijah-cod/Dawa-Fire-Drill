@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { createMockClient } from "./mock-client";
+import { fixCandidates, plannedFixes } from "./candidates";
 import fixture from "../fixtures/kisumu.json";
 
 afterEach(() => vi.unstubAllEnvs());
@@ -69,57 +70,42 @@ describe("OpenAPI-typed synthetic mock", () => {
   });
 });
 
-it("returns only the recorded optimizer fixture for the exact synthetic demo inputs", async () => {
+it("returns only the recorded optimizer fixtures for the exact synthetic demo inputs", async () => {
   const mock = createMockClient("planner");
-  const route = fixture.pilot.demo_cases.near_expiry_transfer;
+  const candidates = fixCandidates(
+    plannedFixes(
+      fixture.run.shock_caused_stockouts,
+      fixture.pilot.demo_cases.transfer_routes,
+    ),
+  );
+  expect(candidates).toHaveLength(8);
   const request = {
     synthetic_attested: true as const,
-    budget: 100,
-    minimum_benefit: 1,
-    candidates: [
-      {
-        id: "transfer",
-        kind: "redistribution" as const,
-        cost: 10,
-        facility_id: route.facility_id,
-        donor_facility_id: route.donor_facility_id,
-        commodity_id: route.commodity_id,
-        quantity: route.quantity,
-        available_units: route.available_units,
-        dispatch_day: route.dispatch_day,
-        arrival_day: route.arrival_day,
-        expiry_day: route.expiry_day,
-        minimum_shelf_days: route.minimum_shelf_days,
-        distance_km: route.distance_km,
-        max_distance_km: route.maximum_distance_km,
-      },
-      {
-        id: "emergency",
-        kind: "emergency_procurement" as const,
-        cost: 50,
-        facility_id: route.facility_id,
-        commodity_id: route.commodity_id,
-        arrival_day: route.arrival_day,
-        quantity: route.quantity,
-      },
-    ],
+    budget: 30,
+    candidates,
   };
-  const response = await mock.rank(
-    "00000000-0000-4000-8000-000000000042",
-    request,
+  const runId = "00000000-0000-4000-8000-000000000042";
+  const partial = await mock.rank(runId, request);
+  expect(partial.selected_ids).toEqual([
+    "transfer-1",
+    "transfer-2",
+    "transfer-3",
+  ]);
+  expect(partial.excluded_reasons["transfer-4"]).toBe(
+    "remaining_budget_exceeded",
   );
-  expect(response.selected_ids).toEqual(["transfer"]);
+  expect(
+    (await mock.rank(runId, { ...request, budget: 100 })).selected_ids,
+  ).toHaveLength(4);
+  await expect(mock.rank(runId, { ...request, budget: 31 })).rejects.toThrow();
   await expect(
-    mock.rank("00000000-0000-4000-8000-000000000042", {
-      ...request,
-      budget: 1,
-    }),
+    mock.rank(runId, { ...request, minimum_benefit: 1 }),
   ).rejects.toThrow();
   await expect(
-    createMockClient("facility").rank(
-      "00000000-0000-4000-8000-000000000042",
-      request,
-    ),
+    mock.rank(runId, { ...request, candidates: candidates.slice(1) }),
+  ).rejects.toThrow();
+  await expect(
+    createMockClient("facility").rank(runId, request),
   ).rejects.toThrow();
 });
 

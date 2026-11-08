@@ -158,3 +158,90 @@ def test_v5_points_stay_in_their_land_checked_boxes_and_routes_match(seed: int) 
         assert abs(km(donor, recipient) - route["distance_km"]) < 1
         assert 0 < route["distance_km"] <= route["maximum_distance_km"]
         assert donor["subcounty_id"] != recipient["subcounty_id"]
+
+
+def budget_request(routes: list[dict], budget: int) -> ModeledRequest:
+    candidates: list[dict] = []
+    for index, route in enumerate(routes, 1):
+        candidates.append(
+            {
+                "id": f"transfer-{index}",
+                "kind": "redistribution",
+                "cost": 10,
+                "facility_id": route["facility_id"],
+                "donor_facility_id": route["donor_facility_id"],
+                "commodity_id": route["commodity_id"],
+                "quantity": route["quantity"],
+                "available_units": route["available_units"],
+                "dispatch_day": route["dispatch_day"],
+                "arrival_day": route["arrival_day"],
+                "expiry_day": route["expiry_day"],
+                "minimum_shelf_days": route["minimum_shelf_days"],
+                "distance_km": route["distance_km"],
+                "max_distance_km": route["maximum_distance_km"],
+            }
+        )
+        candidates.append(
+            {
+                "id": f"emergency-{index}",
+                "kind": "emergency_procurement",
+                "cost": 50,
+                "facility_id": route["facility_id"],
+                "commodity_id": route["commodity_id"],
+                "quantity": route["quantity"],
+                "arrival_day": route["arrival_day"],
+            }
+        )
+    return ModeledRequest.model_validate(
+        {"synthetic_attested": True, "budget": budget, "candidates": candidates}
+    )
+
+
+def test_v5_plants_routes_for_the_four_earliest_shock_events() -> None:
+    data = generate_kisumu_panel(seed=42, version=5)
+    events = simulate_kisumu(shock(40), data, horizon_days=90)["shock_caused_stockouts"]
+    routes = data["demo_cases"]["transfer_routes"]
+    assert [(r["facility_id"], r["commodity_id"]) for r in routes] == [
+        (e["facility_id"], e["commodity_id"]) for e in events[:4]
+    ]
+    assert len({(r["donor_facility_id"], r["commodity_id"]) for r in routes}) == 4
+    for route, event in zip(routes, events, strict=False):
+        assert route["dispatch_day"] < route["arrival_day"] <= event["day"]
+
+
+def test_v5_budget_funds_some_fixes_and_names_the_budget_for_the_rest() -> None:
+    data = generate_kisumu_panel(seed=42, version=5)
+    run = simulate_kisumu(shock(40), data, horizon_days=90)
+    routes = data["demo_cases"]["transfer_routes"]
+
+    full, effects = rank_kisumu(
+        shock(40), data, run, request=budget_request(routes, 100), horizon_days=90
+    )
+    assert sorted(full.selected_ids) == ["transfer-1", "transfer-2", "transfer-3", "transfer-4"]
+    assert full.total_cost == 40
+    assert all(
+        full.excluded_reasons[f"emergency-{i}"] == "alternative_selected" for i in range(1, 5)
+    )
+    assert all(effect.deferred_days >= 1 for effect in effects)
+
+    partial, _ = rank_kisumu(
+        shock(40), data, run, request=budget_request(routes, 30), horizon_days=90
+    )
+    assert len(partial.selected_ids) == 3 and partial.total_cost == 30
+    (cut,) = {f"transfer-{i}" for i in range(1, 5)} - set(partial.selected_ids)
+    assert partial.excluded_reasons[cut] == "remaining_budget_exceeded"
+    assert all(
+        partial.excluded_reasons[f"emergency-{i}"] == "cost_exceeds_ceiling" for i in range(1, 5)
+    )
+
+    none, _ = rank_kisumu(shock(40), data, run, request=budget_request(routes, 5), horizon_days=90)
+    assert none.selected_ids == () and none.total_cost == 0
+    assert set(none.excluded_reasons.values()) == {"cost_exceeds_ceiling"}
+
+
+def test_v5_rejects_a_transfer_that_matches_no_planted_route() -> None:
+    data = generate_kisumu_panel(seed=42, version=5)
+    run = simulate_kisumu(shock(40), data, horizon_days=90)
+    route = {**data["demo_cases"]["transfer_routes"][0], "distance_km": 1}
+    with pytest.raises(ValueError, match="pinned synthetic route"):
+        rank_kisumu(shock(40), data, run, request=budget_request([route], 100), horizon_days=90)

@@ -1,33 +1,229 @@
 {
-  "synthetic": true,
-  "notice": "Illustrative and unvalidated; delivery timing, quantity and cost are supplied assumptions. Days deferred measure the model's first stockout within its horizon.",
-  "run_id": "00000000-0000-4000-8000-000000000042",
-  "explanation": "Illustrative and unvalidated. OR-Tools selected transfer under the supplied budget and assumed benefits. Excluded candidates: emergency. The selected set's supplied cost is 10 and the budget is 100.",
-  "selected_ids": [
-    "transfer"
-  ],
-  "selected_reasons": {
-    "transfer": "included_in_optimal_set"
-  },
-  "excluded_reasons": {
-    "emergency": "alternative_selected"
-  },
-  "cut_line": 1,
-  "total_cost": 10,
-  "remaining_budget": 90,
-  "minimum_benefit": 1,
-  "effects": [
-    {
-      "id": "transfer",
-      "baseline_stockout_day": 41,
-      "counterfactual_stockout_day": null,
-      "deferred_days": 50
+  "5": {
+    "synthetic": true,
+    "notice": "Illustrative and unvalidated; delivery timing, quantity and cost are supplied assumptions. Days deferred measure the model's first stockout within its horizon.",
+    "run_id": "00000000-0000-4000-8000-000000000042",
+    "explanation": "Illustrative and unvalidated. OR-Tools selected none under the supplied budget and assumed benefits. Excluded candidates: transfer-1, emergency-1, transfer-2, emergency-2, transfer-3, emergency-3, transfer-4, emergency-4. The selected set's supplied cost is 0 and the budget is 5.",
+    "selected_ids": [],
+    "selected_reasons": {},
+    "excluded_reasons": {
+      "transfer-1": "cost_exceeds_ceiling",
+      "emergency-1": "cost_exceeds_ceiling",
+      "transfer-2": "cost_exceeds_ceiling",
+      "emergency-2": "cost_exceeds_ceiling",
+      "transfer-3": "cost_exceeds_ceiling",
+      "emergency-3": "cost_exceeds_ceiling",
+      "transfer-4": "cost_exceeds_ceiling",
+      "emergency-4": "cost_exceeds_ceiling"
     },
-    {
-      "id": "emergency",
-      "baseline_stockout_day": 41,
-      "counterfactual_stockout_day": null,
-      "deferred_days": 50
-    }
-  ]
+    "cut_line": 0,
+    "total_cost": 0,
+    "remaining_budget": 5,
+    "minimum_benefit": null,
+    "effects": [
+      {
+        "id": "transfer-1",
+        "baseline_stockout_day": 41,
+        "counterfactual_stockout_day": null,
+        "deferred_days": 50
+      },
+      {
+        "id": "emergency-1",
+        "baseline_stockout_day": 41,
+        "counterfactual_stockout_day": null,
+        "deferred_days": 50
+      },
+      {
+        "id": "transfer-2",
+        "baseline_stockout_day": 43,
+        "counterfactual_stockout_day": null,
+        "deferred_days": 48
+      },
+      {
+        "id": "emergency-2",
+        "baseline_stockout_day": 43,
+        "counterfactual_stockout_day": null,
+        "deferred_days": 48
+      },
+      {
+        "id": "transfer-3",
+        "baseline_stockout_day": 43,
+        "counterfactual_stockout_day": null,
+        "deferred_days": 48
+      },
+      {
+        "id": "emergency-3",
+        "baseline_stockout_day": 43,
+        "counterfactual_stockout_day": null,
+        "deferred_days": 48
+      },
+      {
+        "id": "transfer-4",
+        "baseline_stockout_day": 44,
+        "counterfactual_stockout_day": null,
+        "deferred_days": 47
+      },
+      {
+        "id": "emergency-4",
+        "baseline_stockout_day": 44,
+        "counterfactual_stockout_day": null,
+        "deferred_days": 47
+      }
+    ]
+  },
+  "30": {
+    "synthetic": true,
+    "notice": "Illustrative and unvalidated; delivery timing, quantity and cost are supplied assumptions. Days deferred measure the model's first stockout within its horizon.",
+    "run_id": "00000000-0000-4000-8000-000000000042",
+    "explanation": "Illustrative and unvalidated. OR-Tools selected transfer-1, transfer-2, transfer-3 under the supplied budget and assumed benefits. Excluded candidates: emergency-1, emergency-2, emergency-3, transfer-4, emergency-4. The selected set's supplied cost is 30 and the budget is 30.",
+    "selected_ids": [
+      "transfer-1",
+      "transfer-2",
+      "transfer-3"
+    ],
+    "selected_reasons": {
+      "transfer-1": "included_in_optimal_set",
+      "transfer-2": "included_in_optimal_set",
+      "transfer-3": "included_in_optimal_set"
+    },
+    "excluded_reasons": {
+      "emergency-1": "cost_exceeds_ceiling",
+      "emergency-2": "cost_exceeds_ceiling",
+      "emergency-3": "cost_exceeds_ceiling",
+      "transfer-4": "remaining_budget_exceeded",
+      "emergency-4": "cost_exceeds_ceiling"
+    },
+    "cut_line": 3,
+    "total_cost": 30,
+    "remaining_budget": 0,
+    "minimum_benefit": null,
+    "effects": [
+      {
+        "id": "transfer-1",
+        "baseline_stockout_day": 41,
+        "counterfactual_stockout_day": null,
+        "deferred_days": 50
+      },
+      {
+        "id": "emergency-1",
+        "baseline_stockout_day": 41,
+        "counterfactual_stockout_day": null,
+        "deferred_days": 50
+      },
+      {
+        "id": "transfer-2",
+        "baseline_stockout_day": 43,
+        "counterfactual_stockout_day": null,
+        "deferred_days": 48
+      },
+      {
+        "id": "emergency-2",
+        "baseline_stockout_day": 43,
+        "counterfactual_stockout_day": null,
+        "deferred_days": 48
+      },
+      {
+        "id": "transfer-3",
+        "baseline_stockout_day": 43,
+        "counterfactual_stockout_day": null,
+        "deferred_days": 48
+      },
+      {
+        "id": "emergency-3",
+        "baseline_stockout_day": 43,
+        "counterfactual_stockout_day": null,
+        "deferred_days": 48
+      },
+      {
+        "id": "transfer-4",
+        "baseline_stockout_day": 44,
+        "counterfactual_stockout_day": null,
+        "deferred_days": 47
+      },
+      {
+        "id": "emergency-4",
+        "baseline_stockout_day": 44,
+        "counterfactual_stockout_day": null,
+        "deferred_days": 47
+      }
+    ]
+  },
+  "100": {
+    "synthetic": true,
+    "notice": "Illustrative and unvalidated; delivery timing, quantity and cost are supplied assumptions. Days deferred measure the model's first stockout within its horizon.",
+    "run_id": "00000000-0000-4000-8000-000000000042",
+    "explanation": "Illustrative and unvalidated. OR-Tools selected transfer-1, transfer-2, transfer-3, transfer-4 under the supplied budget and assumed benefits. Excluded candidates: emergency-1, emergency-2, emergency-3, emergency-4. The selected set's supplied cost is 40 and the budget is 100.",
+    "selected_ids": [
+      "transfer-1",
+      "transfer-2",
+      "transfer-3",
+      "transfer-4"
+    ],
+    "selected_reasons": {
+      "transfer-1": "included_in_optimal_set",
+      "transfer-2": "included_in_optimal_set",
+      "transfer-3": "included_in_optimal_set",
+      "transfer-4": "included_in_optimal_set"
+    },
+    "excluded_reasons": {
+      "emergency-1": "alternative_selected",
+      "emergency-2": "alternative_selected",
+      "emergency-3": "alternative_selected",
+      "emergency-4": "alternative_selected"
+    },
+    "cut_line": 4,
+    "total_cost": 40,
+    "remaining_budget": 60,
+    "minimum_benefit": null,
+    "effects": [
+      {
+        "id": "transfer-1",
+        "baseline_stockout_day": 41,
+        "counterfactual_stockout_day": null,
+        "deferred_days": 50
+      },
+      {
+        "id": "emergency-1",
+        "baseline_stockout_day": 41,
+        "counterfactual_stockout_day": null,
+        "deferred_days": 50
+      },
+      {
+        "id": "transfer-2",
+        "baseline_stockout_day": 43,
+        "counterfactual_stockout_day": null,
+        "deferred_days": 48
+      },
+      {
+        "id": "emergency-2",
+        "baseline_stockout_day": 43,
+        "counterfactual_stockout_day": null,
+        "deferred_days": 48
+      },
+      {
+        "id": "transfer-3",
+        "baseline_stockout_day": 43,
+        "counterfactual_stockout_day": null,
+        "deferred_days": 48
+      },
+      {
+        "id": "emergency-3",
+        "baseline_stockout_day": 43,
+        "counterfactual_stockout_day": null,
+        "deferred_days": 48
+      },
+      {
+        "id": "transfer-4",
+        "baseline_stockout_day": 44,
+        "counterfactual_stockout_day": null,
+        "deferred_days": 47
+      },
+      {
+        "id": "emergency-4",
+        "baseline_stockout_day": 44,
+        "counterfactual_stockout_day": null,
+        "deferred_days": 47
+      }
+    ]
+  }
 }

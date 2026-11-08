@@ -179,13 +179,14 @@ const strings = {
     rankAssumptions:
       "Costs and benefits are illustrative assumptions, not validated impacts.",
     rankCandidateAssumptions:
-      "The synthetic transfer and emergency delivery use the same assumed quantity and arrival day, with illustrative costs of 10 KES and 50 KES. The target is at least one day of modeled deferral.",
+      "For each of the earliest shock-caused stockouts, a synthetic transfer and an emergency delivery use the same assumed quantity and arrival day, with illustrative costs of 10 KES and 50 KES. The optimizer maximizes modeled days deferred within the budget.",
     rankTransfer: "Redistribution transfer",
     rankEmergency: "Emergency delivery",
     rankTransferUnavailable:
-      "The planted transfer does not match this first stockout; comparison is unavailable for this snapshot.",
+      "No planted transfer matches these shock-caused stockouts; comparison is unavailable for this snapshot.",
     rankEnglishOnly: "Explanation available in English only.",
-    rankTarget: "First shock-caused stockout",
+    rankTargets: "Earliest shock-caused stockouts with a planted transfer",
+    rankRemainingBudget: "Not funded: it does not fit in the remaining budget.",
     rankBudget: "Budget ceiling (KES)",
     rankAction: "Rank feasible actions",
     rankLoading: "Ranking feasible actions…",
@@ -391,14 +392,16 @@ const strings = {
     rankAssumptions:
       "Gharama na manufaa ni makadirio ya mfano, si athari zilizothibitishwa.",
     rankCandidateAssumptions:
-      "Uhamisho na uwasilishaji wa dharura wa mfano hutumia kiasi na siku ileile ya kuwasili, kwa gharama za mfano za KES 10 na KES 50. Lengo ni kuchelewesha kuisha kwa bidhaa kwa angalau siku moja katika mfano.",
+      "Kwa kila tukio la mapema la kuisha kwa bidhaa kutokana na mshtuko, uhamisho na uwasilishaji wa dharura wa mfano hutumia kiasi na siku ileile ya kuwasili, kwa gharama za mfano za KES 10 na KES 50. Mfumo huongeza siku za kuchelewa katika mfano ndani ya bajeti.",
     rankTransfer: "Uhamisho wa bidhaa",
     rankEmergency: "Uwasilishaji wa dharura",
     rankTransferUnavailable:
       "Uhamisho wa mfano haulengani na tatizo hili la kwanza; ulinganisho haupatikani kwa picha hii ya data.",
     rankEnglishOnly:
       "Maelezo yanapatikana kwa Kiingereza pekee. Explanation available in English only.",
-    rankTarget: "Akiba ya kwanza kuisha kutokana na mshtuko",
+    rankTargets:
+      "Matukio ya mapema ya kuisha kwa bidhaa yenye uhamisho wa mfano",
+    rankRemainingBudget: "Haikufadhiliwa: haitoshi ndani ya bajeti iliyobaki.",
     rankBudget: "Kikomo cha bajeti (KES)",
     rankAction: "Panga hatua zinazowezekana",
     rankLoading: "Inapanga hatua zinazowezekana…",

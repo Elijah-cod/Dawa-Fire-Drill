@@ -41,14 +41,14 @@ it("ranks once at the default ceiling when the demo reaches the ranked-fix step"
     <TourProvider>
       <RankedFixes
         runId="run-1"
-        target={{ facility_id: "F001", commodity_id: "C02", day: 48 }}
-        transfer={route}
+        events={[{ facility_id: "F001", commodity_id: "C02", day: 48 }]}
+        routes={[route]}
         rank={rank}
       />
     </TourProvider>,
   );
   await waitFor(() => expect(rank).toHaveBeenCalledTimes(1));
-  expect(rank).toHaveBeenCalledWith(expect.objectContaining({ budget: 100 }));
+  expect(rank).toHaveBeenCalledWith(expect.objectContaining({ budget: 30 }));
 });
 
 it("does not rank by itself outside the demo", async () => {
@@ -57,8 +57,8 @@ it("does not rank by itself outside the demo", async () => {
     <TourProvider>
       <RankedFixes
         runId="run-1"
-        target={{ facility_id: "F001", commodity_id: "C02", day: 48 }}
-        transfer={route}
+        events={[{ facility_id: "F001", commodity_id: "C02", day: 48 }]}
+        routes={[route]}
         rank={rank}
       />
     </TourProvider>,

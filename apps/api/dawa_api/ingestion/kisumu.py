@@ -14,7 +14,7 @@ KISUMU_HIV_ESTIMATE_2023 = 135_550
 # Version 5 cover: lead time plus this many invented extra days per facility and commodity.
 V5_EXTRA_COVER_DAYS = (4, 40)
 # Version 5 plants one transfer route for each of this many earliest 40% shock events.
-V5_PLANTED_ROUTES = 1
+V5_PLANTED_ROUTES = 4
 # Version 5 invented cluster centers, moved inland. Every point of each center's jitter box
 # (±0.003 degrees) was checked against OpenStreetMap tiles on 2026-11-08: none fell on water.
 V5_CENTERS = (

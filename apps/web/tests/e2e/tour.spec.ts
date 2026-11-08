@@ -49,7 +49,7 @@ test("guided demo walks overview to capture by keyboard", async ({ page }) => {
   await next("Ranked fix");
   const ranked = page.getByRole("region", { name: "Do this first" });
   await expect(ranked).toContainText(
-    "Redistribution transfer · 10 KES · 50 modeled days deferred · Selected by the optimizer",
+    "Redistribution transfer → SYN-KE-042-F031 · SYN-C04 · 10 KES · 50 modeled days deferred · Selected by the optimizer",
     { timeout: 30000 },
   );
 

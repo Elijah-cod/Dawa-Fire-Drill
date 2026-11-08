@@ -14,9 +14,9 @@
  * The funding part is the backend trace of the planted stalled-release flow
  * at its own as_of date.
  *
- * ranked-fixes.json is the backend ranking (OR-Tools via rank_kisumu and the
+ * ranked-fixes.json holds the backend rankings (OR-Tools via rank_kisumu and the
  * deterministic explanation) of the candidates the web app builds for the 40%
- * run at a 100 KES ceiling.
+ * run, keyed by ceiling: 30, 100 and 5 KES.
  *
  * Always regenerate from backend county generator version 5 with seed 42;
  * never hand-edit. Usage, from apps/web (requires uv):
@@ -32,6 +32,8 @@ const SIMULATION_VERSION = 2;
 const HORIZON_DAYS = 90;
 const SHOCK_MAGNITUDE = 40;
 const KEEP_MONTHS = 3;
+// Ceilings with recorded rankings for the mock client (KES, illustrative).
+const BUDGETS = [30, 100, 5];
 // The mock client's fixed run ID for the 40% shock.
 const RUN_ID = "00000000-0000-4000-8000-000000000042";
 
@@ -75,14 +77,22 @@ funding = trace_kisumu_case(
 
 RUN_ID = "${RUN_ID}"
 shock_run = run(${SHOCK_MAGNITUDE})
-route = pilot["demo_cases"]["near_expiry_transfer"]
-request = ModeledRequest.model_validate({
-    "synthetic_attested": True,
-    "budget": 100,
-    "minimum_benefit": 1,
-    "candidates": [
+events = shock_run["shock_caused_stockouts"]
+fixes = []
+for route in pilot["demo_cases"]["transfer_routes"]:
+    event = next(
+        (e for e in events
+         if (e["facility_id"], e["commodity_id"]) == (route["facility_id"], route["commodity_id"])),
+        None,
+    )
+    if route.get("synthetic") is True and event and route["arrival_day"] <= event["day"]:
+        fixes.append((event, route))
+fixes.sort(key=lambda item: item[0]["day"])
+candidates = []
+for index, (_, route) in enumerate(fixes, 1):
+    candidates += [
         {
-            "id": "transfer", "kind": "redistribution", "cost": 10,
+            "id": f"transfer-{index}", "kind": "redistribution", "cost": 10,
             "facility_id": route["facility_id"],
             "donor_facility_id": route["donor_facility_id"],
             "commodity_id": route["commodity_id"],
@@ -96,31 +106,37 @@ request = ModeledRequest.model_validate({
             "max_distance_km": route["maximum_distance_km"],
         },
         {
-            "id": "emergency", "kind": "emergency_procurement", "cost": 50,
+            "id": f"emergency-{index}", "kind": "emergency_procurement", "cost": 50,
             "facility_id": route["facility_id"],
             "commodity_id": route["commodity_id"],
             "quantity": route["quantity"],
             "arrival_day": route["arrival_day"],
         },
-    ],
-})
+    ]
 scenario = ScenarioCreate.model_validate({
     "name": "Synthetic donor shock", "shock_type": "logistics_reduction",
     "magnitude": ${SHOCK_MAGNITUDE}, "seed": ${SEED}, "horizon_days": ${HORIZON_DAYS},
 })
-result, effects = rank_kisumu(scenario, pilot, shock_run, request=request, horizon_days=${HORIZON_DAYS})
-ranked = ModeledResponse(
-    run_id=RUN_ID,
-    explanation=explain_selection(result, budget=request.budget).text,
-    selected_ids=result.selected_ids,
-    selected_reasons={item: "included_in_optimal_set" for item in result.selected_ids},
-    excluded_reasons=result.excluded_reasons,
-    cut_line=len(result.selected_ids),
-    total_cost=result.total_cost,
-    remaining_budget=request.budget - result.total_cost,
-    minimum_benefit=request.minimum_benefit,
-    effects=effects,
-).model_dump(mode="json")
+ranked = {}
+for budget in ${JSON.stringify(BUDGETS)}:
+    request = ModeledRequest.model_validate(
+        {"synthetic_attested": True, "budget": budget, "candidates": candidates}
+    )
+    result, effects = rank_kisumu(
+        scenario, pilot, shock_run, request=request, horizon_days=${HORIZON_DAYS}
+    )
+    ranked[str(budget)] = ModeledResponse(
+        run_id=RUN_ID,
+        explanation=explain_selection(result, budget=budget).text,
+        selected_ids=result.selected_ids,
+        selected_reasons={item: "included_in_optimal_set" for item in result.selected_ids},
+        excluded_reasons=result.excluded_reasons,
+        cut_line=len(result.selected_ids),
+        total_cost=result.total_cost,
+        remaining_budget=budget - result.total_cost,
+        minimum_benefit=None,
+        effects=effects,
+    ).model_dump(mode="json")
 
 print(json.dumps({
     "planning": generate_county_planning(seed=${SEED}),
@@ -143,7 +159,8 @@ if (result.status !== 0) {
   process.exit(1);
 }
 const { ranked, ...fixture } = JSON.parse(result.stdout);
-if (ranked?.synthetic !== true) throw new Error("Ranking is not synthetic");
+if (!Object.values(ranked).every((item) => item.synthetic === true))
+  throw new Error("Ranking is not synthetic");
 await writeFile(rankedOutput, `${JSON.stringify(ranked, null, 2)}\n`);
 for (const part of ["planning", "pilot", "baseline", "run", "funding"])
   if (fixture[part]?.synthetic !== true)

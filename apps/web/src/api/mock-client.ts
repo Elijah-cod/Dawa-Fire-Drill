@@ -1,3 +1,4 @@
+import { fixCandidates, plannedFixes } from "./candidates";
 import { ApiError } from "./client";
 import type { Role, Session } from "../auth/auth-provider";
 import type { components } from "../generated/api";
@@ -80,52 +81,26 @@ export function createMockClient(role: Role) {
       request: components["schemas"]["ModeledRequest"],
     ): Promise<components["schemas"]["ModeledResponse"]> {
       if (role !== "planner" && role !== "admin") throw new Error("Forbidden");
-      const route = (await import("../fixtures/kisumu.json")).default.pilot
-        .demo_cases.near_expiry_transfer;
-      const common = {
-        facility_id: route.facility_id,
-        commodity_id: route.commodity_id,
-        quantity: route.quantity,
-        arrival_day: route.arrival_day,
-      };
-      const expected = [
-        {
-          id: "transfer",
-          kind: "redistribution",
-          cost: 10,
-          ...common,
-          donor_facility_id: route.donor_facility_id,
-          available_units: route.available_units,
-          dispatch_day: route.dispatch_day,
-          expiry_day: route.expiry_day,
-          minimum_shelf_days: route.minimum_shelf_days,
-          distance_km: route.distance_km,
-          max_distance_km: route.maximum_distance_km,
-        },
-        { id: "emergency", kind: "emergency_procurement", cost: 50, ...common },
-      ];
+      const fixture = (await import("../fixtures/kisumu.json")).default;
+      const expected = fixCandidates(
+        plannedFixes(
+          fixture.run.shock_caused_stockouts,
+          fixture.pilot.demo_cases.transfer_routes,
+        ),
+      );
+      const recorded = (await import("../fixtures/ranked-fixes.json"))
+        .default as Record<string, components["schemas"]["ModeledResponse"]>;
       if (
         runId !== "00000000-0000-4000-8000-000000000042" ||
         request.synthetic_attested !== true ||
-        request.budget !== 100 ||
-        request.minimum_benefit !== 1 ||
-        request.candidates.length !== expected.length ||
-        !expected.every((item) =>
-          request.candidates.some((candidate) => {
-            const actual: Record<string, unknown> = { ...candidate };
-            return (
-              Object.keys(actual).length === Object.keys(item).length &&
-              Object.entries(item).every(
-                ([key, value]) => actual[key] === value,
-              )
-            );
-          }),
-        )
+        request.minimum_benefit != null ||
+        !(String(request.budget) in recorded) ||
+        JSON.stringify(request.candidates) !== JSON.stringify(expected)
       )
         throw new Error(
           "Synthetic ranking fixture unavailable for these inputs",
         );
-      return (await import("../fixtures/ranked-fixes.json")).default;
+      return recorded[String(request.budget)];
     },
     /** No extraction provider in fixture mode: fields come back empty for manual entry. */
     async uploadCapture(

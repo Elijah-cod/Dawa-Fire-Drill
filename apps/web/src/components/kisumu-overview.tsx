@@ -271,8 +271,12 @@ export function KisumuOverview({
           <RankedFixes
             key={run.id}
             runId={run.id}
-            target={shockEvents[0]}
-            transfer={panel.demo_cases.near_expiry_transfer}
+            events={shockEvents}
+            routes={
+              panel.demo_cases.transfer_routes ?? [
+                panel.demo_cases.near_expiry_transfer,
+              ]
+            }
             rank={(body) => rank(run.id, body)}
           />
         )}

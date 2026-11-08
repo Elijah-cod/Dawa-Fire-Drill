@@ -25,16 +25,16 @@ it("shows optimizer order, the budget cut line, reasons and the first-stockout t
     synthetic: true,
     notice: "Illustrative and unvalidated",
     run_id: "run-1",
-    selected_ids: ["transfer"],
-    selected_reasons: { transfer: "included_in_optimal_set" },
-    excluded_reasons: { emergency: "alternative_selected" },
+    selected_ids: ["transfer-1"],
+    selected_reasons: { "transfer-1": "included_in_optimal_set" },
+    excluded_reasons: { "emergency-1": "alternative_selected" },
     cut_line: 1,
     total_cost: 10,
     remaining_budget: 90,
     minimum_benefit: 1,
     effects: [
       {
-        id: "transfer",
+        id: "transfer-1",
         baseline_stockout_day: 48,
         counterfactual_stockout_day: null,
         deferred_days: 42,
@@ -45,8 +45,8 @@ it("shows optimizer order, the budget cut line, reasons and the first-stockout t
   render(
     <RankedFixes
       runId="run-1"
-      target={{ facility_id: "F001", commodity_id: "C02", day: 48 }}
-      transfer={route}
+      events={[{ facility_id: "F001", commodity_id: "C02", day: 48 }]}
+      routes={[route]}
       rank={rank}
     />,
   );
@@ -56,7 +56,12 @@ it("shows optimizer order, the budget cut line, reasons and the first-stockout t
   expect(
     await screen.findByText(/The optimizer selected transfer/),
   ).toBeTruthy();
-  expect(screen.getByText(/F001.*C02.*48/)).toBeTruthy();
+  expect(
+    screen.getByText(/Earliest shock-caused stockouts.*F001 · C02 · 48/),
+  ).toBeTruthy();
+  expect((rank.mock.calls as unknown[][])[0][0]).not.toHaveProperty(
+    "minimum_benefit",
+  );
   expect(screen.getByText(/cut line/i)).toBeTruthy();
   expect(screen.getByText(/42 modeled days deferred/i)).toBeTruthy();
   expect(
@@ -65,9 +70,7 @@ it("shows optimizer order, the budget cut line, reasons and the first-stockout t
   expect(
     screen.getByText(/costs and benefits are illustrative assumptions/i),
   ).toBeTruthy();
-  expect(rank).toHaveBeenCalledWith(
-    expect.objectContaining({ budget: 100, minimum_benefit: 1 }),
-  );
+  expect(rank).toHaveBeenCalledWith(expect.objectContaining({ budget: 30 }));
 });
 
 it("reports when the synthetic protection target cannot fit the ceiling", async () => {
@@ -80,8 +83,8 @@ it("reports when the synthetic protection target cannot fit the ceiling", async 
   render(
     <RankedFixes
       runId="run-1"
-      target={{ facility_id: "F001", commodity_id: "C02", day: 48 }}
-      transfer={route}
+      events={[{ facility_id: "F001", commodity_id: "C02", day: 48 }]}
+      routes={[route]}
       rank={rank}
     />,
   );
@@ -106,7 +109,7 @@ it("re-ranks after the ceiling changes and ignores an older response", async () 
     synthetic: true,
     notice: "Illustrative",
     run_id: "run-1",
-    selected_ids: ["transfer"],
+    selected_ids: ["transfer-1"],
     selected_reasons: {},
     excluded_reasons: {},
     cut_line: 1,
@@ -132,8 +135,8 @@ it("re-ranks after the ceiling changes and ignores an older response", async () 
   render(
     <RankedFixes
       runId="run-1"
-      target={{ facility_id: "F001", commodity_id: "C02", day: 48 }}
-      transfer={route}
+      events={[{ facility_id: "F001", commodity_id: "C02", day: 48 }]}
+      routes={[route]}
       rank={rank}
     />,
   );
@@ -163,8 +166,8 @@ it("explains that a new ranking requires a connection while offline", () => {
     render(
       <RankedFixes
         runId="run-1"
-        target={{ facility_id: "F001", commodity_id: "C02", day: 48 }}
-        transfer={route}
+        events={[{ facility_id: "F001", commodity_id: "C02", day: 48 }]}
+        routes={[route]}
         rank={rank}
       />,
     );
@@ -202,9 +205,9 @@ it("compares the planted transfer and emergency for the first event", async () =
     synthetic: true,
     notice: "Illustrative",
     run_id: "run-1",
-    selected_ids: ["transfer"],
-    selected_reasons: { transfer: "included_in_optimal_set" },
-    excluded_reasons: { emergency: "alternative_selected" },
+    selected_ids: ["transfer-1"],
+    selected_reasons: { "transfer-1": "included_in_optimal_set" },
+    excluded_reasons: { "emergency-1": "alternative_selected" },
     cut_line: 1,
     total_cost: 10,
     remaining_budget: 90,
@@ -215,8 +218,8 @@ it("compares the planted transfer and emergency for the first event", async () =
   render(
     <RankedFixes
       runId="run-1"
-      target={{ facility_id: "F001", commodity_id: "C02", day: 48 }}
-      transfer={route}
+      events={[{ facility_id: "F001", commodity_id: "C02", day: 48 }]}
+      routes={[route]}
       rank={rank}
     />,
   );
@@ -232,12 +235,12 @@ it("compares the planted transfer and emergency for the first event", async () =
     expect.objectContaining({
       candidates: expect.arrayContaining([
         expect.objectContaining({
-          id: "transfer",
+          id: "transfer-1",
           kind: "redistribution",
           donor_facility_id: "F002",
         }),
         expect.objectContaining({
-          id: "emergency",
+          id: "emergency-1",
           kind: "emergency_procurement",
         }),
       ]),
@@ -252,9 +255,9 @@ it("labels the optimizer explanation as English-only in Swahili", async () => {
     synthetic: true,
     notice: "Illustrative",
     run_id: "run-1",
-    selected_ids: ["transfer"],
+    selected_ids: ["transfer-1"],
     selected_reasons: {},
-    excluded_reasons: { emergency: "alternative_selected" },
+    excluded_reasons: { "emergency-1": "alternative_selected" },
     cut_line: 1,
     total_cost: 10,
     remaining_budget: 90,
@@ -267,8 +270,8 @@ it("labels the optimizer explanation as English-only in Swahili", async () => {
       <PreferenceControls />
       <RankedFixes
         runId="run-1"
-        target={{ facility_id: "F001", commodity_id: "C02", day: 48 }}
-        transfer={route}
+        events={[{ facility_id: "F001", commodity_id: "C02", day: 48 }]}
+        routes={[route]}
         rank={rank}
       />
     </PreferencesProvider>,
@@ -292,12 +295,12 @@ it("refuses a transfer that targets a different first stockout", () => {
   render(
     <RankedFixes
       runId="run-1"
-      target={{ facility_id: "F001", commodity_id: "C02", day: 48 }}
-      transfer={{ ...route, facility_id: "F003" }}
+      events={[{ facility_id: "F001", commodity_id: "C02", day: 48 }]}
+      routes={[{ ...route, facility_id: "F003" }]}
       rank={rank}
     />,
   );
-  expect(screen.getByText(/planted transfer does not match/i)).toBeTruthy();
+  expect(screen.getByText(/no planted transfer matches/i)).toBeTruthy();
   expect(
     (
       screen.getByRole("button", {
@@ -312,22 +315,22 @@ it("lists each candidate with cost, deferral and status on either side of the cu
     synthetic: true,
     notice: "Illustrative",
     run_id: "run-1",
-    selected_ids: ["transfer"],
-    selected_reasons: { transfer: "included_in_optimal_set" },
-    excluded_reasons: { emergency: "alternative_selected" },
+    selected_ids: ["transfer-1"],
+    selected_reasons: { "transfer-1": "included_in_optimal_set" },
+    excluded_reasons: { "emergency-1": "alternative_selected" },
     cut_line: 1,
     total_cost: 10,
     remaining_budget: 90,
     minimum_benefit: 1,
     effects: [
       {
-        id: "transfer",
+        id: "transfer-1",
         baseline_stockout_day: 48,
         counterfactual_stockout_day: null,
         deferred_days: 43,
       },
       {
-        id: "emergency",
+        id: "emergency-1",
         baseline_stockout_day: 48,
         counterfactual_stockout_day: null,
         deferred_days: 41,
@@ -338,8 +341,8 @@ it("lists each candidate with cost, deferral and status on either side of the cu
   render(
     <RankedFixes
       runId="run-1"
-      target={{ facility_id: "F001", commodity_id: "C02", day: 48 }}
-      transfer={route}
+      events={[{ facility_id: "F001", commodity_id: "C02", day: 48 }]}
+      routes={[route]}
       rank={rank}
     />,
   );
@@ -353,10 +356,10 @@ it("lists each candidate with cost, deferral and status on either side of the cu
   const below = screen.getByRole("list", { name: /not selected/i });
   const cut = screen.getByText(/budget cut line/i);
   expect(above.textContent).toMatch(
-    /Redistribution transfer · 10 KES · 43 modeled days deferred · Selected by the optimizer/,
+    /Redistribution transfer → F001 · C02 · 10 KES · 43 modeled days deferred · Selected by the optimizer/,
   );
   expect(below.textContent).toMatch(
-    /Emergency delivery · 50 KES · 41 modeled days deferred · Another option for this stockout was selected/,
+    /Emergency delivery → F001 · C02 · 50 KES · 41 modeled days deferred · Another option for this stockout was selected/,
   );
   expect(
     above.compareDocumentPosition(cut) & Node.DOCUMENT_POSITION_FOLLOWING,
@@ -372,7 +375,7 @@ it("marks a missing modeled deferral instead of inventing one", async () => {
     synthetic: true,
     notice: "Illustrative",
     run_id: "run-1",
-    selected_ids: ["transfer"],
+    selected_ids: ["transfer-1"],
     selected_reasons: {},
     excluded_reasons: {},
     cut_line: 1,
@@ -385,8 +388,8 @@ it("marks a missing modeled deferral instead of inventing one", async () => {
   render(
     <RankedFixes
       runId="run-1"
-      target={{ facility_id: "F001", commodity_id: "C02", day: 48 }}
-      transfer={route}
+      events={[{ facility_id: "F001", commodity_id: "C02", day: 48 }]}
+      routes={[route]}
       rank={rank}
     />,
   );
@@ -395,6 +398,63 @@ it("marks a missing modeled deferral instead of inventing one", async () => {
   );
   const below = await screen.findByRole("list", { name: /not selected/i });
   expect(below.textContent).toMatch(
-    /Emergency delivery · 50 KES · modeled deferral unavailable · The exclusion reason is unavailable/,
+    /Emergency delivery → F001 · C02 · 50 KES · modeled deferral unavailable · The exclusion reason is unavailable/,
   );
+});
+
+it("funds what fits the ceiling and names the budget for the rest", async () => {
+  const second = { ...route, facility_id: "F019", commodity_id: "C03" };
+  const rank = vi.fn(async () => ({
+    synthetic: true,
+    notice: "Illustrative",
+    run_id: "run-1",
+    selected_ids: ["transfer-1"],
+    selected_reasons: { "transfer-1": "included_in_optimal_set" },
+    excluded_reasons: {
+      "emergency-1": "cost_exceeds_ceiling",
+      "transfer-2": "remaining_budget_exceeded",
+      "emergency-2": "cost_exceeds_ceiling",
+    },
+    cut_line: 1,
+    total_cost: 10,
+    remaining_budget: 5,
+    minimum_benefit: null,
+    effects: [],
+    explanation: "OR-Tools selected transfer-1.",
+  }));
+  render(
+    <RankedFixes
+      runId="run-1"
+      events={[
+        { facility_id: "F001", commodity_id: "C02", day: 48 },
+        { facility_id: "F019", commodity_id: "C03", day: 50 },
+      ]}
+      routes={[route, second]}
+      rank={rank}
+    />,
+  );
+  fireEvent.change(screen.getByLabelText(/budget ceiling/i), {
+    target: { value: "15" },
+  });
+  fireEvent.click(
+    screen.getByRole("button", { name: /rank feasible actions/i }),
+  );
+  const below = await screen.findByRole("list", { name: /not selected/i });
+  expect(below.textContent).toMatch(
+    /Redistribution transfer → F019 · C03 · 10 KES · modeled deferral unavailable · Not funded: it does not fit in the remaining budget\./,
+  );
+  expect(below.textContent).toMatch(
+    /Emergency delivery → F001 · C02 · 50 KES · modeled deferral unavailable · The assumed cost exceeds the ceiling\./,
+  );
+  expect(
+    screen.getByText(
+      /Earliest shock-caused stockouts.*F001 · C02 · 48 .*; F019 · C03 · 50/,
+    ),
+  ).toBeTruthy();
+  expect((rank.mock.calls as unknown[][])[0][0]).toMatchObject({
+    budget: 15,
+    candidates: expect.arrayContaining([
+      expect.objectContaining({ id: "transfer-2", facility_id: "F019" }),
+    ]),
+  });
 });

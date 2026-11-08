@@ -2,28 +2,35 @@
 
 import { useEffect, useRef, useState } from "react";
 import { ApiError } from "../api/client";
-import type { PilotPanel } from "../api/client";
+import {
+  fixCandidates,
+  plannedFixes,
+  type PlantedRoute,
+  type ShockEvent,
+} from "../api/candidates";
 import type { components } from "../generated/api";
 import { usePreferences } from "../preferences/preferences";
 import { useTour } from "../tour/tour";
 
 type Request = components["schemas"]["ModeledRequest"];
 type Result = components["schemas"]["ModeledResponse"];
-type Target = { facility_id: string; commodity_id: string; day: number };
+
+/** Default ceiling: enough for some planted transfers but not all, so the cut line is visible. */
+export const DEFAULT_BUDGET = 30;
 
 export function RankedFixes({
   runId,
-  target,
-  transfer,
+  events,
+  routes,
   rank,
 }: {
   runId: string;
-  target: Target;
-  transfer: PilotPanel["demo_cases"]["near_expiry_transfer"];
+  events: ShockEvent[];
+  routes: PlantedRoute[];
   rank: (body: Request) => Promise<Result>;
 }) {
   const { t, locale } = usePreferences();
-  const [budget, setBudget] = useState(100);
+  const [budget, setBudget] = useState(DEFAULT_BUDGET);
   const [online, setOnline] = useState(true);
   const sequence = useRef(0);
   const started = useRef(false);
@@ -56,40 +63,9 @@ export function RankedFixes({
   const [status, setStatus] = useState<
     "idle" | "loading" | "error" | "unreachable"
   >("idle");
-  const routeMatches =
-    transfer?.synthetic === true &&
-    transfer.facility_id === target.facility_id &&
-    transfer.commodity_id === target.commodity_id &&
-    transfer.arrival_day <= target.day;
-  const candidates: Request["candidates"] = routeMatches
-    ? [
-        {
-          id: "transfer",
-          kind: "redistribution",
-          cost: 10,
-          facility_id: transfer.facility_id,
-          donor_facility_id: transfer.donor_facility_id,
-          commodity_id: transfer.commodity_id,
-          quantity: transfer.quantity,
-          available_units: transfer.available_units,
-          dispatch_day: transfer.dispatch_day,
-          arrival_day: transfer.arrival_day,
-          expiry_day: transfer.expiry_day,
-          minimum_shelf_days: transfer.minimum_shelf_days,
-          distance_km: transfer.distance_km,
-          max_distance_km: transfer.maximum_distance_km,
-        },
-        {
-          id: "emergency",
-          kind: "emergency_procurement",
-          cost: 50,
-          facility_id: transfer.facility_id,
-          commodity_id: transfer.commodity_id,
-          arrival_day: transfer.arrival_day,
-          quantity: transfer.quantity,
-        },
-      ]
-    : [];
+  const fixes = plannedFixes(events, routes);
+  const routeMatches = fixes.length > 0;
+  const candidates: Request["candidates"] = fixCandidates(fixes);
   async function submit(ceiling: number) {
     started.current = true;
     const request = ++sequence.current;
@@ -99,7 +75,6 @@ export function RankedFixes({
       const response = await rank({
         synthetic_attested: true,
         budget: ceiling,
-        minimum_benefit: 1,
         candidates,
       });
       if (request !== sequence.current) return;
@@ -125,7 +100,12 @@ export function RankedFixes({
     }
   }
   function name(id: string) {
-    return id === "transfer" ? t("rankTransfer") : t("rankEmergency");
+    const [kind, number] = id.split("-");
+    const fix = fixes.find((item) => String(item.index) === number);
+    const label = kind === "transfer" ? t("rankTransfer") : t("rankEmergency");
+    return fix
+      ? `${label} → ${fix.event.facility_id} · ${fix.event.commodity_id}`
+      : label;
   }
   function cost(id: string) {
     return candidates.find((item) => item.id === id)?.cost;
@@ -137,17 +117,19 @@ export function RankedFixes({
       : t("rankDeferralUnavailable");
   }
   function reasonText(reason: string | undefined) {
-    return reason === "alternative_selected"
-      ? t("rankAlternative")
-      : reason === "cost_exceeds_ceiling"
-        ? t("rankOverBudget")
-        : reason === "donor_recipient_conflict"
-          ? t("rankDonorConflict")
-          : reason === "shared_inventory_constraint"
-            ? t("rankInventory")
-            : reason === "not_selected_by_optimal_set"
-              ? t("rankNotSelected")
-              : t("rankReasonUnavailable");
+    return reason === "remaining_budget_exceeded"
+      ? t("rankRemainingBudget")
+      : reason === "alternative_selected"
+        ? t("rankAlternative")
+        : reason === "cost_exceeds_ceiling"
+          ? t("rankOverBudget")
+          : reason === "donor_recipient_conflict"
+            ? t("rankDonorConflict")
+            : reason === "shared_inventory_constraint"
+              ? t("rankInventory")
+              : reason === "not_selected_by_optimal_set"
+                ? t("rankNotSelected")
+                : t("rankReasonUnavailable");
   }
   const { step } = useTour();
   useEffect(() => {
@@ -161,10 +143,17 @@ export function RankedFixes({
       <p>{t("rankAssumptions")}</p>
       <p>{t("rankCandidateAssumptions")}</p>
       {!routeMatches && <p role="status">{t("rankTransferUnavailable")}</p>}
-      <p>
-        {t("rankTarget")}: {target.facility_id} · {target.commodity_id} ·{" "}
-        {target.day} {t("days")}
-      </p>
+      {fixes.length > 0 && (
+        <p>
+          {t("rankTargets")}:{" "}
+          {fixes
+            .map(
+              ({ event }) =>
+                `${event.facility_id} · ${event.commodity_id} · ${event.day} ${t("days")}`,
+            )
+            .join("; ")}
+        </p>
+      )}
       <label htmlFor="rank-budget">{t("rankBudget")}</label>{" "}
       <input
         id="rank-budget"

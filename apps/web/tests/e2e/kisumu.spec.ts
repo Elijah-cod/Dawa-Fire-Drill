@@ -91,9 +91,11 @@ test("optimizer ranks a synthetic fix for the first shock-caused stockout", asyn
   ).toBeVisible({ timeout: 30000 });
   await expect(section).toContainText("Redistribution transfer");
   await expect(section).toContainText("Emergency delivery");
+  await expect(section).toContainText("Budget used: 30 KES");
   await expect(section).toContainText(
-    "Another option for this stockout was selected",
+    "Not funded: it does not fit in the remaining budget.",
   );
+  await expect(section).toContainText("The assumed cost exceeds the ceiling.");
   await expect(section).toContainText("F031");
   await expect(section).toContainText("C04");
   await expect(section).toContainText("Budget cut line");

@@ -37,3 +37,14 @@ it("keeps the planted transfer aimed at the first shock-caused stockout", () => 
     first.commodity_id,
   ]);
 });
+
+it("plants transfer routes for the four earliest shock-caused stockouts", () => {
+  const routes = fixture.pilot.demo_cases.transfer_routes;
+  expect(
+    routes.map((route) => [route.facility_id, route.commodity_id]),
+  ).toEqual(
+    fixture.run.shock_caused_stockouts
+      .slice(0, 4)
+      .map((event) => [event.facility_id, event.commodity_id]),
+  );
+});
