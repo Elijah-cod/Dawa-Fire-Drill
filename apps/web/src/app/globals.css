@@ -328,9 +328,12 @@ input {
   align-items: center;
   gap: 0.35rem;
   width: auto;
-  padding: 0 0.75rem;
+  max-width: 160px;
+  padding: 0.25rem 0.75rem;
   border-radius: 22px;
-  white-space: nowrap;
+  font-size: 0.8125rem;
+  line-height: 1.2;
+  text-align: left;
   font-weight: 700;
 }
 .risk-summary {

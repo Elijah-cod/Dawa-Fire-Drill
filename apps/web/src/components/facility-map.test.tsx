@@ -8,12 +8,23 @@ import {
 } from "@testing-library/react";
 import { afterEach, expect, it, vi } from "vitest";
 import oldFacilities from "../fixtures/kisumu-v2-facilities.json";
-import { FacilityMap, facilityMarkers, MAP_FIT_PADDING } from "./facility-map";
+import {
+  FacilityMap,
+  facilityMarkers,
+  MAP_FIT_PADDING,
+  mapFitPadding,
+} from "./facility-map";
 
 const handlers = vi.hoisted(() => new Map<string, (event: unknown) => void>());
 const fits = vi.hoisted(() => [] as { bounds: unknown; options: unknown }[]);
 // Pixels per degree: county zoom by default; a cluster zoom (maxZoom 18) spreads markers apart.
-const view = vi.hoisted(() => ({ scale: 1000 }));
+const view = vi.hoisted(() => ({
+  scale: 1000,
+  zoom: 9,
+  // When set, fitting a cluster leaves the zoom unchanged (a cluster as wide as the view).
+  stuck: false,
+  jumps: [] as unknown[],
+}));
 vi.mock("maplibre-gl", () => {
   class Map {
     container: HTMLElement;
@@ -26,10 +37,18 @@ vi.mock("maplibre-gl", () => {
     }
     fitBounds(bounds: unknown, options: { maxZoom?: number }) {
       fits.push({ bounds, options });
-      if (options.maxZoom === 18) {
+      if (options.maxZoom === 18 && !view.stuck) {
         view.scale = 10_000_000;
+        view.zoom = 18;
         handlers.get("moveend")?.({});
       }
+      return this;
+    }
+    getZoom() {
+      return view.zoom;
+    }
+    jumpTo(options: unknown) {
+      view.jumps.push(options);
       return this;
     }
     project([lng, lat]: [number, number]) {
@@ -75,6 +94,9 @@ vi.mock("maplibre-gl", () => {
 afterEach(() => {
   cleanup();
   view.scale = 1000;
+  view.zoom = 9;
+  view.stuck = false;
+  view.jumps = [];
 });
 
 it("shows the map-unavailable state for a version without synthetic coordinates", () => {
@@ -320,11 +342,17 @@ it("fits the map to every marker with padding that clears the controls, again on
   expect(bounds.points).toEqual(
     facilities.map((f) => [f.longitude, f.latitude]),
   );
-  expect(options.padding).toEqual(MAP_FIT_PADDING);
-  for (const side of ["top", "left", "right", "bottom"] as const)
-    expect(options.padding[side]).toBeGreaterThan(22);
-  expect(options.padding.right).toBeGreaterThan(options.padding.left);
-  expect(options.padding.bottom).toBeGreaterThan(options.padding.top);
+  // jsdom has no layout, so the container width is 0 and the narrow minimum applies.
+  expect(options.padding).toEqual(mapFitPadding(0));
+  expect(mapFitPadding(1280)).toEqual({ ...MAP_FIT_PADDING });
+  const phone = mapFitPadding(358);
+  expect(phone.left).toBeLessThan(MAP_FIT_PADDING.left);
+  for (const padding of [phone, mapFitPadding(1280)]) {
+    for (const side of ["top", "left", "right", "bottom"] as const)
+      expect(padding[side]).toBeGreaterThan(22);
+    expect(padding.right).toBeGreaterThan(padding.left);
+    expect(padding.bottom).toBeGreaterThan(padding.top);
+  }
   act(() => handlers.get("resize")!({}));
   expect(fits).toHaveLength(2);
   act(() => handlers.get("zoomstart")!({ originalEvent: new Event("wheel") }));
@@ -355,9 +383,9 @@ it("clusters nearby facilities with count and worst status, then separates them 
     />,
   );
   const cluster = await screen.findByRole("button", {
-    name: "3 · Critical · 3 synthetic facilities, worst status shown · 1 Critical, 1 Watch, 1 Stable. Press Enter to zoom in.",
+    name: "3 · 1 Crit · 1 Watch · 1 Stable · 3 synthetic facilities: 1 Critical, 1 Watch, 1 Stable; worst status Critical. Press Enter to zoom in.",
   });
-  expect(cluster.textContent).toBe("!3 · Critical");
+  expect(cluster.textContent).toBe("!3 · 1 Crit · 1 Watch · 1 Stable");
   expect(cluster.dataset.count).toBe("3");
   expect(screen.queryByRole("button", { name: /^Synthetic A/ })).toBeNull();
   expect(document.querySelector(".risk-summary")?.textContent).toBe(
@@ -372,4 +400,33 @@ it("clusters nearby facilities with count and worst status, then separates them 
     }),
   ).toBeTruthy();
   expect(document.querySelector(".facility-cluster")).toBeNull();
+});
+
+it("still zooms in when fitting a wide cluster would not", async () => {
+  handlers.clear();
+  view.stuck = true;
+  render(
+    <FacilityMap
+      facilities={[
+        {
+          id: "A",
+          name: "Synthetic A",
+          latitude: -0.075,
+          longitude: 34.76,
+          coordinates_synthetic: true,
+        },
+        {
+          id: "B",
+          name: "Synthetic B",
+          latitude: -0.0751,
+          longitude: 34.7601,
+          coordinates_synthetic: true,
+        },
+      ]}
+      risks={{}}
+    />,
+  );
+  const cluster = await screen.findByRole("button", { name: /^2 · 2 Unk/ });
+  act(() => cluster.click());
+  expect(view.jumps).toEqual([{ center: [34.76005, -0.07505], zoom: 11 }]);
 });

@@ -38,12 +38,12 @@ test("Kisumu map follows the selected synthetic scenario", async ({
   const cluster = map().locator(".facility-cluster").first();
   await expect(cluster).toHaveAttribute(
     "aria-label",
-    /^(\d+) · (Critical|Watch|Stable) · \1 synthetic facilities, worst status shown · .*Press Enter to zoom in\.$/,
+    /^(\d+)( · \d+ (Crit|Watch|Stable|Unk))+ · \1 synthetic facilities: .*; worst status (Critical|Watch|Stable|Unknown)\. Press Enter to zoom in\.$/,
   );
   await cluster.focus();
   // Each Enter zooms into the focused cluster; on narrow screens a large cluster first
   // splits into smaller clusters, and focus follows the group's first facility.
-  for (let step = 0; step < 4; step++) {
+  for (let step = 0; step < 6; step++) {
     await page.keyboard.press("Enter");
     await expect(page.locator(".facility-marker:focus")).toHaveCount(1);
     if (!(await page.locator(".facility-cluster:focus").count())) break;
@@ -238,11 +238,43 @@ test("the map summary matches the backend counts at each shock", async ({
     );
     const clusters = map.locator(".facility-cluster");
     await expect(clusters.first()).toBeVisible();
+    // Visible mix adds up to the cluster size and the text fits inside its pill.
+    for (const cluster of await clusters.evaluateAll((items) =>
+      items.map((item) => ({
+        size: Number((item as HTMLElement).dataset.count),
+        text: (item.lastElementChild as HTMLElement).textContent ?? "",
+        overflow:
+          item.scrollWidth > item.clientWidth + 1 ||
+          item.scrollHeight > item.clientHeight + 1,
+      })),
+    )) {
+      const [size, ...parts] = cluster.text.split(" · ");
+      expect(Number(size)).toBe(cluster.size);
+      expect(
+        parts.reduce((sum, part) => sum + Number(part.split(" ")[0]), 0),
+      ).toBe(cluster.size);
+      expect(cluster.overflow).toBe(false);
+    }
+    // No two cluster labels overlap on screen.
+    const boxes = await clusters.evaluateAll((items) =>
+      items.map((item) => {
+        const r = item.getBoundingClientRect();
+        return { left: r.left, right: r.right, top: r.top, bottom: r.bottom };
+      }),
+    );
+    for (let i = 0; i < boxes.length; i++)
+      for (let j = i + 1; j < boxes.length; j++)
+        expect(
+          boxes[i].right <= boxes[j].left ||
+            boxes[j].right <= boxes[i].left ||
+            boxes[i].bottom <= boxes[j].top ||
+            boxes[j].bottom <= boxes[i].top,
+        ).toBe(true);
     for (const label of await clusters.evaluateAll((items) =>
       items.map((item) => item.getAttribute("aria-label") ?? ""),
     ))
       expect(label).toMatch(
-        /^(\d+) · (Critical|Watch|Stable) · \1 synthetic facilities, worst status shown · /,
+        /^(\d+)( · \d+ (Crit|Watch|Stable|Unk))+ · \1 synthetic facilities: /,
       );
   }
   const result = await new AxeBuilder({ page }).analyze();

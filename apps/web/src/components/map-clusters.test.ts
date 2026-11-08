@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import fixture from "../fixtures/kisumu.json";
 import { risksForRun, riskSummary, worstStatus } from "../risk/risk";
-import { clusterPoints, CLUSTER_RADIUS_PX } from "./map-clusters";
+import { CLUSTER_BOX, clusterPoints, clusterText } from "./map-clusters";
 
 type Run = {
   horizon_days: number;
@@ -36,46 +36,22 @@ describe("clustering and risk counts on real version 5 runs (seed 42)", () => {
     [
       "0",
       [2, 0, 38],
-      [
-        "critical",
-        "stable",
-        "critical",
-        "stable",
-        "stable",
-        "stable",
-        "stable",
-      ],
+      ["critical", "critical", "stable", "stable", "stable", "stable"],
     ],
     [
       "20",
       [2, 5, 33],
-      ["critical", "stable", "critical", "watch", "watch", "stable", "watch"],
+      ["critical", "critical", "watch", "watch", "stable", "watch"],
     ],
     [
       "40",
       [10, 18, 12],
-      [
-        "critical",
-        "watch",
-        "critical",
-        "critical",
-        "critical",
-        "critical",
-        "watch",
-      ],
+      ["critical", "critical", "critical", "critical", "critical", "watch"],
     ],
     [
       "100",
       [40, 0, 0],
-      [
-        "critical",
-        "critical",
-        "critical",
-        "critical",
-        "critical",
-        "critical",
-        "critical",
-      ],
+      ["critical", "critical", "critical", "critical", "critical", "critical"],
     ],
   ] as const)(
     "at %s%% counts Critical/Watch/Stable and shows each cluster's worst status",
@@ -94,12 +70,42 @@ describe("clustering and risk counts on real version 5 runs (seed 42)", () => {
       expect(summary.unknown).toBe(0);
       expect(summary.total).toBe(40);
       expect(summary.alreadyShort).toBe(2);
-      expect(groups.map((group) => group.length)).toEqual([
-        6, 6, 6, 6, 6, 5, 5,
-      ]);
+      expect(groups.map((group) => group.length)).toEqual([12, 6, 6, 6, 5, 5]);
       expect(
         groups.map((group) => worstStatus(group.map((p) => p.risk))),
       ).toEqual(worst);
+    },
+  );
+
+  it.each(["0", "20", "40", "100"])(
+    "at %s%% each cluster label's status counts add up to the cluster size",
+    (magnitude) => {
+      const { risks, groups } = view(magnitude);
+      let total = 0;
+      for (const group of groups) {
+        const counts = riskSummary(
+          group.map((point) => point.id),
+          risks,
+        );
+        const text = clusterText(group.length, counts, {
+          critical: "Crit",
+          watch: "Watch",
+          stable: "Stable",
+          unknown: "Unk",
+        });
+        const [size, ...parts] = text.split(" · ");
+        expect(Number(size)).toBe(group.length);
+        expect(
+          parts.every((part) =>
+            /^[1-9]\d* (Crit|Watch|Stable|Unk)$/.test(part),
+          ),
+        ).toBe(true);
+        expect(
+          parts.reduce((sum, part) => sum + Number(part.split(" ")[0]), 0),
+        ).toBe(group.length);
+        total += group.length;
+      }
+      expect(total).toBe(40);
     },
   );
 
@@ -112,20 +118,43 @@ describe("clustering and risk counts on real version 5 runs (seed 42)", () => {
 });
 
 describe("cluster helpers", () => {
-  it("groups points within the radius of a group's first point, in order", () => {
+  it("merges groups whose centres are within one pill box, keeping tight clusters whole", () => {
+    const { width, height } = CLUSTER_BOX;
     const groups = clusterPoints([
       { x: 0, y: 0 },
-      { x: CLUSTER_RADIUS_PX, y: 0 },
-      { x: CLUSTER_RADIUS_PX + 1, y: 0 },
-      { x: 500, y: 500 },
+      { x: width + 1, y: 0 },
+      { x: 0, y: height },
+      { x: 1000, y: 1000 },
+      { x: 1001, y: 1001 },
     ]);
-    expect(groups.map((group) => group.length)).toEqual([2, 1, 1]);
+    expect(groups.map((group) => group.length)).toEqual([2, 1, 2]);
     expect(
       clusterPoints([
         { x: 0, y: 0 },
-        { x: 0, y: CLUSTER_RADIUS_PX + 1 },
+        { x: 0, y: height + 1 },
       ]),
     ).toHaveLength(2);
+  });
+
+  it("leaves no two cluster centres within one pill box on the real map at any scale", () => {
+    for (const scale of [300, 600, 900, COUNTY_SCALE]) {
+      const groups = clusterPoints(
+        panel.facilities.map((facility) => ({
+          x: facility.longitude * scale,
+          y: -facility.latitude * scale,
+        })),
+      );
+      const centres = groups.map((group) => ({
+        x: group.reduce((sum, p) => sum + p.x, 0) / group.length,
+        y: group.reduce((sum, p) => sum + p.y, 0) / group.length,
+      }));
+      for (let i = 0; i < centres.length; i++)
+        for (let j = i + 1; j < centres.length; j++)
+          expect(
+            Math.abs(centres[i].x - centres[j].x) > CLUSTER_BOX.width ||
+              Math.abs(centres[i].y - centres[j].y) > CLUSTER_BOX.height,
+          ).toBe(true);
+    }
   });
 
   it("orders worst status Critical, Watch, Unknown, Stable", () => {
@@ -135,4 +164,31 @@ describe("cluster helpers", () => {
     expect(worstStatus(["stable"])).toBe("stable");
     expect(worstStatus([])).toBe("unknown");
   });
+});
+
+it("formats the status mix worst first and skips empty statuses", () => {
+  expect(
+    clusterText(
+      6,
+      { critical: 2, watch: 3, stable: 1, unknown: 0 },
+      {
+        critical: "Crit",
+        watch: "Watch",
+        stable: "Stable",
+        unknown: "Unk",
+      },
+    ),
+  ).toBe("6 · 2 Crit · 3 Watch · 1 Stable");
+  expect(
+    clusterText(
+      5,
+      { critical: 0, watch: 0, stable: 4, unknown: 1 },
+      {
+        critical: "Crit",
+        watch: "Watch",
+        stable: "Stable",
+        unknown: "Unk",
+      },
+    ),
+  ).toBe("5 · 4 Stable · 1 Unk");
 });

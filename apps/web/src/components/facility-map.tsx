@@ -9,7 +9,7 @@ import {
   type FacilityRisk,
   type Risk,
 } from "../risk/risk";
-import { clusterPoints } from "./map-clusters";
+import { clusterPoints, clusterText, statusMix } from "./map-clusters";
 
 export type MapFacility = {
   id: string;
@@ -68,16 +68,27 @@ export function facilityMarkers(
 }
 
 /**
- * Room around the markers: half of a cluster pill (about 130 px wide, “6 · Critical”) plus a
- * margin left and right, half a 44 px marker plus a margin above and below, and extra space on
+ * Room around the markers: half of a cluster pill (at most 160 px wide, wrapping to two lines)
+ * plus a margin left and right, half a 44 px marker plus a margin above and below, and extra space on
  * the right (zoom controls) and bottom (attribution) so nothing sits under them.
  */
 export const MAP_FIT_PADDING = Object.freeze({
   top: 40,
-  left: 80,
-  right: 112,
+  left: 88,
+  right: 120,
   bottom: 56,
 });
+
+/** Narrow maps keep proportionally less side padding so phones are not zoomed far out. */
+export function mapFitPadding(width: number) {
+  const scale = Math.min(1, Math.max(0, width) / 900);
+  return {
+    top: MAP_FIT_PADDING.top,
+    bottom: MAP_FIT_PADDING.bottom,
+    left: Math.max(48, Math.round(MAP_FIT_PADDING.left * scale)),
+    right: Math.max(64, Math.round(MAP_FIT_PADDING.right * scale)),
+  };
+}
 
 export function FacilityMap({
   facilities,
@@ -186,7 +197,7 @@ export function FacilityMap({
           });
           const fit = () =>
             map?.fitBounds(bounds, {
-              padding: MAP_FIT_PADDING,
+              padding: mapFitPadding(container.current?.clientWidth ?? 0),
               maxZoom: 12,
               duration: 0,
             });
@@ -226,6 +237,12 @@ export function FacilityMap({
           // Regroup on every move: nearby markers share one cluster button at low zoom.
           const render = () => {
             if (!map) return;
+            // Keep keyboard focus on the facility it was on, whatever re-renders the markers.
+            const active = placed.find(
+              (item) => item.marker.getElement() === document.activeElement,
+            );
+            const keep = focusId ?? active?.ids[0] ?? null;
+            focusId = null;
             for (const item of placed) item.marker.remove();
             placed = [];
             const projected = markers.map((marker) => ({
@@ -259,14 +276,17 @@ export function FacilityMap({
                     members.map((item) => [item.facility.id, item.result]),
                   ),
                 );
-                const breakdown = (
-                  ["critical", "watch", "stable", "unknown"] as const
-                )
-                  .filter((status) => counts[status])
-                  .map((status) => `${counts[status]} ${t(status)}`)
+                const visible = clusterText(members.length, counts, {
+                  critical: t("shortCritical"),
+                  watch: t("shortWatch"),
+                  stable: t("shortStable"),
+                  unknown: t("shortUnknown"),
+                });
+                const breakdown = statusMix(counts)
+                  .map(([status, count]) => `${count} ${t(status)}`)
                   .join(", ");
                 // Starts with the visible text so the accessible name contains it.
-                const label = `${members.length} · ${t(worst)} · ${members.length} ${t("clusterFacilities")}, ${t("clusterWorst")} · ${breakdown}. ${t("clusterZoom")}`;
+                const label = `${visible} · ${members.length} ${t("clusterFacilities")}: ${breakdown}; ${t("clusterWorst")} ${t(worst)}. ${t("clusterZoom")}`;
                 button.className = `facility-marker facility-cluster facility-marker--${worst}`;
                 button.dataset.count = String(members.length);
                 button.setAttribute("aria-label", label);
@@ -274,26 +294,35 @@ export function FacilityMap({
                 symbol.textContent = symbols[worst];
                 const text = document.createElement("span");
                 text.setAttribute("aria-hidden", "true");
-                text.textContent = `${members.length} · ${t(worst)}`;
+                text.textContent = visible;
                 button.append(symbol, text);
-                const area = new library.LngLatBounds();
-                for (const item of members)
-                  area.extend([item.longitude, item.latitude]);
-                button.addEventListener("click", () => {
-                  followBounds = false;
-                  focusId = members[0].facility.id;
-                  map?.fitBounds(area, {
-                    padding: MAP_FIT_PADDING,
-                    maxZoom: 18,
-                    duration: 0,
-                  });
-                });
                 position = [
                   members.reduce((sum, item) => sum + item.longitude, 0) /
                     members.length,
                   members.reduce((sum, item) => sum + item.latitude, 0) /
                     members.length,
                 ];
+                const area = new library.LngLatBounds();
+                for (const item of members)
+                  area.extend([item.longitude, item.latitude]);
+                button.addEventListener("click", () => {
+                  if (!map) return;
+                  followBounds = false;
+                  focusId = members[0].facility.id;
+                  const before = map.getZoom();
+                  map.fitBounds(area, {
+                    padding: mapFitPadding(container.current?.clientWidth ?? 0),
+                    maxZoom: 18,
+                    duration: 0,
+                  });
+                  // A cluster spanning most of the view barely zooms when fitted; always
+                  // advance so repeated Enter keeps separating it.
+                  if (map.getZoom() < before + 1)
+                    map.jumpTo({
+                      center: position,
+                      zoom: Math.min(18, before + 2),
+                    });
+                });
               }
               placed.push({
                 marker: new library.Marker({ element: button })
@@ -302,12 +331,12 @@ export function FacilityMap({
                 ids: members.map((item) => item.facility.id),
               });
             }
-            // After a cluster zoom, keep keyboard focus on the group's first facility.
-            if (focusId) {
-              const target = placed.find((item) => item.ids.includes(focusId!));
-              focusId = null;
-              target?.marker.getElement().focus();
-            }
+            // After a cluster zoom, focus moves to the group's first facility.
+            if (keep)
+              placed
+                .find((item) => item.ids.includes(keep))
+                ?.marker.getElement()
+                .focus();
           };
           map.on("moveend", render);
           render();
