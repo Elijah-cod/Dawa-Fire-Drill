@@ -126,15 +126,13 @@ it("saves only after the person reviews every field and confirms", async () => {
 
 it("prefills extracted values and highlights unclear ones", async () => {
   setup(
-    vi
-      .fn()
-      .mockResolvedValue(
-        pending({
-          ...empty,
-          commodity_name: "Synthetic tracer",
-          opening_balance: 9,
-        }),
-      ),
+    vi.fn().mockResolvedValue(
+      pending({
+        ...empty,
+        commodity_name: "Synthetic tracer",
+        opening_balance: 9,
+      }),
+    ),
   );
   fireEvent.click(screen.getByLabelText(/synthetic bin card with no real/i));
   fireEvent.change(screen.getByLabelText(/bin-card photo/i), {
