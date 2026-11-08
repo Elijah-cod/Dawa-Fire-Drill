@@ -201,6 +201,11 @@ export function KisumuOverview({
   };
   const [tab, setTab] = useState<View>("overview");
   const [day, setDay] = useState(DEFAULT_DAY);
+  // The facility map starts only once its tab is shown, so it never sizes itself while hidden.
+  const [mapReady, setMapReady] = useState(false);
+  useEffect(() => {
+    if (tab === "facilities") setMapReady(true);
+  }, [tab]);
   useEffect(() => {
     // The navigation's funding link lands on this page with #funding-title.
     if (window.location.hash === "#funding-title") setTab("funding");
@@ -236,10 +241,7 @@ export function KisumuOverview({
   const mapProps = {
     facilities,
     risks: viewRisks,
-    onSelect: (id: string) => {
-      setSelected(id);
-      setTab("facilities");
-    },
+    onSelect: setSelected,
     preShock,
     magnitude: run && !previous ? magnitude : undefined,
   };
@@ -257,7 +259,7 @@ export function KisumuOverview({
       </button>
       <div className="desktop-grid">
         {/* One map at a time: the sheet's copy replaces this hidden one. */}
-        {!mapOpen && <FacilityMap {...mapProps} onSelect={setSelected} />}
+        {!mapOpen && <FacilityMap {...mapProps} />}
       </div>
       <dialog
         ref={dialog}
@@ -271,7 +273,7 @@ export function KisumuOverview({
             {t("closeMap")}
           </button>
         </div>
-        {mapOpen && <FacilityMap {...mapProps} onSelect={setSelected} />}
+        {mapOpen && <FacilityMap {...mapProps} />}
         <div className="map-drawer" aria-live="polite">
           {facility ? `${facility.name} · ${facility.id}` : t("selectFacility")}
         </div>
@@ -592,7 +594,7 @@ export function KisumuOverview({
                 }}
               />
             </section>
-            {canRun && mapSection}
+            {canRun && mapReady && mapSection}
             <section
               className="panel facility-detail"
               id="facility-detail"
