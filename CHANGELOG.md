@@ -1,5 +1,7 @@
 # Changelog
 
+- Added a favicon. Browser tests now cover the guided demo, funding trace, bin-card capture and clustered map in Swahili with the dark theme, including accessibility checks and the English-only note on the optimizer explanation.
+
 - Bin-card capture moves focus to the first empty field when extraction returns empty or partial values, and styles “Confirm and save” as the primary button.
 
 - The funding trace shows a four-step stage bar with the stalled stage marked by a pause symbol, “Stalled here” and a dashed border, and a two-column bottleneck detail.
