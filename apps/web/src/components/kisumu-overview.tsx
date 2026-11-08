@@ -315,9 +315,7 @@ export function KisumuOverview({
         >
           {controlsOpen ? t("hideScenario") : t("changeScenario")}
           <span className="change-scenario-current">
-            {magnitude === 0
-              ? t("scenarioNone")
-              : tf("scenarioCut", { n: magnitude })}
+            {magnitude === 0 ? t("scenarioNone") : `${magnitude}%`}
           </span>
         </button>
       )}
