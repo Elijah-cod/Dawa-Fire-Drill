@@ -117,14 +117,48 @@ function tabs() {
   }
 }
 
+const reducedMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
+let playing = null;
+
 function timeline() {
   const r = run();
   const soFar = r.stockouts.filter(([, , d]) => d <= state.day).length;
   const out = new Set(r.stockouts.filter(([, , d]) => d <= state.day).map(([f]) => f)).size;
-  document.getElementById("timeline").innerHTML = `
-    <label class="field-label" for="day" style="margin:0">Day</label>
-    <input id="day" type="range" min="0" max="${H}" value="${state.day}" />
-    <p class="readout">Day <strong>${state.day}</strong> of ${H}: <strong>${soFar}</strong> of ${r.stockouts.length} stockouts so far, <strong>${out}</strong> of 40 facilities out of at least one commodity. <span class="modeled">Modeled, no intervention.</span></p>`;
+  const el = document.getElementById("timeline");
+  if (!el.firstChild) {
+    el.innerHTML = `
+      <div class="btn-row" role="group" aria-label="Timeline">
+        <button class="btn" type="button" id="prev-week" aria-label="Back one week">${icon("i-prev", "icon")}</button>
+        ${reducedMotion ? "" : `<button class="btn" type="button" id="play" aria-label="Play the run">${icon("i-play", "icon")}</button>`}
+        <button class="btn" type="button" id="next-week" aria-label="Forward one week">${icon("i-next", "icon")}</button>
+      </div>
+      <div><label class="visually-hidden" for="day">Day of the ${H}-day run</label><input id="day" type="range" min="0" max="${H}" /></div>
+      <p class="readout" id="readout" aria-live="polite"></p>`;
+  }
+  document.getElementById("day").value = state.day;
+  document.getElementById("readout").innerHTML = `Day <strong>${state.day}</strong> of ${H}: <strong>${soFar}</strong> of ${r.stockouts.length} stockouts so far, <strong>${out}</strong> of 40 facilities out of at least one commodity. <span class="modeled">Modeled, no intervention.</span>`;
+}
+
+function setDay(day) {
+  state.day = Math.min(H, Math.max(0, day));
+  timeline();
+  map();
+}
+
+function togglePlay() {
+  const b = document.getElementById("play");
+  if (playing) {
+    clearInterval(playing);
+    playing = null;
+  } else {
+    if (state.day >= H) setDay(0);
+    playing = setInterval(() => {
+      setDay(state.day + 1);
+      if (state.day >= H) togglePlay();
+    }, 120);
+  }
+  b.setAttribute("aria-label", playing ? "Pause the run" : "Play the run");
+  b.innerHTML = icon(playing ? "i-pause" : "i-play", "icon");
 }
 
 function map() {
@@ -133,22 +167,51 @@ function map() {
   const areas = {};
   for (const f of D.facilities) (areas[f.sub] ??= []).push(f);
   const lon = [34.48, 35.22], lat = [-0.38, 0.0];
-  el.innerHTML = "";
   const outBy = new Set(r.stockouts.filter(([, , d]) => d <= state.day).map(([f]) => f));
-  for (const [sub, list] of Object.entries(areas)) {
+  const legendText = `<div class="map-legend"><strong>Out by day ${state.day} / facilities in the area.</strong>
+      <span class="key"><span class="area-key" data-out="none"></span>None out</span>
+      <span class="key"><span class="area-key" data-out="some"></span>Some out</span>
+      <span class="key"><span class="area-key" data-out="all"></span>All out</span>
+      <span class="key">Positions are invented.</span></div>`;
+  el.innerHTML = legendText;
+  const W = el.clientWidth, Hh = el.clientHeight - el.querySelector(".map-legend").offsetHeight - 16;
+  const MW = 60, MH = 48;
+  // Place by synthetic coordinates, then nudge overlapping markers apart vertically.
+  const pts = Object.entries(areas).map(([sub, list]) => {
     const x = list.reduce((s, f) => s + f.lon, 0) / list.length;
     const y = list.reduce((s, f) => s + f.lat, 0) / list.length;
     const out = list.filter((f) => outBy.has(f.id)).length;
-    const b = document.createElement("button");
-    b.type = "button";
-    b.className = "area";
-    b.dataset.out = out === 0 ? "none" : out === list.length ? "all" : "some";
-    b.style.left = `${6 + ((x - lon[0]) / (lon[1] - lon[0])) * 88}%`;
-    b.style.top = `${10 + ((lat[1] - y) / (lat[1] - lat[0])) * 74}%`;
-    b.textContent = `${out}/${list.length}`;
-    b.setAttribute("aria-label", `${sub}: ${out} of ${list.length} facilities out by day ${state.day}`);
-    el.append(b);
+    return { sub, list, out, x: MW / 2 + 8 + ((x - lon[0]) / (lon[1] - lon[0])) * (W - MW - 16), y: MH / 2 + 8 + ((lat[1] - y) / (lat[1] - lat[0])) * (Hh - MH - 8) };
+  });
+  for (let pass = 0; pass < 40; pass++) {
+    let moved = false;
+    for (let i = 0; i < pts.length; i++)
+      for (let j = i + 1; j < pts.length; j++) {
+        const a = pts[i], b = pts[j];
+        if (Math.abs(a.x - b.x) < MW + 4 && Math.abs(a.y - b.y) < MH + 4) {
+          const push = (MH + 4 - Math.abs(a.y - b.y)) / 2 + 1;
+          const [top, bottom] = a.y <= b.y ? [a, b] : [b, a];
+          top.y -= push;
+          bottom.y += push;
+          // When vertical room runs out, also ease apart sideways.
+          const side = (MW + 4 - Math.abs(a.x - b.x)) / 4;
+          const [left, right] = a.x <= b.x ? [a, b] : [b, a];
+          left.x -= side;
+          right.x += side;
+          moved = true;
+        }
+      }
+    for (const p of pts) {
+      p.y = Math.min(Hh - MH / 2, Math.max(MH / 2 + 4, p.y));
+      p.x = Math.min(W - MW / 2 - 4, Math.max(MW / 2 + 4, p.x));
+    }
+    if (!moved) break;
   }
+  const markers = pts.map(({ sub, list, out, x, y }) => {
+    const level = out === 0 ? "none" : out === list.length ? "all" : "some";
+    return `<span class="area" role="img" data-out="${level}" style="left:${x}px;top:${y}px" aria-label="${sub}: ${out} of ${list.length} facilities out by day ${state.day}">${out}/${list.length}</span>`;
+  });
+  el.innerHTML = markers.join("") + legendText;
 }
 
 function areaList() {
@@ -366,13 +429,29 @@ document.getElementById("compare").addEventListener("click", (e) => {
   state.compare = b.dataset.compare;
   render();
 });
-document.querySelector('[role="tablist"]').addEventListener("click", (e) => {
+const tablist = document.querySelector('[role="tablist"]');
+tablist.addEventListener("click", (e) => {
   const t = e.target.closest('[role="tab"]');
   if (!t) return;
   state.tab = t.id.slice(2);
   tabs();
 });
+// Automatic activation: arrows, Home and End move to and select a tab.
+tablist.addEventListener("keydown", (e) => {
+  const all = [...tablist.querySelectorAll('[role="tab"]')];
+  const i = all.findIndex((t) => t.id === `t-${state.tab}`);
+  const next = { ArrowRight: i + 1, ArrowLeft: i - 1, Home: 0, End: all.length - 1 }[e.key];
+  if (next === undefined) return;
+  e.preventDefault();
+  const t = all[(next + all.length) % all.length];
+  state.tab = t.id.slice(2);
+  tabs();
+  t.focus();
+});
 document.addEventListener("click", (e) => {
+  if (e.target.closest("#prev-week")) setDay(state.day - 7);
+  if (e.target.closest("#next-week")) setDay(state.day + 7);
+  if (e.target.closest("#play")) togglePlay();
   if (e.target.id === "retry") {
     failed = false;
     fixes();
@@ -385,10 +464,5 @@ document.addEventListener("input", (e) => {
     document.getElementById(id).focus();
     return;
   }
-  if (e.target.id === "day") {
-    state.day = Number(e.target.value);
-    timeline();
-    map();
-    document.getElementById("day").focus();
-  }
+  if (e.target.id === "day") setDay(Number(e.target.value));
 });

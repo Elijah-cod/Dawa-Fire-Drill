@@ -506,13 +506,18 @@ h1 {
   box-shadow: var(--shadow);
   font-size: var(--text-xs);
 }
+.area,
+.area-key {
+  border: 2px solid var(--primary);
+  background: var(--surface);
+}
 .area {
   position: absolute;
   transform: translate(-50%, -50%);
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-width: 52px;
+  min-width: 56px;
   min-height: 44px;
   padding: 0 var(--space-2);
   border-radius: var(--radius-pill);
@@ -524,12 +529,14 @@ h1 {
   cursor: pointer;
   box-shadow: var(--shadow);
 }
-.area[data-out="some"] {
+.area[data-out="some"],
+.area-key[data-out="some"] {
   border-color: var(--critical);
   background: var(--critical-soft);
   color: var(--critical);
 }
-.area[data-out="all"] {
+.area[data-out="all"],
+.area-key[data-out="all"] {
   border-color: var(--out);
   background: var(--out);
   color: var(--surface);
@@ -922,4 +929,24 @@ tr[aria-selected="true"] {
 .detail-list dd {
   margin: 0;
   font-weight: 700;
+}
+.map-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1) var(--space-3);
+  align-items: center;
+}
+.map-legend strong {
+  flex-basis: 100%;
+}
+.key {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+.area-key {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
 }
