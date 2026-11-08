@@ -25,7 +25,7 @@ else
 fi
 rm -rf "$state"
 
-export APP_ENV=local DEMO_ROLE_SWITCHER=false SUPABASE_URL="" SUPABASE_JWT_SECRET=""
+export APP_ENV=local DEMO_ROLE_SWITCHER=false SUPABASE_URL="" SUPABASE_JWT_SECRET="" RATE_LIMIT_PER_MINUTE=60
 docker compose -f "$compose" up -d --no-deps --no-build api >/dev/null 2>&1 ||
   fail "Could not restore the api container."
 for ((attempt = 0; attempt < 60; attempt++)); do

@@ -27,7 +27,10 @@ chmod 700 "$state"
 trap 'rm -f "$state/build.log"' EXIT
 
 printf '%s\n' 'Synthetic data only; all outputs are illustrative and unvalidated.'
+# One shared demo identity drives the browser suite and Lighthouse, so the
+# local session raises the per-subject limit; demo-down restores the default.
 export APP_ENV=local DEMO_ROLE_SWITCHER=true SUPABASE_URL="https://synthetic-demo.invalid"
+export RATE_LIMIT_PER_MINUTE=600
 SUPABASE_JWT_SECRET="$(python3 -c 'import secrets; print(secrets.token_urlsafe(48))')"
 export SUPABASE_JWT_SECRET
 printf '%s\n' 'Recreating the api container with disposable demo signing material…'
@@ -50,7 +53,13 @@ print(jwt.encode({
     "exp": now + datetime.timedelta(hours=4),
     "iss": os.environ["SUPABASE_URL"] + "/auth/v1",
     "aud": "authenticated",
-    "app_metadata": {"role": "admin", "country_code": "KE"},
+    # The web demo starts on the national overview and opens the Kisumu pilot.
+    "app_metadata": {
+        "role": "admin",
+        "country_code": "KE",
+        "county_code": "042",
+        "national_planning": True,
+    },
 }, os.environ["SUPABASE_JWT_SECRET"], algorithm="HS256"))
 ' 2>/dev/null)" || fail "Could not create the synthetic demo token."
 unset SUPABASE_JWT_SECRET
@@ -68,7 +77,6 @@ fi
   nohup npm run start -- -p "$web_port" >"$state/web.log" 2>&1 &
   printf '%s\n' "$!" >"$state/web.pid"
 )
-unset DEMO_API_TOKEN
 started=false
 for ((attempt = 0; attempt < 60; attempt++)); do
   if curl --silent --fail -o /dev/null "http://localhost:$web_port/kisumu" 2>/dev/null; then
@@ -79,3 +87,14 @@ done
 [[ "$started" == true ]] || fail "Web server did not start; see $state/web.log."
 printf '%s\n' "Demo ready: http://localhost:$web_port/kisumu (token valid for 4 hours)."
 printf '%s\n' 'Stop with: bash scripts/demo-down.sh'
+# Optional: `demo-up.sh -- <command>` runs a local check (for example the
+# Playwright token-leak canary) from apps/web with E2E_DEMO_TOKEN in its
+# environment only. The session keeps running afterwards.
+[[ "${1:-}" == "--" ]] && shift
+if (($# > 0)); then
+  status=0
+  (cd "$root/apps/web" && E2E_DEMO_TOKEN="$DEMO_API_TOKEN" "$@") || status=$?
+  unset DEMO_API_TOKEN
+  exit "$status"
+fi
+unset DEMO_API_TOKEN

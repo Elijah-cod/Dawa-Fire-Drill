@@ -9,6 +9,7 @@ services:
       DEMO_ROLE_SWITCHER: ${DEMO_ROLE_SWITCHER:-false}
       SUPABASE_URL: ${SUPABASE_URL:-}
       SUPABASE_JWT_SECRET: ${SUPABASE_JWT_SECRET:-}
+      RATE_LIMIT_PER_MINUTE: ${RATE_LIMIT_PER_MINUTE:-60}
     ports:
       - "8000:8000"
     depends_on:

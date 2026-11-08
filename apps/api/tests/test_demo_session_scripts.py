@@ -25,7 +25,8 @@ def tools(tmp_path: Path) -> Path:
     seen = tmp_path / "token-seen"
     fake(
         bin_dir / "docker",
-        f'printf "docker %s switcher=%s\\n" "$*" "$DEMO_ROLE_SWITCHER" >> {log}\n'
+        'printf "docker %s switcher=%s limit=%s\\n" "$*" "$DEMO_ROLE_SWITCHER" '
+        f'"$RATE_LIMIT_PER_MINUTE" >> {log}\n'
         f'printf "%s" "$SUPABASE_JWT_SECRET" > {secret}\n',
     )
     fake(bin_dir / "curl", "exit 0\n")
@@ -45,7 +46,7 @@ def tools(tmp_path: Path) -> Path:
     return tmp_path
 
 
-def run(script: str, tmp_path: Path, **extra: str) -> subprocess.CompletedProcess[str]:
+def run(script: str, tmp_path: Path, *args: str, **extra: str) -> subprocess.CompletedProcess[str]:
     env = os.environ | {
         "PATH": f"{tmp_path / 'bin'}:{os.environ['PATH']}",
         "DAWA_DEMO_STATE_DIR": str(tmp_path / "state"),
@@ -53,7 +54,7 @@ def run(script: str, tmp_path: Path, **extra: str) -> subprocess.CompletedProces
     env.pop("APP_ENV", None)
     env.update(extra)
     return subprocess.run(
-        ["bash", str(ROOT / "scripts" / script)],
+        ["bash", str(ROOT / "scripts" / script), *args],
         env=env,
         capture_output=True,
         text=True,
@@ -103,7 +104,7 @@ def test_up_passes_token_by_environment_only_and_down_restores(tools: Path) -> N
         assert stat.S_IMODE(state.stat().st_mode) == 0o700
         assert not (state / "build.log").exists()
         calls = (tools / "calls.log").read_text()
-        assert "up -d --no-deps --no-build api switcher=true" in calls
+        assert "up -d --no-deps --no-build api switcher=true limit=600" in calls
         assert "npm run build" in calls
         assert "npm run start -- -p 3300" in calls
         assert "http://localhost:3300/kisumu" in up.stdout
@@ -112,8 +113,24 @@ def test_up_passes_token_by_environment_only_and_down_restores(tools: Path) -> N
         down = run("demo-down.sh", tools)
     assert down.returncode == 0, down.stderr
     assert "API restored to default settings" in down.stdout
-    assert "switcher=false" in (tools / "calls.log").read_text().splitlines()[-1]
+    assert "switcher=false limit=60" in (tools / "calls.log").read_text().splitlines()[-1]
     assert (tools / "secret-seen").read_text() == ""
     assert not state.exists()
     with pytest.raises(ProcessLookupError):
         os.kill(pid, 0)
+
+
+def test_up_passes_canary_only_to_an_explicit_local_check(tools: Path) -> None:
+    check = 'test "$E2E_DEMO_TOKEN" = "' + TOKEN + '" && pwd && echo canary-ok'
+    up = run("demo-up.sh", tools, "--", "sh", "-c", check)
+    try:
+        assert up.returncode == 0, up.stderr
+        assert "canary-ok" in up.stdout
+        assert up.stdout.rstrip().splitlines()[-2].endswith("apps/web")
+        assert TOKEN not in up.stdout + up.stderr
+        failing = run("demo-down.sh", tools)
+        assert failing.returncode == 0
+        up = run("demo-up.sh", tools, "--", "sh", "-c", "exit 3")
+        assert up.returncode == 3
+    finally:
+        run("demo-down.sh", tools)
