@@ -133,11 +133,14 @@ export function KisumuOverview({
           {t("openFacilityMap")}
         </button>
         <div className="desktop-grid">
-          <FacilityMap
-            facilities={facilities}
-            risks={risks}
-            onSelect={setSelected}
-          />
+          {/* One map at a time: the sheet's copy replaces this hidden one. */}
+          {!mapOpen && (
+            <FacilityMap
+              facilities={facilities}
+              risks={risks}
+              onSelect={setSelected}
+            />
+          )}
         </div>
         <dialog
           ref={dialog}
@@ -211,7 +214,8 @@ export function KisumuOverview({
                 ? t("previousRun")
                 : ""}
         </p>
-        {previous && <p>{t("previousRun")}</p>}
+        {/* Always rendered so the line's removal cannot shift the page. */}
+        <p className="previous-note">{previous ? t("previousRun") : ""}</p>
       </section>
       {magnitude > 0 && (
         <section className="panel shock-panel" aria-busy={pending}>

@@ -99,7 +99,37 @@ it("reserves the shock and ranked panels while the shock run is pending", async 
   expect(
     container.querySelector(".shock-panel")?.getAttribute("aria-busy"),
   ).toBe("true");
+  expect(container.querySelector(".previous-note")).not.toBeNull();
   expect(container.querySelector(".rank-placeholder")?.textContent).toMatch(
     /Do this first.*Ranking feasible actions/,
+  );
+});
+
+it("renders a single facility map while the mobile sheet is open", async () => {
+  HTMLDialogElement.prototype.showModal ??= function (this: HTMLDialogElement) {
+    this.open = true;
+  };
+  const panel = {
+    synthetic: true,
+    county_code: "042",
+    country_code: "KE",
+    seed: 42,
+    facilities: [],
+    subcounties: [],
+    commodities: [],
+    consumption: [],
+    stock: [],
+  } as unknown as PilotPanel;
+  const scenario = {
+    submit: vi.fn(() => new Promise<never>(() => {})),
+    read: vi.fn(),
+  };
+  render(<KisumuOverview panel={panel} scenario={scenario} />);
+  expect(screen.getAllByText("Facility locations are synthetic.")).toHaveLength(
+    1,
+  );
+  fireEvent.click(screen.getByRole("button", { name: /open facility map/i }));
+  expect(screen.getAllByText("Facility locations are synthetic.")).toHaveLength(
+    1,
   );
 });

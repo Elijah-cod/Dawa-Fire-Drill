@@ -164,7 +164,8 @@ p {
   font-weight: 600;
 }
 /* Reserved from measured fixture-run heights so arriving results do not shift the page. */
-.scenario-status {
+.scenario-status,
+.previous-note {
   min-height: 1.5em;
 }
 .shock-panel {
