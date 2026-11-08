@@ -25,7 +25,7 @@ test("Kisumu map follows the selected synthetic scenario", async ({
   );
   await expect(
     page.getByRole("region", { name: "Illustrative stockout risk" }),
-  ).toContainText("8–30 days");
+  ).toContainText("46–52 days");
   await page
     .getByRole("heading", { name: "Facility locations are synthetic." })
     .scrollIntoViewIfNeeded();
@@ -52,7 +52,7 @@ test("Kisumu map follows the selected synthetic scenario", async ({
   );
   await expect(watch).toHaveAttribute(
     "aria-label",
-    /Watch · 26 days to stockout/,
+    /Critical · 26 days to stockout/,
     {
       timeout: 30000,
     },

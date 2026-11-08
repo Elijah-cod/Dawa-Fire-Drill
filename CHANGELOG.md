@@ -1,5 +1,7 @@
 # Changelog
 
+- Updated browser checks, Lighthouse results and README screenshots for the new risk cutoffs; added a facility-map screenshot at 40%.
+
 - Shortened the “Do this first” intro to two lines and moved the cost assumptions and targeted stockouts behind “How these options are built”.
 
 - The facility map fits all markers with padding that clears the zoom and attribution controls, and refits when it is resized.

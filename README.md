@@ -34,6 +34,8 @@ All screens show synthetic data; every number is illustrative and unvalidated.
 | Funding trace: 100,000 KES approved, not released, 90 days | Shock summary at 40%: first stockout and busiest week |
 | ![Guided demo on a phone](docs/screenshots/readme-tour-mobile-390.png) | ![Bin-card capture awaiting human confirmation](docs/screenshots/readme-capture-confirm-390.png) |
 | Guided demo at 390 px | Bin-card capture: nothing is saved until “Confirm and save” |
+| ![Kisumu facility map at a 40% shock with the risk legend](docs/screenshots/readme-map-40-1280.png) | |
+| Facility map at 40%: 10 Critical, 18 Watch, 12 Stable (overlapping markers per cluster) | |
 
 ## Local quickstart
 
@@ -67,8 +69,8 @@ The health response identifies the synthetic-data policy. API documentation is a
 Start at `http://localhost:3300/` and press **Try the 3-minute demo**. Each step has a caption, **Back**, **Next step** and **Exit demo**; Escape also exits. The demo only navigates, applies the 40% shock, presses Rank once and switches to the facility role for capture; everything shown comes from the normal screens.
 
 1. **National overview (≈20 s).** “Forty-seven counties on a schematic grid, not a map. Every value is synthetic and illustrative.”
-2. **Kisumu pilot (≈20 s).** “Kisumu is the only facility-level pilot: forty invented facilities at invented locations. Risk uses shape and text, not only color.”
-3. **Apply a 40% shock (≈20 s).** “Donor logistics support drops by 40% and the county model reruns.”
+2. **Kisumu pilot (≈20 s).** “Kisumu is the only facility-level pilot: forty invented facilities at invented locations. With no shock, 38 are Stable; the two Critical ones are labeled ‘Already short before the shock’. Risk uses shape and text, not only color.”
+3. **Apply a 40% shock (≈20 s).** “Donor logistics support drops by 40% and the county model reruns: 10 facilities are now Critical, 18 Watch and 12 Stable.”
 4. **First stockout (≈30 s).** “A one-line summary: at 40%, 211 stockouts against 2 with no shock, 209 caused by the shock. The first is SYN-KE-042-F031 running out of SYN-C04 on day 41; the most fall in days 71–77. The full order is one click away. Act on the earliest first.”
 5. **Funding trace (≈30 s).** “One synthetic flow: 100,000 KES approved but not released, waiting 90 days.”
 6. **Ranked fix (≈40 s).** “For each of the four earliest shock-caused stockouts, OR-Tools compares a 10 KES transfer from a nearby facility with a 50 KES emergency delivery, maximizing modeled days deferred within a 30 KES ceiling. It funds three transfers; the fourth sits below the cut line because it no longer fits the remaining budget, and every emergency delivery costs more than the ceiling. Costs are assumptions, and the explanation only restates the optimizer's result.”
@@ -90,6 +92,7 @@ See [agent rules](AGENTS.md), [current progress](docs/PROGRESS.md), [design appr
 - **Language.** Swahili strings, and the English-only optimizer explanation, need native-speaker review.
 - **No production sign-in.** The demo uses a server-side proxy with a privileged synthetic token, allowed only in local or staging environments behind external access control.
 - **Risk cutoffs are tuned, not a standard.** Map labels use Critical within 45 days, Watch 46–52 and Stable beyond 52. These cutoffs were tuned to make this synthetic scenario readable, are relative to the 90-day simulation horizon, and are not a standard. A facility takes the status of its worst commodity.
+- **Map markers overlap.** Each invented cluster holds five or six facilities within about 300 m, so at county zoom their markers stack and only the top one is visible; zoom in or use the facility list.
 - **Performance and design gaps.** The interactive Lighthouse flow meets its performance budget. Its layout shift ranged from 0.006 to 0.203 in earlier runs; the latest run, after the shock card change, measured 0.001, but one run does not show the issue is resolved. The flow is not in CI. Bottom navigation, several design states and screenshot review against the approved design are outstanding. See [progress](docs/PROGRESS.md) and [Phase 3 notes](docs/phases/3.md).
 
 ## Next steps
