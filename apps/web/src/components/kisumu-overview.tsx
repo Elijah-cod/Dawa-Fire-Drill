@@ -244,6 +244,16 @@ export function KisumuOverview({
       navigatingTo.current = null;
     }
     written.current = tab;
+    // Write only when the view differs from what the URL already says (missing values
+    // mean the defaults), so loading the page never rewrites the URL under a click.
+    const shown = readLinkState(window.location.search);
+    if (
+      shown.shock === shock &&
+      shown.budget === ranking.budget &&
+      shown.tab === tab &&
+      shown.day === day
+    )
+      return;
     const search = writeLinkState(window.location.search, {
       shock,
       budget: ranking.budget,
