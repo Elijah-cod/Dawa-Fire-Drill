@@ -331,6 +331,20 @@ export function FacilityMap({
                 ids: members.map((item) => item.facility.id),
               });
             }
+            // A wide cluster label near the edge of a narrow map can overhang it; nudge the
+            // label sideways so it stays inside, still over its own area.
+            const frame = container.current?.getBoundingClientRect();
+            if (frame && frame.width > 0)
+              for (const item of placed) {
+                const box = item.marker.getElement().getBoundingClientRect();
+                const shift =
+                  box.left < frame.left + 4
+                    ? frame.left + 4 - box.left
+                    : box.right > frame.right - 4
+                      ? frame.right - 4 - box.right
+                      : 0;
+                if (shift) item.marker.setOffset([shift, 0]);
+              }
             // After a cluster zoom, focus moves to the group's first facility.
             if (keep)
               placed
