@@ -29,7 +29,7 @@ All screens show synthetic data; every number is illustrative and unvalidated.
 | | |
 | --- | --- |
 | ![National overview with the guided demo open](docs/screenshots/readme-overview-tour-1280.png) | ![Ranked fixes: funded transfers above the budget cut line, unfunded actions below it](docs/screenshots/readme-ranked-fix-1280.png) |
-| National overview with the guided demo (1280 px) | Ranked fixes at 30 KES: three transfers funded, the fourth cut by the remaining budget |
+| National overview with the guided demo (1280 px) | Ranked fixes at 30 units: three transfers funded, the fourth cut by the remaining budget |
 | ![Funding trace with the stalled stage marked](docs/screenshots/readme-funding-trace-1280.png) | ![Shock card with the stockout summary](docs/screenshots/readme-first-stockout-1280.png) |
 | Funding trace: stage bar stalled at Released; 100,000 KES approved, not released, 90 days | Shock summary at 40%: first stockout and busiest week |
 | ![Facility map at a 40% shock with clusters and counts](docs/screenshots/readme-map-40-1280.png) | ![Kisumu on a phone with the bottom navigation bar](docs/screenshots/readme-mobile-nav-390.png) |
@@ -66,17 +66,17 @@ The health response identifies the synthetic-data policy. API documentation is a
 
 ## Three-minute demo script
 
-Start at `http://localhost:3300/` and press **Try the 3-minute demo**. Each step has a caption, **Back**, **Next step** and **Exit demo**; Escape also exits. The demo only navigates, applies the 40% shock, presses Rank once and switches to the facility role for capture; everything shown comes from the normal screens.
+Start at `http://localhost:3300/` and press **Try the 3-minute demo**. Each step has a caption, **Back**, **Next step** and **Exit demo**; Escape also exits. The demo only navigates, opens the tab each step needs and switches to the facility role for capture; everything shown comes from the normal screens.
 
 1. **National overview (≈20 s).** “Forty-seven counties on a schematic grid, not a map. Every value is synthetic and illustrative.”
-2. **Kisumu pilot (≈20 s).** “Kisumu is the only facility-level pilot: forty invented facilities at invented locations. With no shock, 38 are Stable; the two Critical ones are labeled ‘Already short before the shock’. Risk uses shape and text, not only color.”
-3. **Apply a 40% shock (≈20 s).** “Donor logistics support drops by 40% and the county model reruns: 10 facilities are now Critical, 18 Watch and 12 Stable.”
-4. **First stockout (≈30 s).** “A one-line summary: at 40%, 211 stockouts against 2 with no shock, 209 caused by the shock. The first is SYN-KE-042-F031 running out of SYN-C04 on day 41; the most fall in days 71–77. The full order is one click away. Act on the earliest first.”
+2. **Kisumu pilot (≈20 s).** “Kisumu is the only facility-level pilot: forty invented facilities with invented names at invented locations. The page answers first: what breaks, how far the fixes reach, and the cheapest fix within the budget.”
+3. **Apply a 40% shock (≈20 s).** “Four prepared scenarios; at a 40% cut in donor logistics support, 10 facilities are Critical, 18 Watch and 12 Stable. Compare flips to the no-shock run, where only the two facilities already short before the shock are Critical.”
+4. **First stockout (≈30 s).** “The verdict: 209 stockouts caused by the shock; Tamarind Crossing Sub-County Hospital (Kisumu West) runs out of family planning tracer 04 first, on day 41. The fixes address only the 4 earliest of those 209. ‘209 stockouts’ opens the full order; the timeline under Where it breaks plays the run week by week.”
 5. **Funding trace (≈30 s).** “One synthetic flow: the stage bar shows money approved but stalled before release; 100,000 KES has waited 90 days.”
-6. **Ranked fix (≈40 s).** “For each of the four earliest shock-caused stockouts, OR-Tools compares a 10 KES transfer from a nearby facility with a 50 KES emergency delivery, maximizing modeled days deferred within a 30 KES ceiling. It funds three transfers; the fourth sits below the cut line because it no longer fits the remaining budget, and every emergency delivery costs more than the ceiling. Costs are assumptions, and the explanation only restates the optimizer's result.”
+6. **Ranked fix (≈40 s).** “For each of the four earliest shock-caused stockouts, OR-Tools compares a 10-unit transfer from a nearby facility with a 50-unit emergency delivery, maximizing modeled days deferred within a 30-unit budget (illustrative cost units, not prices). It funds three transfers; the fourth sits below the cut line because it no longer fits the remaining budget, and every emergency delivery costs more than the budget. The budget slider re-ranks live. Costs are assumptions, and ‘Why these picks?’ only restates the optimizer's result.”
 7. **Bin-card capture (≈20 s).** “The facility in-charge uploads a synthetic bin-card photo. With no extraction provider configured locally, the fields come back empty, focus moves to the first one, and they type all four values from the photo. Nothing is saved until they confirm.”
 
-Press **Finish demo**. To show a different budget, change “Budget ceiling (KES)”: at 100 KES all four transfers are funded and each emergency delivery is excluded because a cheaper option covers the same stockout; at 5 KES nothing fits and every action is excluded as over the ceiling.
+Press **Finish demo**. To show a different budget, move “Budget (illustrative units)”: at 100 units all four transfers are funded and each emergency delivery is excluded because a cheaper option covers the same stockout; at 5 units nothing fits and every action is excluded as over the ceiling.
 
 For the Python test suite, install `uv`, then run `cd apps/api && uv sync --frozen --extra dev && uv run --frozen pytest -q`. Web checks run from `apps/web`: `npm run lint`, `npm run typecheck`, `npx vitest run`; browser tests need a running demo session (`bash scripts/demo-up.sh -- npx playwright test`). The authenticated synthetic scenario demo and its prerequisites are in [Phase 2 notes](docs/phases/2.md).
 
@@ -86,7 +86,7 @@ See [agent rules](AGENTS.md), [current progress](docs/PROGRESS.md), [design appr
 
 - **Synthetic and unvalidated.** All data is invented or calibrated only to public aggregates; forecasts, stockout days, deferrals and rankings are illustrative and have not been validated against real outcomes. Do not use them for operational decisions.
 - **Not a geographic map of counties.** The national view is a schematic 47-county grid because boundary data rights are unresolved. Kisumu facility locations are invented.
-- **Narrow ranking.** The ranked fix compares planted candidates for the four earliest shock-caused stockouts: one synthetic transfer and one emergency delivery each, with assumed costs (10 and 50 KES) and the same assumed quantity and arrival day. Candidates are not generated for other stockouts or other kinds of action.
+- **Narrow ranking.** The ranked fix compares planted candidates for the four earliest shock-caused stockouts: one synthetic transfer and one emergency delivery each, with assumed costs (10 and 50 illustrative units) and the same assumed quantity and arrival day. Candidates are not generated for other stockouts or other kinds of action.
 - **Funding trace is a slice.** One planted stalled-release flow with a four-step stage bar, amounts and ageing. The partial-graph state, filters and a dedicated Funding page are not built.
 - **Capture is online only and unreviewed for extraction quality.** There is no offline queue. The local stack has no extraction provider, so fields are typed by hand when extraction returns empty or partial values. If the upload itself fails, no capture record exists and manual entry cannot be offered; the user must retake or retry the photo. No real LLM provider has been exercised end to end.
 - **Language.** Swahili strings, and the English-only optimizer explanation, need native-speaker review.
