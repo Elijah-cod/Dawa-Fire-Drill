@@ -187,9 +187,18 @@ export function KisumuEntry({ mode }: { mode: Mode }) {
   // Capture belongs to the facility in-charge: the capture link and the demo's capture step
   // open that role; leaving the demo's capture step returns to the planner.
   const [role, setRole] = useState<DemoRole>("planner");
-  const view = useSearchParams().get("view");
+  // The capture view opens the facility role; leaving that view (a link, back or forward)
+  // returns to the planner, unless the role was picked by hand.
+  const view = useSearchParams()?.get("view");
+  const fromView = useRef(false);
   useEffect(() => {
-    if (view === "capture") setRole("facility");
+    if (view === "capture") {
+      fromView.current = true;
+      setRole("facility");
+    } else if (fromView.current) {
+      fromView.current = false;
+      setRole("planner");
+    }
   }, [view]);
   const { step } = useTour();
   const previousStep = useRef(step);
