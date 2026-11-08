@@ -72,7 +72,15 @@ export function TourProvider({ children }: { children: ReactNode }) {
   );
   const exit = useCallback(() => {
     setStep(null);
-    window.history.replaceState(null, "", pathname);
+    // Leave the rest of the URL (such as the Kisumu tab) as it is.
+    const query = new URLSearchParams(window.location.search);
+    query.delete("tour");
+    const search = query.toString();
+    window.history.replaceState(
+      null,
+      "",
+      `${pathname}${search ? `?${search}` : ""}`,
+    );
   }, [pathname]);
   const value = useMemo(
     () => ({ step, start: () => go(0), go, exit }),

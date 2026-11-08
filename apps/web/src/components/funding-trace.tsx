@@ -4,7 +4,6 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import type { PilotPanel } from "../api/client";
 import type { components } from "../generated/api";
 import { usePreferences } from "../preferences/preferences";
-import { useHashTarget } from "../navigation/nav";
 
 type Trace = components["schemas"]["FundingTraceResponse"];
 type Bottleneck = components["schemas"]["BottleneckRead"];
@@ -32,7 +31,6 @@ export function FundingTrace({
   trace: (flowId: string, asOf: string) => Promise<Trace>;
 }) {
   const { t } = usePreferences();
-  useHashTarget("funding-title", true);
   const [result, setResult] = useState<Trace | null>(null);
   const [status, setStatus] = useState<"loading" | "error" | "idle">("loading");
   const [online, setOnline] = useState(true);

@@ -120,3 +120,15 @@ it("ends from the last step with Finish demo", () => {
     screen.getByRole("button", { name: "Try the 3-minute demo" }),
   ).toBeTruthy();
 });
+
+it("keeps the rest of the URL, such as the Kisumu tab, when the demo exits", () => {
+  navigation.pathname = "/kisumu";
+  window.history.replaceState(
+    null,
+    "",
+    "/kisumu?tour=funding&shock=40&budget=30&tab=funding&day=45",
+  );
+  renderTour();
+  fireEvent.keyDown(document, { key: "Escape" });
+  expect(window.location.search).toBe("?shock=40&budget=30&tab=funding&day=45");
+});
