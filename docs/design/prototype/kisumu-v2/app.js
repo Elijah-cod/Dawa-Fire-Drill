@@ -165,22 +165,101 @@ function areaList() {
     .join("");
 }
 
+const REASONS = {
+  alternative_selected: "A cheaper option already covers this stockout",
+  cost_exceeds_ceiling: "Costs more than the whole budget",
+  remaining_budget_exceeded: "Does not fit in what is left of the budget",
+  not_selected_by_optimal_set: "Not in the optimizer's best set",
+};
+// Preview-only switches for states the live app reaches through the backend.
+const pinned = q.get("state");
+let inFlight = pinned === "inflight";
+let failed = pinned === "failed";
+let loading = pinned === "loading";
+let timer = null;
+
+function effectText(e) {
+  return e.counterfactual === null ? `No stockout within the ${H}-day run` : `Stockout moves to day ${e.counterfactual}`;
+}
+
+function budgetBar(k, r) {
+  const scale = 100;
+  let x = 0;
+  const segs = k.selected.map((id) => {
+    const c = r.candidates.find((c) => c.id === id);
+    const seg = `<span class="seg" style="left:${(x / scale) * 100}%;width:${(c.cost / scale) * 100}%" title="${c.cost} KES">${c.cost}</span>`;
+    x += c.cost;
+    return seg;
+  });
+  return `<div class="budget-bar" aria-hidden="true">${segs.join("")}<span class="cut" style="left:${(state.budget / scale) * 100}%"><span>${state.budget} KES</span></span></div>`;
+}
+
 function fixes() {
   const r = run();
   const el = document.getElementById("fixes");
-  const k = ranking();
-  const head = `<h2 id="fixes-title">Cheapest fixes</h2><p class="sub">OR-Tools picks what fits the budget; costs are illustrative assumptions.</p>`;
-  if (!k) {
-    el.innerHTML = `${head}<p class="state">${shownShock() === 0 ? "No shock-caused stockouts, so there is nothing to fix." : "No planted transfer arrives before these stockouts, so there is nothing to rank."}</p>`;
+  const head = `<h2 id="fixes-title">Cheapest fixes</h2><p class="sub">OR-Tools picks what fits the budget. Costs are illustrative assumptions.</p>`;
+  if (loading) {
+    el.innerHTML = `${head}<p class="state" role="status">Loading the ranked fixes…</p><div class="skeleton" style="width:80%"></div><div class="skeleton" style="width:60%"></div><div class="skeleton" style="width:70%"></div>`;
+    el.setAttribute("aria-busy", "true");
     return;
   }
-  const rows = r.candidates.map((c) => {
-    const funded = k.selected.includes(c.id);
-    const e = k.effects[c.id];
-    const effect = e.counterfactual === null ? `No stockout within the ${H}-day run` : `Stockout moves to day ${e.counterfactual}`;
-    return `<li class="option ${funded ? "option--funded" : "option--cut"}"><span class="name">${c.kind === "redistribution" ? "Transfer" : "Emergency delivery"} to ${byId[c.facility_id].name}, ${c.commodity_id}</span><span class="cost">${c.cost} KES</span><span class="why">${funded ? "Funded" : "Not funded"} · ${effect}</span></li>`;
-  });
-  el.innerHTML = `${head}<p>Budget ${state.budget} KES · ${k.total_cost} KES used</p><ul class="pairs">${rows.join("")}</ul>`;
+  el.removeAttribute("aria-busy");
+  if (!r.candidates.length) {
+    el.innerHTML = `${head}<p class="state" role="status">${
+      shownShock() === 0
+        ? "With no shock there are no shock-caused stockouts, so there is nothing to fix."
+        : "None of the planted transfers arrives before its stockout at this shock, so there is nothing to rank."
+    }</p>`;
+    return;
+  }
+  const k = ranking();
+  const control = `
+    <label class="field-label" for="budget">Budget (KES)</label>
+    <div class="budget-control">
+      <input id="budget" type="range" min="0" max="100" step="5" value="${state.budget}" aria-describedby="budget-status" />
+      <input id="budget-number" type="number" min="0" max="100" step="5" value="${state.budget}" aria-label="Budget in KES" />
+    </div>
+    ${budgetBar(k, r)}`;
+  const cheapest = Math.min(...r.candidates.map((c) => c.cost));
+  let status = "";
+  if (failed)
+    status = `<div class="state state--error" role="alert">${icon("i-critical")}<span>The ranking could not be updated. The fixes below are for the last budget that ranked. <button class="btn" type="button" id="retry">Try again</button></span></div>`;
+  else if (inFlight) status = `<p class="state" role="status" id="budget-status">Updating the ranking for ${state.budget} KES…</p>`;
+  else if (!k.selected.length)
+    status = `<p class="state" role="status" id="budget-status">Nothing fits ${state.budget} KES. The cheapest fix costs ${cheapest} KES.</p>`;
+  else status = `<p class="visually-hidden" role="status" id="budget-status">${k.total_cost} of ${state.budget} KES used.</p>`;
+  const events = shockEvents(r);
+  const pairs = [];
+  for (let i = 0; i < r.candidates.length; i += 2) {
+    const [t, e] = [r.candidates[i], r.candidates[i + 1]];
+    const ev = events.find((x) => x.facility.id === t.facility_id && x.commodity === t.commodity_id);
+    const same = effectText(k.effects[t.id]) === effectText(k.effects[e.id]);
+    const option = (c, label) => {
+      const funded = k.selected.includes(c.id);
+      return `<li class="option ${funded ? "option--funded" : "option--cut"}"><span class="name">${label}</span><span class="cost">${c.cost} KES</span><span class="why">${funded ? `${icon("i-stable")}Funded` : `Not funded: ${REASONS[k.excluded[c.id]] ?? "reason unavailable"}`}${same ? "" : ` · ${effectText(k.effects[c.id])}`}</span></li>`;
+    };
+    pairs.push(`<li class="pair">
+      <h3>${ev.facility.name}, ${ev.commodity}</h3>
+      <p class="meta">${ev.facility.sub} · runs out on day ${ev.day}${same ? ` · either option: ${effectText(k.effects[t.id]).toLowerCase()}` : ""}</p>
+      <ul class="pairs">${option(t, `Transfer from ${byId[t.donor].name}, ${t.km} km`)}${option(e, "Emergency delivery")}</ul>
+    </li>`);
+  }
+  el.innerHTML = `${head}${control}${status}<ol class="pairs" ${inFlight ? 'aria-busy="true"' : ""}>${pairs.join("")}</ol>
+    <section class="explain"><h3>Optimizer explanation</h3><p>${k.explanation}</p></section>`;
+}
+
+function setBudget(value) {
+  state.budget = Math.min(100, Math.max(0, Math.round(value / 5) * 5));
+  failed = false;
+  inFlight = true;
+  fixes();
+  clearTimeout(timer);
+  // The app debounces the backend ranking call; the preview shows the same in-flight state.
+  timer = setTimeout(() => {
+    inFlight = false;
+    fixes();
+    verdict();
+  }, 350);
 }
 
 function order() {
@@ -293,7 +372,19 @@ document.querySelector('[role="tablist"]').addEventListener("click", (e) => {
   state.tab = t.id.slice(2);
   tabs();
 });
+document.addEventListener("click", (e) => {
+  if (e.target.id === "retry") {
+    failed = false;
+    fixes();
+  }
+});
 document.addEventListener("input", (e) => {
+  if (e.target.id === "budget" || e.target.id === "budget-number") {
+    const id = e.target.id;
+    setBudget(Number(e.target.value));
+    document.getElementById(id).focus();
+    return;
+  }
   if (e.target.id === "day") {
     state.day = Number(e.target.value);
     timeline();
