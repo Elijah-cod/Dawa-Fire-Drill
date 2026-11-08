@@ -44,6 +44,30 @@ function KisumuContent({
     ? `${principal.role}:${principal.countyCode}:${principal.facilityId}:${selectedRole}`
     : "none";
   const [loaded, setLoaded] = useState<Loaded | null>(null);
+  // Stable callbacks: the page re-renders on every URL change (tabs, budget, day), and a
+  // new function would make the funding trace fetch again each time.
+  const rank = useMemo(
+    () =>
+      mode === "demo"
+        ? (runId: string, body: Parameters<typeof api.rank>[1]) =>
+            api.rank(runId, body, selectedRole)
+        : mode === "mock"
+          ? (runId: string, body: Parameters<typeof api.rank>[1]) =>
+              createMockClient("planner").rank(runId, body)
+          : undefined,
+    [mode, selectedRole],
+  );
+  const trace = useMemo(
+    () =>
+      mode === "demo"
+        ? (flowId: string, asOf: string) =>
+            api.fundingTrace(flowId, asOf, selectedRole)
+        : mode === "mock"
+          ? (flowId: string, asOf: string) =>
+              createMockClient("planner").fundingTrace(flowId, asOf)
+          : undefined,
+    [mode, selectedRole],
+  );
   const scenario = useMemo<ScenarioApi>(
     () => ({
       submit: async (magnitude, key) => {
@@ -160,21 +184,8 @@ function KisumuContent({
           panel={loaded.panel}
           scenario={scenario}
           canRun={auth.role === "planner" || auth.role === "admin"}
-          rank={
-            mode === "demo"
-              ? (runId, body) => api.rank(runId, body, selectedRole)
-              : mode === "mock"
-                ? (runId, body) => createMockClient("planner").rank(runId, body)
-                : undefined
-          }
-          trace={
-            mode === "demo"
-              ? (flowId, asOf) => api.fundingTrace(flowId, asOf, selectedRole)
-              : mode === "mock"
-                ? (flowId, asOf) =>
-                    createMockClient("planner").fundingTrace(flowId, asOf)
-                : undefined
-          }
+          rank={rank}
+          trace={trace}
         />
       ) : (
         <p>{t("overviewError")}</p>
