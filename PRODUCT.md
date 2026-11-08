@@ -13,7 +13,7 @@ web
 - **Facility in-charges**: upload a bin-card photo and confirm every stock field before anything is saved.
 - **Hackathon judges**: watch a guided three-minute demo and must understand what breaks first, why, and the cheapest fix without help.
 
-Audience priority when needs conflict: not yet stated. Inferred from the success answer below: the demo path leads for now, built on the planner's real task rather than a separate show mode. Confirm.
+Audience priority when needs conflict: **planners first.** The three-minute demo is a guided path through the same product and must work for a first-time viewer with no help.
 
 ## Product Purpose
 
@@ -23,12 +23,14 @@ Success for the next milestone (confirmed): **both, demo first.** The three-minu
 
 ## Positioning
 
-Inferred from the repository's agent rules and implementation; confirm which points to lead with:
+A stress-test sandbox for health supply planning. The lead question: **what breaks first, and what is the cheapest fix under a budget?** The product shows the order in which facility–commodity pairs stock out under a chosen shock, then ranks transfers against emergency orders within a budget ceiling, with a visible cut line and the reason each option is or is not funded.
 
-- **The optimizer decides; AI only explains.** OR-Tools ranks mitigations. LLMs only extract bin-card fields and restate optimizer results; LLM output never changes a ranking.
-- **Order of failure, not totals.** The product shows which facility and commodity run out first under a chosen shock.
-- **Cheapest fix under a budget.** Transfers are ranked against emergency orders within a ceiling, with a visible cut line and the reason each option is or is not funded.
-- **Money-to-medicine trace.** Funding stages (approved, released, procured, delivered) are linked to the stockouts they cause.
+Supporting points, in this order:
+
+1. **The optimizer decides; AI only explains.** OR-Tools ranks mitigations. LLMs only extract bin-card fields and restate optimizer results; LLM output never changes a ranking.
+2. **The money-to-medicine trace shows where funding stalls.** Funding stages (approved, released, procured, delivered) are linked to the stockouts they cause.
+
+It is not a live monitoring dashboard and not a government system.
 
 ## Operating Context
 
@@ -63,7 +65,7 @@ Stated by the user as binding:
 1. Truth before polish: every number on screen comes from the backend or is clearly labeled as an assumption; outputs are illustrative and unvalidated.
 2. Show what breaks first, then what to do about it.
 3. The optimizer makes the decision; explanations only restate it.
-4. One product, one path: the demo is a guided route through the real planner task, not a separate show.
+4. Planners first, one path: the demo is a guided route through the real planner task, not a separate show, and works for a first-time viewer with no help.
 5. Built for county settings: works on a phone, in two languages, without relying on colour alone.
 
 ## Accessibility & Inclusion
