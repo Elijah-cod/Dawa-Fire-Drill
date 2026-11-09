@@ -4,19 +4,33 @@ on:
   push:
     branches: [main]
 
+# Read-only by default; no job needs to write to the repository.
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+# Actions are pinned to commit SHAs (version in the comment); runtimes and images are pinned
+# so a clean runner reproduces the local toolchain.
 jobs:
   secrets:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
           fetch-depth: 0
-      - uses: gitleaks/gitleaks-action@v2
+      - uses: gitleaks/gitleaks-action@ff98106e4c7b2bc287b24eaf42907196329070c7 # v2.3.9
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
   api:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     services:
+      # The backend tests connect to postgresql+asyncpg://postgres:postgres@localhost:5432/dawa.
       postgres:
-        image: postgres:16
+        image: postgres:16@sha256:5db6dac2ef5dcff512f4f00a009c3c332b9f2f28f24277175bf3e4a3d02ef83a
         env:
           POSTGRES_DB: dawa
           POSTGRES_USER: postgres
@@ -27,55 +41,57 @@ jobs:
           --health-interval 5s
           --health-timeout 3s
           --health-retries 10
+    defaults:
+      run:
+        working-directory: apps/api
     steps:
-      - uses: actions/checkout@v4
-      - uses: astral-sh/setup-uv@v6
-      - run: uv sync --frozen --extra dev
-        working-directory: apps/api
-      - run: uv run --frozen ruff check .
-        working-directory: apps/api
-      - run: uv run --frozen ruff check ../../infra/load
-        working-directory: apps/api
-      - run: uv run --frozen mypy dawa_api
-        working-directory: apps/api
-      - run: uv run --frozen pytest -q
-        working-directory: apps/api
-      - run: uv run --frozen bandit -r dawa_api -q
-        working-directory: apps/api
-      - run: uv run --frozen pip-audit
-        working-directory: apps/api
-  web-tooling:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - uses: astral-sh/setup-uv@d0cc045d04ccac9d8b7881df0226f9e82c39688e # v6.8.0
         with:
-          node-version: '24'
+          version: '0.12.21'
+          python-version: '3.12'
+      - run: uv sync --frozen --extra dev
+      - run: uv run --frozen ruff check .
+      - run: uv run --frozen ruff check ../../infra/load
+      - run: uv run --frozen mypy dawa_api
+      - run: uv run --frozen pytest -q
+      - run: uv run --frozen bandit -r dawa_api -q
+      - run: uv run --frozen pip-audit
+
+  web:
+    runs-on: ubuntu-24.04
+    defaults:
+      run:
+        working-directory: apps/web
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: '24.21.0'
           cache: npm
           cache-dependency-path: apps/web/package-lock.json
       - run: npm ci
-        working-directory: apps/web
       - run: npm run lint
-        working-directory: apps/web
       - run: npm run typecheck
-        working-directory: apps/web
       - run: npm run format:check
-        working-directory: apps/web
       - run: npm test
-        working-directory: apps/web
-      - run: npx playwright install --with-deps chromium
-        working-directory: apps/web
-      - run: npm run test:design-prototype
-        working-directory: apps/web
       - run: npm audit --audit-level=low
-        working-directory: apps/web
+      - run: npx playwright install --with-deps chromium
+      - run: npm run test:design-prototype
+      # Builds the public read-only demo and checks it has no proxy route, no token and
+      # makes no backend request. No server-side variables are set in this job.
+      - run: npm run test:static-demo
+
   docs-quickstart:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
       - run: docker compose -f infra/compose.yaml up -d --build
-      - run: curl --fail --retry 20 --retry-delay 3 --retry-connrefused http://localhost:8000/health
-      - run: curl --fail --retry 20 --retry-delay 3 --retry-connrefused http://localhost:8000/ready
+      - run: curl --fail --retry 20 --retry-delay 3 --retry-all-errors http://localhost:8000/health
+      - run: curl --fail --retry 20 --retry-delay 3 --retry-all-errors http://localhost:8000/ready
       - run: docker compose -f infra/compose.yaml exec -T api python -m dawa_api.ingestion.persist --country KE --seed 42
+      - run: docker compose -f infra/compose.yaml exec -T api python -m dawa_api.ingestion.seed_counties --seed 42
+      - if: failure()
+        run: docker compose -f infra/compose.yaml logs --no-color
       - if: always()
         run: docker compose -f infra/compose.yaml down -v
