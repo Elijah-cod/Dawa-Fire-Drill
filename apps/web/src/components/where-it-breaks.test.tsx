@@ -133,3 +133,33 @@ it("places every area inside the map with no two markers overlapping", () => {
         ).toBe(true);
   }
 });
+
+it("shows a loading state, not zero counts, while the run loads", () => {
+  const { rerender } = render(
+    <WhereItBreaks
+      panel={panel}
+      events={[]}
+      risks={{}}
+      day={45}
+      onDay={() => {}}
+      loading
+    />,
+  );
+  expect(readout()).toBe("Loading the run…");
+  expect(readout()).not.toMatch(/0 of 0/);
+  expect(document.querySelector(".map-panel")?.getAttribute("aria-busy")).toBe(
+    "true",
+  );
+  expect(screen.getByText(/^Kisumu West: 6 facilities$/)).toBeTruthy();
+  expect(document.querySelector(".areas .mix")).toBeNull();
+  rerender(
+    <WhereItBreaks
+      panel={panel}
+      events={run.stockouts}
+      risks={risks}
+      day={45}
+      onDay={() => {}}
+    />,
+  );
+  expect(readout()).toMatch(/^Day 45 of 90: 11 of 211 stockouts so far/);
+});

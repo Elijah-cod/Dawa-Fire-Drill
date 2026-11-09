@@ -147,6 +147,9 @@ const strings = {
     timelineReadout:
       "Day {day} of {h}: {soFar} of {total} stockouts so far, {out} of {facilities} facilities out of at least one commodity.",
     timelineModeled: "Modeled, no intervention.",
+    timelineLoading: "Loading the run…",
+    areaLoadingLabel: "{area}: {n} facilities, run loading",
+    areaRowLoading: "{area}: {n} facilities",
     areaMapLabel: "Kisumu areas with facilities out of stock by day {day}",
     areaLabel: "{area}: {out} of {n} facilities out by day {day}",
     legendTitle: "Out by day {day}, of all facilities in the area",
@@ -500,6 +503,9 @@ const strings = {
     timelineReadout:
       "Siku {day} kati ya {h}: matukio {soFar} kati ya {total} ya kuisha hadi sasa, vituo {out} kati ya {facilities} vimekosa angalau bidhaa moja.",
     timelineModeled: "Imeigwa, bila hatua yoyote.",
+    timelineLoading: "Inapakia jaribio…",
+    areaLoadingLabel: "{area}: vituo {n}, jaribio linapakiwa",
+    areaRowLoading: "{area}: vituo {n}",
     areaMapLabel:
       "Maeneo ya Kisumu yenye vituo vilivyokosa bidhaa kufikia siku {day}",
     areaLabel:

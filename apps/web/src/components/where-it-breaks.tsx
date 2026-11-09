@@ -92,7 +92,10 @@ export function WhereItBreaks({
   risks,
   day,
   onDay,
+  loading = false,
 }: {
+  /** True while the shown run is still loading: no counts are shown until it arrives. */
+  loading?: boolean;
   panel: PilotPanel;
   /** Every stockout in the shown run. */
   events: ShockEvent[];
@@ -169,7 +172,11 @@ export function WhereItBreaks({
     facilities: panel.facilities.length,
   });
   return (
-    <section className="panel map-panel" aria-labelledby="where-title">
+    <section
+      className="panel map-panel"
+      aria-labelledby="where-title"
+      aria-busy={loading}
+    >
       <h2 id="where-title">{t("whereTitle")}</h2>
       <p className="sub">{t("whereSub")}</p>
       <div className="timeline">
@@ -241,7 +248,13 @@ export function WhereItBreaks({
           id="readout"
           aria-live={playing ? "off" : "polite"}
         >
-          {readout} <span className="modeled">{t("timelineModeled")}</span>
+          {loading ? (
+            t("timelineLoading")
+          ) : (
+            <>
+              {readout} <span className="modeled">{t("timelineModeled")}</span>
+            </>
+          )}
         </p>
       </div>
       <div
@@ -263,16 +276,23 @@ export function WhereItBreaks({
               key={area.id}
               className="area"
               role="img"
-              data-out={level}
+              data-out={loading ? "none" : level}
               style={{ left: area.x, top: area.y }}
-              aria-label={tf("areaLabel", {
-                area: area.name,
-                out: count,
-                n: area.facilities.length,
-                day,
-              })}
+              aria-label={
+                loading
+                  ? tf("areaLoadingLabel", {
+                      area: area.name,
+                      n: area.facilities.length,
+                    })
+                  : tf("areaLabel", {
+                      area: area.name,
+                      out: count,
+                      n: area.facilities.length,
+                      day,
+                    })
+              }
             >
-              {count}/{area.facilities.length}
+              {loading ? "–" : count}/{area.facilities.length}
             </span>
           );
         })}
@@ -301,20 +321,27 @@ export function WhereItBreaks({
           return (
             <li key={area.id}>
               <span>
-                {tf("areaRow", {
-                  area: area.name,
-                  out: count,
-                  n: area.facilities.length,
-                  day,
-                })}
+                {loading
+                  ? tf("areaRowLoading", {
+                      area: area.name,
+                      n: area.facilities.length,
+                    })
+                  : tf("areaRow", {
+                      area: area.name,
+                      out: count,
+                      n: area.facilities.length,
+                      day,
+                    })}
               </span>
-              <span className="mix" aria-label={t("areaMixLabel")}>
-                {tf("areaMix", {
-                  critical: status("critical"),
-                  watch: status("watch"),
-                  stable: status("stable"),
-                })}
-              </span>
+              {!loading && (
+                <span className="mix" aria-label={t("areaMixLabel")}>
+                  {tf("areaMix", {
+                    critical: status("critical"),
+                    watch: status("watch"),
+                    stable: status("stable"),
+                  })}
+                </span>
+              )}
             </li>
           );
         })}

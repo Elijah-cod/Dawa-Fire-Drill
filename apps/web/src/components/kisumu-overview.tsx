@@ -459,6 +459,7 @@ export function KisumuOverview({
                   risks={risks}
                   day={day}
                   onDay={setDay}
+                  loading={pending || !evidence(run)}
                 />
               )}
               {!canRun && mapSection}

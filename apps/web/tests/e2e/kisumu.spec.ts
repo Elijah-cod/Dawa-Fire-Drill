@@ -265,6 +265,34 @@ test("the timeline counts match the run at days 0, 41 and 90", async ({
   await noSeriousAxe(page);
 });
 
+test("the timeline shows a loading state, not zero counts, until the run arrives", async ({
+  page,
+}) => {
+  // Hold the scenario run requests so the loading state is visible.
+  let release = () => {};
+  const held = new Promise<void>((resolve) => (release = resolve));
+  await page.route("**/api/counties/042/runs**", async (route) => {
+    await held;
+    await route.continue();
+  });
+  await page.goto(KISUMU);
+  const readout = page.locator("#readout");
+  await expect(readout).toHaveText("Loading the run…", { timeout: 15000 });
+  await expect(readout).not.toContainText("0 of 0");
+  await expect(page.locator(".map-panel")).toHaveAttribute("aria-busy", "true");
+  release();
+  await expect(readout).toContainText(
+    "Day 45 of 90: 11 of 211 stockouts so far",
+    {
+      timeout: 30000,
+    },
+  );
+  await expect(page.locator(".map-panel")).toHaveAttribute(
+    "aria-busy",
+    "false",
+  );
+});
+
 test("facilities can be sorted, filtered and opened", async ({ page }) => {
   await page.goto(KISUMU);
   await expect(verdict(page)).toContainText("209 stockouts", {
