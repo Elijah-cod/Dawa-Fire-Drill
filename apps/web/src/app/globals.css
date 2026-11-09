@@ -363,7 +363,8 @@ p {
   color: var(--primary);
   font-weight: 600;
 }
-.tour-actions button:disabled {
+.tour-actions button:disabled,
+.tour-actions button[aria-disabled="true"] {
   opacity: 0.5;
 }
 .tour-waiting {

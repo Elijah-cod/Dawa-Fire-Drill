@@ -4,7 +4,9 @@ import AxeBuilder from "@axe-core/playwright";
 test("guided demo walks overview to capture by keyboard", async ({ page }) => {
   test.setTimeout(120000);
   await page.goto("http://localhost:3300/");
-  const start = page.getByRole("button", { name: "Try the tour (about 3 minutes)" });
+  const start = page.getByRole("button", {
+    name: "Try the tour (about 3 minutes)",
+  });
   await start.focus();
   await page.keyboard.press("Enter");
   const tour = page.getByRole("region", { name: "National overview" });
@@ -15,7 +17,9 @@ test("guided demo walks overview to capture by keyboard", async ({ page }) => {
   ).toBeFocused();
 
   const next = async (title: string) => {
-    await page.getByRole("button", { name: "Next step" }).focus();
+    const button = page.getByRole("button", { name: "Next step" });
+    await expect(button).toBeEnabled({ timeout: 15000 });
+    await button.focus();
     await page.keyboard.press("Enter");
     await expect(page.getByRole("heading", { name: title })).toBeFocused({
       timeout: 15000,

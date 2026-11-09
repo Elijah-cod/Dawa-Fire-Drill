@@ -232,8 +232,13 @@ function TourPanel() {
         <button
           type="button"
           className="tour-primary"
-          disabled={!ready}
-          onClick={() => (last ? exit() : go(index + 1))}
+          // aria-disabled keeps Next in the tab order while the target loads.
+          aria-disabled={!ready || undefined}
+          onClick={() => {
+            if (!ready) return;
+            if (last) exit();
+            else go(index + 1);
+          }}
         >
           {last ? t("tourFinish") : t("tourNext")}
         </button>

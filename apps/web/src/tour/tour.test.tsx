@@ -80,8 +80,8 @@ it("walks the seven demo steps in order", () => {
 const nextEnabled = (name = "Next step") =>
   waitFor(() =>
     expect(
-      (screen.getByRole("button", { name }) as HTMLButtonElement).disabled,
-    ).toBe(false),
+      screen.getByRole("button", { name }).getAttribute("aria-disabled"),
+    ).toBeNull(),
   );
 
 it("starts on the overview, moves focus to the caption and navigates to Kisumu", async () => {
@@ -185,7 +185,10 @@ it("keeps Next disabled until the step's target is visible", async () => {
     const next = screen.getByRole("button", {
       name: "Next step",
     }) as HTMLButtonElement;
-    expect(next.disabled).toBe(true);
+    expect(next.getAttribute("aria-disabled")).toBe("true");
+    expect(next.disabled).toBe(false);
+    fireEvent.click(next);
+    expect(screen.getByTestId("step").textContent).toBe("overview");
     expect(screen.getByRole("status").textContent).toBe(
       "Waiting for this part of the page to appear…",
     );
@@ -194,7 +197,7 @@ it("keeps Next disabled until the step's target is visible", async () => {
       height: 20,
     } as DOMRect);
     await act(async () => vi.advanceTimersByTime(300));
-    expect(next.disabled).toBe(false);
+    expect(next.getAttribute("aria-disabled")).toBeNull();
     expect(
       screen.queryByText("Waiting for this part of the page to appear…"),
     ).toBeNull();
