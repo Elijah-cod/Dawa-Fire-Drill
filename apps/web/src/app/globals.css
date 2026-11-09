@@ -852,7 +852,7 @@ input {
 .segmented button:hover {
   background: var(--surface-2);
 }
-.segmented button[aria-pressed="true"] {
+.segmented button[aria-checked="true"] {
   background: var(--primary);
   color: var(--primary-ink);
 }

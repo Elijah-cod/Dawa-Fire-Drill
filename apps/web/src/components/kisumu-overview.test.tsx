@@ -78,7 +78,7 @@ it("updates a facility's risk and driving tracer with the selected scenario", as
       )
     ).length,
   ).toBeGreaterThan(0);
-  fireEvent.click(screen.getByRole("button", { name: "0%" }));
+  fireEvent.click(screen.getByRole("radio", { name: "0%" }));
   await vi.waitFor(() =>
     expect(detail().textContent).toMatch(/Later.*Synthetic tracer/),
   );
@@ -119,11 +119,11 @@ it("keeps the previous verdict, marked busy, while another shock runs", async ()
   await vi.waitFor(() =>
     expect(verdict()?.getAttribute("aria-busy")).toBe("false"),
   );
-  expect(screen.getByRole("button", { name: "40%" })).toHaveProperty(
-    "ariaPressed",
+  expect(screen.getByRole("radio", { name: "40%" })).toHaveProperty(
+    "ariaChecked",
     "true",
   );
-  fireEvent.click(screen.getByRole("button", { name: "20%" }));
+  fireEvent.click(screen.getByRole("radio", { name: "20%" }));
   expect(verdict()?.getAttribute("aria-busy")).toBe("true");
   expect(
     screen.getByRole("complementary", { name: "Scenario" }).textContent,
@@ -269,7 +269,7 @@ it("answers what breaks first at each prepared shock from the backend runs", asy
   );
   expect(verdict().textContent).toContain("10 Critical · 18 Watch · 12 Later");
 
-  fireEvent.click(screen.getByRole("button", { name: "20%" }));
+  fireEvent.click(screen.getByRole("radio", { name: "20%" }));
   await vi.waitFor(() =>
     expect(verdict().textContent).toContain(
       "The fixes address only 4 of 77 shock-caused stockouts (days 47 to 74).",
@@ -277,7 +277,7 @@ it("answers what breaks first at each prepared shock from the backend runs", asy
   );
   expect(verdict().textContent).toContain("2 Critical · 5 Watch · 33 Later");
 
-  fireEvent.click(screen.getByRole("button", { name: "100%" }));
+  fireEvent.click(screen.getByRole("radio", { name: "100%" }));
   await vi.waitFor(() =>
     expect(verdict().textContent).toContain(
       "None of the 4 listed transfers can arrive in time: they arrive from day 39, but their stockouts happen by day 26.",
@@ -286,7 +286,7 @@ it("answers what breaks first at each prepared shock from the backend runs", asy
   expect(verdict().textContent).toContain("40 Critical · 0 Watch · 0 Later");
   expect(verdict().textContent).toContain("causes 393 stockouts");
 
-  fireEvent.click(screen.getByRole("button", { name: "0%" }));
+  fireEvent.click(screen.getByRole("radio", { name: "0%" }));
   await vi.waitFor(() =>
     expect(verdict().textContent).toContain(
       "With no shock, nothing new runs out within 90 days.There is nothing to fix.",
@@ -344,17 +344,17 @@ it("compares the selected shock with the no-shock run", async () => {
       "209 stockouts",
     ),
   );
-  fireEvent.click(screen.getByRole("button", { name: "No shock" }));
+  fireEvent.click(screen.getByRole("radio", { name: "No shock" }));
   await vi.waitFor(() =>
     expect(container.querySelector("#verdict")?.textContent).toContain(
       "With no shock",
     ),
   );
-  expect(screen.getByRole("button", { name: "40%" })).toHaveProperty(
-    "ariaPressed",
+  expect(screen.getByRole("radio", { name: "40%" })).toHaveProperty(
+    "ariaChecked",
     "true",
   );
-  fireEvent.click(screen.getByRole("button", { name: "40% cut" }));
+  fireEvent.click(screen.getByRole("radio", { name: "40% cut" }));
   await vi.waitFor(() =>
     expect(container.querySelector("#verdict")?.textContent).toContain(
       "209 stockouts",
@@ -513,13 +513,13 @@ it("restores shock, budget, tab and day from a shared link and keeps them in the
       .getAttribute("aria-selected"),
   ).toBe("true");
   expect(
-    screen.getByRole("button", { name: "20%" }).getAttribute("aria-pressed"),
+    screen.getByRole("radio", { name: "20%" }).getAttribute("aria-checked"),
   ).toBe("true");
   fireEvent.click(screen.getByRole("tab", { name: /Map and fixes/ }));
   expect(document.getElementById("readout")?.textContent).toMatch(
     /^Day 41 of 90/,
   );
-  fireEvent.click(screen.getByRole("button", { name: "100%" }));
+  fireEvent.click(screen.getByRole("radio", { name: "100%" }));
   await vi.waitFor(() =>
     expect(window.location.search).toBe(
       "?shock=100&budget=65&tab=overview&day=41",
@@ -565,7 +565,7 @@ it("follows a tab change in the URL and focuses that panel's heading", async () 
 
 it("says when a facility has no stockout in the run", async () => {
   render(<KisumuOverview panel={fixture.pilot} scenario={fixtureScenario()} />);
-  fireEvent.click(screen.getByRole("button", { name: "0%" }));
+  fireEvent.click(screen.getByRole("radio", { name: "0%" }));
   fireEvent.click(screen.getByRole("tab", { name: /Facilities/ }));
   const table = screen.getByRole("region", { name: "Facilities table" });
   await vi.waitFor(() =>

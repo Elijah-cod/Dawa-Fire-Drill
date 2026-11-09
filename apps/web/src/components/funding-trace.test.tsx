@@ -73,10 +73,15 @@ it("shows the selected bottleneck's details", async () => {
   const button = await screen.findByRole("button", {
     name: /inspect bottleneck: approved, not released/i,
   });
+  // A disclosure: a button that says whether its details are shown.
+  expect(button.getAttribute("aria-expanded")).toBe("false");
+  expect(button.getAttribute("aria-controls")).toBe("funding-detail");
+  expect(document.querySelector("dl.funding-detail")).toBeNull();
   fireEvent.click(button);
-  expect(button.getAttribute("aria-pressed")).toBe("true");
+  expect(button.getAttribute("aria-expanded")).toBe("true");
+  expect(button.hasAttribute("aria-pressed")).toBe(false);
   expect(screen.getByText("Selected bottleneck")).toBeTruthy();
-  const detail = document.querySelector("dl.funding-detail")!;
+  const detail = document.querySelector("#funding-detail dl.funding-detail")!;
   expect(detail.querySelectorAll("dt")).toHaveLength(3);
   expect(detail.querySelectorAll("dd")).toHaveLength(3);
   expect(screen.getByText("2025-01-01")).toBeTruthy();
@@ -122,4 +127,17 @@ it("keeps the stage summary and skips the request while offline", () => {
     if (original) Object.defineProperty(navigator, "onLine", original);
     else Reflect.deleteProperty(navigator, "onLine");
   }
+});
+
+it("closes the bottleneck details from the same button", async () => {
+  render(
+    <FundingTrace flow={flow} trace={vi.fn().mockResolvedValue(stalled)} />,
+  );
+  const button = await screen.findByRole("button", {
+    name: /inspect bottleneck: approved, not released/i,
+  });
+  fireEvent.click(button);
+  fireEvent.click(button);
+  expect(button.getAttribute("aria-expanded")).toBe("false");
+  expect(document.querySelector("dl.funding-detail")).toBeNull();
 });

@@ -152,9 +152,12 @@ export function FundingTrace({
                   <button
                     className="rank-action"
                     type="button"
-                    aria-pressed={selected === item.stage}
+                    aria-expanded={selected === item.stage}
+                    aria-controls="funding-detail"
                     aria-label={`${t("fundingInspect")}: ${label(item.stage)}`}
-                    onClick={() => setSelected(item.stage)}
+                    onClick={() =>
+                      setSelected(selected === item.stage ? null : item.stage)
+                    }
                   >
                     {t("fundingInspect")}
                   </button>
@@ -162,7 +165,7 @@ export function FundingTrace({
               ))}
             </ul>
           )}
-          <div aria-live="polite">
+          <div aria-live="polite" id="funding-detail">
             {chosen && (
               <dl className="funding-detail">
                 <dt>{t("fundingDetail")}</dt>

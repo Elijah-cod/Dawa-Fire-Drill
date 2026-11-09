@@ -43,8 +43,8 @@ it("applies the 40% shock during the demo's shock steps", async () => {
     </TourProvider>,
   );
   expect(
-    (await screen.findByRole("button", { name: "40%" })).getAttribute(
-      "aria-pressed",
+    (await screen.findByRole("radio", { name: "40%" })).getAttribute(
+      "aria-checked",
     ),
   ).toBe("true");
   expect(screen.getAllByText("40% logistics cut").length).toBeGreaterThan(0);

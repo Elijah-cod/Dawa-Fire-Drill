@@ -1,6 +1,7 @@
 "use client";
 
 import { usePreferences } from "../preferences/preferences";
+import { RadioGroup } from "./radio-group";
 
 /** The four prepared shocks; the backend can run others, but the demo prepares these. */
 export const SHOCKS = [0, 20, 40, 100] as const;
@@ -34,43 +35,31 @@ export function ScenarioControls({
       data-open={open}
     >
       <fieldset>
-        <legend>{t("shockPresets")}</legend>
-        <div className="segmented" id="shock-presets">
-          {SHOCKS.map((value) => (
-            <button
-              key={value}
-              type="button"
-              aria-pressed={value === shock}
-              disabled={!enabled}
-              onClick={() => onShock(value)}
-            >
-              {value}%
-            </button>
-          ))}
-        </div>
+        <legend id="shock-presets-label">{t("shockPresets")}</legend>
+        <RadioGroup
+          id="shock-presets"
+          labelledBy="shock-presets-label"
+          options={SHOCKS.map((value) => ({ value, label: `${value}%` }))}
+          value={shock}
+          disabled={!enabled}
+          onChange={onShock}
+        />
         <p className="hint">{t("shockHint")}</p>
       </fieldset>
       {shock > 0 && (
         <fieldset>
-          <legend>{t("compare")}</legend>
-          <div className="segmented" id="compare">
-            <button
-              type="button"
-              aria-pressed={compare === "none"}
-              disabled={!enabled}
-              onClick={() => onCompare("none")}
-            >
-              {t("compareNone")}
-            </button>
-            <button
-              type="button"
-              aria-pressed={compare === "shock"}
-              disabled={!enabled}
-              onClick={() => onCompare("shock")}
-            >
-              {tf("compareShock", { n: shock })}
-            </button>
-          </div>
+          <legend id="compare-label">{t("compare")}</legend>
+          <RadioGroup<Compare>
+            id="compare"
+            labelledBy="compare-label"
+            options={[
+              { value: "none", label: t("compareNone") },
+              { value: "shock", label: tf("compareShock", { n: shock }) },
+            ]}
+            value={compare}
+            disabled={!enabled}
+            onChange={onCompare}
+          />
         </fieldset>
       )}
       <p className="controls-status" role="status">

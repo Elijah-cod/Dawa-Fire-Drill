@@ -30,8 +30,8 @@ test("guided demo walks overview to capture by keyboard", async ({ page }) => {
 
   await next("Apply a 40% shock");
   await expect(
-    page.getByRole("button", { name: "40%", exact: true }),
-  ).toHaveAttribute("aria-pressed", "true");
+    page.getByRole("radio", { name: "40%", exact: true }),
+  ).toHaveAttribute("aria-checked", "true");
 
   await next("First stockout");
   await expect(

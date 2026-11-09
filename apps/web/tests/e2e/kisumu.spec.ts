@@ -32,7 +32,7 @@ async function pickShock(page: Page, label: string) {
     await toggle.click();
   await page
     .getByRole("complementary", { name: "Scenario" })
-    .getByRole("button", { name: label, exact: true })
+    .getByRole("radio", { name: label, exact: true })
     .click();
 }
 
@@ -131,14 +131,14 @@ test("the four prepared shocks match the backend runs", async ({ page }) => {
   // Compare flips to the no-shock run while 40% stays selected.
   await page
     .getByRole("complementary", { name: "Scenario" })
-    .getByRole("button", { name: "No shock" })
+    .getByRole("radio", { name: "No shock" })
     .click();
   await expect(verdict(page)).toContainText("With no shock", {
     timeout: 30000,
   });
   await expect(
-    page.getByRole("button", { name: "40%", exact: true }),
-  ).toHaveAttribute("aria-pressed", "true");
+    page.getByRole("radio", { name: "40%", exact: true }),
+  ).toHaveAttribute("aria-checked", "true");
   await noSeriousAxe(page);
 });
 
