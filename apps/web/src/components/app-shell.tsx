@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { PreferenceControls, usePreferences } from "../preferences/preferences";
 import { StartTourButton, TourProvider } from "../tour/tour";
 import { PrimaryNav } from "../navigation/nav";
@@ -8,6 +8,25 @@ import { PrimaryNav } from "../navigation/nav";
 export function AppShell({ children }: { children: ReactNode }) {
   const { t } = usePreferences();
   const [about, setAbout] = useState(false);
+  // The phone bottom bar grows with larger text; publish its real height so the page
+  // padding and focus scrolling keep content clear of it.
+  const bar = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const element = bar.current;
+    if (!element) return;
+    const update = () => {
+      const height = element.getBoundingClientRect().height;
+      document.documentElement.style.setProperty(
+        "--bottom-bar",
+        `${Math.ceil(height)}px`,
+      );
+    };
+    update();
+    const observer =
+      typeof ResizeObserver === "undefined" ? null : new ResizeObserver(update);
+    observer?.observe(element);
+    return () => observer?.disconnect();
+  }, []);
   return (
     <TourProvider>
       <a className="skip" href="#content">
@@ -59,7 +78,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           <main id="content">{children}</main>
         </div>
       </div>
-      <div className="bottom-nav">
+      <div className="bottom-nav" ref={bar}>
         <PrimaryNav label={t("navMobile")} />
       </div>
     </TourProvider>

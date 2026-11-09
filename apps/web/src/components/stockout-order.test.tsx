@@ -91,7 +91,7 @@ it("filters the order by area and medicine, with counts", () => {
   fireEvent.change(screen.getByLabelText("Commodity"), {
     target: { value: "SYN-C04" },
   });
-  const items = [...document.querySelectorAll("ol.order li")].map(
+  const items = Array.from(document.querySelectorAll("ol.order li")).map(
     (li) => li.textContent,
   );
   expect(items.length).toBeGreaterThan(0);
