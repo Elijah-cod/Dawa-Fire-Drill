@@ -17,6 +17,10 @@ Dawa Fire Drill is a supply-chain stress-test sandbox for essential medicines in
 - Never commit secrets. Only `.env.example` templates are tracked; never create, print or commit real keys. Keep provider keys on the backend.
 - Real credentials and accounts come from the maintainer. Do not create keys, change billing or alter account settings.
 
+## Destructive actions
+
+- Never delete data or run destructive commands (for example `docker compose down`, `docker volume rm`, `git reset --hard`, force pushes or deleting databases, volumes or branches) without asking the maintainer first.
+
 ## Git and documentation
 
 - Commit each logical unit using Conventional Commits (`feat`, `fix`, `test`, `docs`, `chore`, `refactor`, `ci`, `perf`).
