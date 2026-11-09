@@ -314,6 +314,8 @@ test("facilities can be sorted, filtered and opened", async ({ page }) => {
     .click();
   const detail = page.locator("#facility-detail");
   await expect(detail).toContainText("Family planning tracer 04: day 41");
+  await expect(detail).toContainText("Runs out on day 41 of the run");
+  await expect(detail).not.toContainText("days to stockout");
   await expect(detail).toContainText(
     "Example transfer: family planning tracer 04",
   );
@@ -433,6 +435,37 @@ test("a shared link recreates shock, budget, tab and day", async ({ page }) => {
   });
   await page.getByLabel("Budget (illustrative units)").fill("100");
   await expect(page).toHaveURL(/shock=20&budget=100&tab=overview&day=41/);
+});
+
+test("How this works and the budget note state what the model does", async ({
+  page,
+}) => {
+  await page.goto(KISUMU);
+  await expect(budgetStatus(page)).toHaveText("30 of 30 units used.", {
+    timeout: 30000,
+  });
+  await expect(page.locator("#budget-note")).toHaveText(
+    "The map shows the run without fixes; the budget changes which fixes are funded, not the map.",
+  );
+  await expect(
+    page.getByRole("region", { name: "Cheapest fixes" }),
+  ).toContainText(
+    "Each option is evaluated on its own; knock-on effects on donors are not simulated.",
+  );
+  await expect(verdict(page).locator(".terms")).toHaveText(
+    "Stockout: one facility running out of one medicine. Tracer: a medicine tracked in this demo.",
+  );
+  await page.getByRole("button", { name: "About this demo" }).click();
+  await page.getByRole("link", { name: "How this works" }).click();
+  const how = page.locator("#how-this-works");
+  await expect(how).toHaveAttribute("open", "");
+  await expect(how).toContainText(
+    "Only 4 of 209 shock-caused stockouts in the shown run have options in this demo.",
+  );
+  await expect(how).toContainText(
+    "different medicines from the same donor are separate pools",
+  );
+  await noSeriousAxe(page);
 });
 
 test("facility role sees only its trusted facility", async ({ page }) => {

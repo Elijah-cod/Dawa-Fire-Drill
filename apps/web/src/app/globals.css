@@ -644,43 +644,68 @@ input {
   opacity: 0.6;
 }
 /* The verdict keeps the 40% scenario's measured height while the run loads, so the page
-   below does not move when it arrives (measured in English, 320–1536 px). */
+   below does not move when it arrives (measured in English, 320–1536 px, with the terms line). */
 .verdict {
-  min-height: 305px;
+  min-height: 362px;
 }
 @media (max-width: 767px) {
   .verdict {
-    min-height: 325px;
+    min-height: 355px;
   }
 }
 @media (max-width: 719px) {
   .verdict {
-    min-height: 380px;
+    min-height: 385px;
   }
 }
-@media (max-width: 535px) {
+@media (max-width: 631px) {
+  .verdict {
+    min-height: 405px;
+  }
+}
+@media (max-width: 543px) {
   .verdict {
     min-height: 430px;
   }
 }
+@media (max-width: 535px) {
+  .verdict {
+    min-height: 480px;
+  }
+}
 @media (max-width: 463px) {
-  .verdict {
-    min-height: 460px;
-  }
-}
-@media (max-width: 399px) {
-  .verdict {
-    min-height: 490px;
-  }
-}
-@media (max-width: 367px) {
   .verdict {
     min-height: 510px;
   }
 }
-@media (max-width: 343px) {
+@media (max-width: 399px) {
+  .verdict {
+    min-height: 540px;
+  }
+}
+@media (max-width: 375px) {
   .verdict {
     min-height: 560px;
+  }
+}
+@media (max-width: 367px) {
+  .verdict {
+    min-height: 585px;
+  }
+}
+@media (max-width: 359px) {
+  .verdict {
+    min-height: 605px;
+  }
+}
+@media (max-width: 343px) {
+  .verdict {
+    min-height: 635px;
+  }
+}
+@media (max-width: 327px) {
+  .verdict {
+    min-height: 655px;
   }
 }
 .verdict-line {
@@ -698,7 +723,7 @@ input {
   line-height: 1.45;
 }
 /* Reserved for the longest budget sentence at every budget (measured: 5 lines at 390 px,
-   3 lines from 768 px), so a ranking that arrives later never moves the page. */
+   4 lines from 768 px), so a ranking that arrives later never moves the page. */
 .verdict-fix {
   min-height: calc(5 * 1.45em);
 }
@@ -1489,7 +1514,7 @@ input {
     line-height: 1.35;
   }
   .verdict-fix {
-    min-height: calc(3 * 1.35em);
+    min-height: calc(4 * 1.35em);
   }
   .area-map {
     height: 380px;
