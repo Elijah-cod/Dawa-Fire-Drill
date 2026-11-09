@@ -653,68 +653,79 @@ input {
   opacity: 0.6;
 }
 /* The verdict keeps the 40% scenario's measured height while the run loads, so the page
-   below does not move when it arrives (measured in English, 320–1536 px, with the terms line). */
+   below does not move when it arrives (measured in English, 320–1536 px, with the next
+   actions and the supporting counts row). */
 .verdict {
-  min-height: 362px;
+  min-height: 375px;
 }
 @media (max-width: 767px) {
   .verdict {
-    min-height: 355px;
+    min-height: 365px;
   }
 }
 @media (max-width: 719px) {
   .verdict {
-    min-height: 385px;
+    min-height: 395px;
+  }
+}
+@media (max-width: 703px) {
+  .verdict {
+    min-height: 420px;
   }
 }
 @media (max-width: 631px) {
   .verdict {
-    min-height: 405px;
+    min-height: 440px;
   }
 }
 @media (max-width: 543px) {
   .verdict {
-    min-height: 430px;
+    min-height: 465px;
   }
 }
 @media (max-width: 535px) {
   .verdict {
-    min-height: 480px;
+    min-height: 495px;
+  }
+}
+@media (max-width: 479px) {
+  .verdict {
+    min-height: 515px;
   }
 }
 @media (max-width: 463px) {
   .verdict {
-    min-height: 510px;
+    min-height: 545px;
   }
 }
 @media (max-width: 399px) {
   .verdict {
-    min-height: 540px;
+    min-height: 575px;
   }
 }
 @media (max-width: 375px) {
   .verdict {
-    min-height: 560px;
+    min-height: 600px;
   }
 }
 @media (max-width: 367px) {
   .verdict {
-    min-height: 585px;
+    min-height: 650px;
   }
 }
 @media (max-width: 359px) {
   .verdict {
-    min-height: 605px;
+    min-height: 670px;
   }
 }
 @media (max-width: 343px) {
   .verdict {
-    min-height: 635px;
+    min-height: 700px;
   }
 }
 @media (max-width: 327px) {
   .verdict {
-    min-height: 655px;
+    min-height: 725px;
   }
 }
 .verdict-line {
