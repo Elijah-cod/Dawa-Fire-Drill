@@ -22,7 +22,7 @@ The three-minute guided demo walks through the same screens a planner uses. The 
 6. **Honest edges.** At 100% no listed transfer can arrive in time: they arrive from day 39, but their stockouts happen by day 26, and the page says so instead of showing an empty list. Loading, in-flight, failed and offline states are all explicit.
 7. **Bin-card capture.** A facility in-charge uploads a bin-card photo; extracted fields (typed by hand when no provider is configured) are saved only after the person confirms every one.
 
-English and Swahili, light and dark themes, a guided demo with keyboard support, and a link that recreates the view (shock, budget, tab and day are in the URL).
+English and Swahili (the Swahili is an unreviewed translation), light and dark themes, a guided demo with keyboard support, and a link that recreates the view (shock, budget, tab and day are in the URL).
 
 | | |
 | --- | --- |
@@ -114,11 +114,11 @@ Measured on the current code:
 | --- | --- | --- |
 | Web unit and component tests (Vitest) | 162 passed | Verdict wording at each shock, ranking hook (debounce, stale responses, offline, retry), tabs and keyboard, URL link state, navigation highlight, filters, timeline counts, fixtures |
 | Backend (pytest) | 154 passed, 86% line coverage | Generators, simulation, optimization, finance flow, auth and roles, tenancy, idempotency, uploads, Alembic migrations, Hypothesis invariants, Schemathesis |
-| Browser (Playwright, 390, 768, 1280 and 1536 px) | 112 passed | Guided demo, every navigation link and back/forward, presets against backend runs, budget slider at 5/30/100 units, timeline at days 0/41/90, facilities table and map, Swahili and dark theme, axe on each flow, a token-leak canary |
+| Browser (Playwright, 390, 768, 1280 and 1536 px; run locally, not in CI) | 116 passed | Guided demo, every navigation link and back/forward, presets against backend runs, budget slider at 5/30/100 units, timeline at days 0/41/90 and its loading state, facilities table and map, Swahili and dark theme, axe on each flow, a token-leak canary |
 | Design prototype check | 66 screen/width combinations and 2 dark-theme checks passed | The static design prototype |
 | Lighthouse | `/` 1.00 performance; `/kisumu` 0.74 page load (see limitations); interaction flow 1.00 with layout shift 0.000 | Accessibility and best practices 1.00 on both pages |
 
-Commands: `cd apps/web && npm test` (Vitest), `npm run lint`, `npm run typecheck`; `cd apps/api && uv run --frozen pytest -q`. The browser suite needs a running demo: `bash scripts/demo-up.sh -- npx playwright test` (after `npx playwright install chromium`).
+Commands: `cd apps/web && npm test` (Vitest), `npm run lint`, `npm run typecheck`; `cd apps/api && uv run --frozen pytest -q`. The browser suite runs locally, not in CI, because it needs the full stack and a running demo: `bash scripts/demo-up.sh -- npx playwright test` (after `npx playwright install chromium`).
 
 ## Limitations
 
@@ -129,7 +129,7 @@ Commands: `cd apps/web && npm test` (Vitest), `npm run lint`, `npm run typecheck
 - **No production sign-in.** The demo relies on a server-side proxy with a synthetic token, for local use only.
 - **Risk cutoffs are tuned for readability** (Critical within 45 days, Watch 46–52, Stable beyond 52) and are not a standard.
 - **Kisumu page-load performance is under its 0.80 Lighthouse budget** (0.73–0.75 measured). The largest text is the data-driven verdict, which waits for the backend scenario run (about 2 s unthrottled, about 9.9 s under Lighthouse's simulated throttling). The title and framing question paint immediately with space reserved, and layout shift is 0; faster runs would need backend changes such as reusing a completed run.
-- **Language.** Swahili strings have not been reviewed by a native speaker; the optimizer explanation is English-only and labelled as such.
+- **Language.** The Swahili interface is an unreviewed translation: no native speaker has checked it. The optimizer explanation is English-only and labelled as such.
 - **Not a county map.** The national view is a schematic grid because boundary data rights are unresolved; Kisumu facility locations are invented.
 
 ## Next steps
