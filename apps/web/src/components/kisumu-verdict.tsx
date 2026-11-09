@@ -174,7 +174,7 @@ export function BudgetSentence({
   ranking: RankingState;
   onShowFunded: () => void;
 }) {
-  const { tf, tn } = usePreferences();
+  const { tf, tn, locale } = usePreferences();
   const { result, rankedBudget, budget, candidates, fixes, status } = ranking;
   if (!result || rankedBudget === null)
     return (
@@ -202,6 +202,10 @@ export function BudgetSentence({
     : n === 1
       ? "verdictFixN"
       : "verdictFixesN";
+  const one =
+    n === 1
+      ? fixes.find((fix) => selected[0]?.endsWith(`-${fix.index}`))
+      : undefined;
   const cut = Object.entries(result.excluded_reasons)
     .filter(
       ([id, reason]) =>
@@ -226,9 +230,26 @@ export function BudgetSentence({
           </a>
         ),
         cost: result.total_cost,
-        hold: holds
-          ? tf(n === 1 ? "verdictHoldOne" : "verdictHoldEach", { h: 90 })
-          : "",
+        // A funded option protects only the medicine it targets at that facility.
+        hold: !holds
+          ? ""
+          : n === 1
+            ? tf("verdictHoldOne", {
+                h: 90,
+                medicine: one
+                  ? commodityLabel(
+                      panel.commodities,
+                      one.event.commodity_id,
+                      locale,
+                    ).toLocaleLowerCase(locale)
+                  : "",
+                facility: one
+                  ? (panel.facilities.find(
+                      (f) => f.id === one.event.facility_id,
+                    )?.name ?? one.event.facility_id)
+                  : "",
+              })
+            : tf("verdictHoldEach", { h: 90 }),
       })}
       {cut.length === 1 &&
         ` ${tf("verdictCutOne", {

@@ -157,12 +157,21 @@ export function RankedFixes({
     );
   const cheapest = Math.min(...candidates.map((item) => item.cost));
   const effect = (id: string) => result?.effects.find((item) => item.id === id);
-  const effectText = (item?: Effect) =>
+  // The modeled effect covers only this medicine at this facility; say so by naming it.
+  const effectText = (
+    key: "ifFunded" | "pairSame",
+    commodityId: string,
+    item?: Effect,
+  ) =>
     !item
       ? t("effectUnknown")
-      : item.counterfactual_stockout_day === null
-        ? tf("effectHolds", { h: 90 })
-        : tf("effectMoves", { day: item.counterfactual_stockout_day });
+      : tf(key, {
+          medicine: medicine(commodityId),
+          effect:
+            item.counterfactual_stockout_day === null
+              ? tf("effectHolds", { h: 90 })
+              : tf("effectMoves", { day: item.counterfactual_stockout_day }),
+        });
   let x = 0;
   const segments = (result?.selected_ids ?? []).map((id) => {
     const cost = candidates.find((item) => item.id === id)?.cost ?? 0;
@@ -304,7 +313,7 @@ export function RankedFixes({
                       })
                     )}
                     {!same &&
-                      ` · ${tf("ifFunded", { effect: effectText(effect(id)) })}`}
+                      ` · ${effectText("ifFunded", route.commodity_id, effect(id))}`}
                   </span>
                 )}
               </li>
@@ -324,7 +333,7 @@ export function RankedFixes({
                   day: event.day,
                 })}
                 {same &&
-                  ` · ${tf("pairSame", { effect: effectText(effect(transfer)) })}`}
+                  ` · ${effectText("pairSame", event.commodity_id, effect(transfer))}`}
               </p>
               <ul className="options">
                 {option(transfer, "transfer")}

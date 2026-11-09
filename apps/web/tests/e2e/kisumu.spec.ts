@@ -51,7 +51,7 @@ test("Kisumu leads with what breaks first and the cheapest fix, from the backend
     "The fixes address only the 4 earliest of 209 shock-caused stockouts.",
   );
   await expect(verdict(page)).toContainText(
-    "At 30 units (illustrative) the optimizer funds 3 transfers (30 units), each keeping its facility stocked through day 90. Jacaranda Ridge Sub-County Hospital (day 44) does not fit what is left.",
+    "At 30 units (illustrative) the optimizer funds 3 transfers (30 units), each keeping the one medicine it targets at that facility stocked through day 90. Jacaranda Ridge Sub-County Hospital (day 44) does not fit what is left.",
     { timeout: 30000 },
   );
   await expect(verdict(page)).toContainText(

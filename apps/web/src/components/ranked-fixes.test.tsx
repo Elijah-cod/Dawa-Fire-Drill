@@ -99,7 +99,7 @@ it("ranks at once at 30 units: three transfers funded, the fourth cut", async ()
     "Tamarind Crossing Sub-County Hospital: family planning tracer 04",
   );
   expect(pairs[0].querySelector(".meta")?.textContent).toBe(
-    "Kisumu West · runs out on day 41 · if funded, either option keeps it stocked through day 90",
+    "Kisumu West · runs out on day 41 · if funded, either option: family planning tracer 04 stays stocked through day 90",
   );
   expect(pairs[0].querySelector(".option--funded")?.textContent).toMatch(
     /^Transferfrom .+, \d+(\.\d+)? km away10 unitsFunded$/,
@@ -112,7 +112,7 @@ it("ranks at once at 30 units: three transfers funded, the fourth cut", async ()
   );
   expect(document.querySelectorAll(".budget-bar .seg")).toHaveLength(3);
   expect(screen.getByTestId("sentence").textContent).toBe(
-    "At 30 units (illustrative) the optimizer funds 3 transfers (30 units), each keeping its facility stocked through day 90. Jacaranda Ridge Sub-County Hospital (day 44) does not fit what is left.",
+    "At 30 units (illustrative) the optimizer funds 3 transfers (30 units), each keeping the one medicine it targets at that facility stocked through day 90. Jacaranda Ridge Sub-County Hospital (day 44) does not fit what is left.",
   );
   expect(
     screen.getByText(
@@ -135,7 +135,7 @@ it("funds four at 100 units and none at 5, saying so plainly", async () => {
   );
   expect(document.querySelectorAll(".option--funded")).toHaveLength(4);
   expect(screen.getByTestId("sentence").textContent).toBe(
-    "At 100 units (illustrative) the optimizer funds 4 transfers (40 units), each keeping its facility stocked through day 90.",
+    "At 100 units (illustrative) the optimizer funds 4 transfers (40 units), each keeping the one medicine it targets at that facility stocked through day 90.",
   );
   expect(document.querySelector(".pair .option--cut")?.textContent).toContain(
     "A cheaper option already covers this stockout",
@@ -345,4 +345,24 @@ it("starts from the budget a shared link asked for", async () => {
   );
   expect(result.current.budget).toBe(65);
   await waitFor(() => expect(result.current.rankedBudget).toBe(65));
+});
+
+it("names the one medicine and facility a single funded transfer protects", async () => {
+  renderFixes();
+  await waitFor(() =>
+    expect(status().textContent).toBe("30 of 30 units used."),
+  );
+  fireEvent.change(screen.getByLabelText("Budget (illustrative units)"), {
+    target: { value: "10" },
+  });
+  await waitFor(() =>
+    expect(status().textContent).toBe("10 of 10 units used."),
+  );
+  expect(screen.getByTestId("sentence").textContent).toContain(
+    "the optimizer funds 1 transfer (10 units), keeping family planning tracer 04 at Tamarind Crossing Sub-County Hospital stocked through day 90.",
+  );
+  // No sentence claims a whole facility is kept stocked.
+  expect(document.body.textContent).not.toMatch(
+    /its facility stocked|keeps it stocked/,
+  );
 });
