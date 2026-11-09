@@ -1,5 +1,7 @@
 # Changelog
 
+- Wording review against the model: funded options name the one medicine they keep stocked at that facility; stockouts are given as a day of the run; the third status is "Later" (first stockout after day 52 or none), with thresholds fixed for the whole run; "Example transfer" replaces "Planted transfer"; stockout, tracer and cost units are defined where first used; a "How this works" disclosure (linked from About) and the budget note say what the model compares, replays and leaves out.
+
 - The Kisumu timeline shows "Loading the run…" until the run arrives instead of zero counts. Local Postgres data lives in a named volume. The local demo session allows 2,400 requests per minute so the 116-test browser suite fits. The README says the browser suite runs locally and that the Swahili is an unreviewed translation.
 
 - Static public demo: `STATIC_DEMO=1` builds the frontend from bundled fixtures with no backend calls, no API proxy, no token and no role switcher, refuses to build or start with server-side secrets set, and is checked by `npm run test:static-demo`. Deployment notes in `docs/deploy-demo.md`.
