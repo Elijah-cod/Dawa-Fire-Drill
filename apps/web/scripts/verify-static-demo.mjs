@@ -33,7 +33,12 @@ for (const name of secrets) delete env[name];
 // Building into a second dist directory makes Next.js add its type paths to tsconfig.json;
 // keep the committed file unchanged.
 const tsconfig = await readFile("tsconfig.json", "utf8");
-const restoreTsconfig = () => writeFile("tsconfig.json", tsconfig);
+const nextEnv = await readFile("next-env.d.ts", "utf8");
+const restoreTsconfig = () =>
+  Promise.all([
+    writeFile("tsconfig.json", tsconfig),
+    writeFile("next-env.d.ts", nextEnv),
+  ]);
 
 // 1. The build refuses to run when a server-side token is present.
 const refused = spawnSync("npx", ["next", "build", "--webpack"], {
