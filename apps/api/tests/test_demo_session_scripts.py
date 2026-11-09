@@ -104,7 +104,7 @@ def test_up_passes_token_by_environment_only_and_down_restores(tools: Path) -> N
         assert stat.S_IMODE(state.stat().st_mode) == 0o700
         assert not (state / "build.log").exists()
         calls = (tools / "calls.log").read_text()
-        assert "up -d --no-deps --no-build api switcher=true limit=1200" in calls
+        assert "up -d --no-deps --no-build api switcher=true limit=2400" in calls
         assert "npm run build" in calls
         assert "npm run start -- -p 3300" in calls
         assert "http://localhost:3300/kisumu" in up.stdout

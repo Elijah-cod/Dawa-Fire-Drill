@@ -109,7 +109,7 @@
 
 - **Most likely CI failures, in order** ([ci-risk.md](ci-risk.md)): new advisories in `npm audit --audit-level=low` or `pip-audit`; gitleaks-action needing a `GITLEAKS_LICENSE` if the repository is owned by an organization; first Linux run of `npm run test:static-demo`; the `docs-quickstart` image build (base image not pinned); timing-sensitive backend tests on a slower runner.
 - **Not verified here:** any GitHub Actions run; any Vercel deployment; behaviour on Linux or amd64; a real language-model provider; Swahili quality (no native-speaker review).
-- **Rate limit on a fresh database:** the browser suite can exceed the demo identity's 1,200-requests-per-minute limit when runs are computed cold (seen in both clean-clone runs). Options: fewer Playwright workers on fresh databases, or a higher limit in `scripts/demo-up.sh` for test sessions.
+- **Rate limit:** on 2026-11-09 the local demo session limit was raised from 1,200 to 2,400 requests per minute (`scripts/demo-up.sh`; `demo-down.sh` still restores 60) after the suite grew to 116 tests and tripped HTTP 429s; two full runs then passed 116/116 with no 429s. A fresh database (cold runs) has not been re-checked at the new limit.
 - **UI gap:** the timeline shows "0 of 0 stockouts" while a run is still loading instead of a loading state.
 - **Local data:** the Compose file has no volumes, so `docker compose down` deletes the database (the README now says so). Because the Postgres image reference changed to a digest, the next `docker compose up` will recreate your Postgres container and empty it; re-run the two seeding commands.
 - **Performance:** `/kisumu` page load is under its 0.80 Lighthouse budget (documented cause: the verdict waits for the backend run).

@@ -2,9 +2,6 @@ import { defineConfig, devices } from "@playwright/test";
 
 export default defineConfig({
   testDir: "./tests/e2e",
-  // The suite shares one demo identity with a 1,200-requests-per-minute limit; four workers
-  // stay under it (the default worker count tripped HTTP 429s at 116 tests).
-  workers: 4,
   projects: [
     {
       name: "mobile",
