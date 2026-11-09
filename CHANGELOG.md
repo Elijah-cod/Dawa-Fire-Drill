@@ -1,5 +1,7 @@
 # Changelog
 
+- The Kisumu timeline shows "Loading the run…" until the run arrives instead of zero counts. Local Postgres data lives in a named volume. The local demo session allows 2,400 requests per minute so the 116-test browser suite fits. The README says the browser suite runs locally and that the Swahili is an unreviewed translation.
+
 - Static public demo: `STATIC_DEMO=1` builds the frontend from bundled fixtures with no backend calls, no API proxy, no token and no role switcher, refuses to build or start with server-side secrets set, and is checked by `npm run test:static-demo`. Deployment notes in `docs/deploy-demo.md`.
 - Portfolio preparation: MIT licence and third-party notices, working notes moved to `docs/process/`, dead code removed, README rewritten, case study and architecture decision records added.
 
