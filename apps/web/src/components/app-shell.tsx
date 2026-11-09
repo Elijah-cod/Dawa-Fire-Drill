@@ -51,6 +51,10 @@ export function AppShell({ children }: { children: ReactNode }) {
             <p>{t("aboutInvented")}</p>
             <p>{t("aboutMethod")}</p>
             <p>{t("aboutTerms")}</p>
+            <p>
+              {/* A plain link so the hash change opens the disclosure on the Kisumu page. */}
+              <a href="/kisumu#how-this-works">{t("aboutHowLink")}</a>
+            </p>
           </div>
           <main id="content">{children}</main>
         </div>

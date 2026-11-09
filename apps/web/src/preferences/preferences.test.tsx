@@ -65,6 +65,11 @@ it("keeps the synthetic notice visible after switching language", () => {
   expect(document.getElementById("about-demo")?.textContent).toContain(
     "Only some scale parameters (facility mix, lead times, demand and funding totals) are anchored to public aggregates",
   );
+  expect(
+    document
+      .getElementById("about-demo")
+      ?.querySelector('a[href="/kisumu#how-this-works"]')?.textContent,
+  ).toBe("How this works");
   fireEvent.change(screen.getByLabelText(/language/i), {
     target: { value: "sw" },
   });

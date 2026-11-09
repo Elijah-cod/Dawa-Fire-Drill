@@ -25,6 +25,7 @@ import type { ShockEvent } from "../api/candidates";
 import { TabList, type TabItem } from "./tabs";
 import { FacilityDetail, FacilityTable } from "./facility-table";
 import { WhereItBreaks } from "./where-it-breaks";
+import { HowThisWorks } from "./how-this-works";
 
 import {
   DEFAULT_LINK_STATE,
@@ -683,6 +684,12 @@ export function KisumuOverview({
           </div>
         </div>
       </div>
+      {canRun && (
+        <HowThisWorks
+          coverage={covered}
+          shockStockouts={events && !pending ? events.shock.length : null}
+        />
+      )}
     </>
   );
 }

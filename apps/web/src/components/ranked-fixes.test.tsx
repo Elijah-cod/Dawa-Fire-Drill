@@ -116,7 +116,7 @@ it("ranks at once at 30 units: three transfers funded, the fourth cut", async ()
   );
   expect(
     screen.getByText(
-      "These options address the 4 earliest of 209 shock-caused stockouts; the others have no option in this demo. OR-Tools picks what fits the budget. Cost units are relative units for comparing options, not prices.",
+      "These options address the 4 earliest of 209 shock-caused stockouts; the others have no option in this demo. OR-Tools picks what fits the budget. Cost units are relative units for comparing options, not prices. Each option is evaluated on its own; knock-on effects on donors are not simulated.",
     ),
   ).toBeTruthy();
   expect(document.body.textContent).not.toMatch(/KES/);

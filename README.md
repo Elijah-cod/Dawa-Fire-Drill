@@ -22,6 +22,8 @@ The three-minute guided demo walks through the same screens a planner uses. The 
 6. **Honest edges.** At 100% no listed transfer can arrive in time: they arrive from day 39, but their stockouts happen by day 26, and the page says so instead of showing an empty list. Loading, in-flight, failed and offline states are all explicit.
 7. **Bin-card capture.** A facility in-charge uploads a bin-card photo; extracted fields (typed by hand when no provider is configured) are saved only after the person confirms every one.
 
+[How this works](docs/how-it-works.md) states exactly what the model compares, replays and leaves out.
+
 English and Swahili (the Swahili is an unreviewed translation), light and dark themes, a guided demo with keyboard support, and a link that recreates the view (shock, budget, tab and day are in the URL).
 
 | | |
@@ -123,7 +125,8 @@ Commands: `cd apps/web && npm test` (Vitest), `npm run lint`, `npm run typecheck
 ## Limitations
 
 - **Synthetic and unvalidated.** Stockout days, deferrals, risk labels and rankings are illustrative and have not been compared with real outcomes.
-- **Narrow ranking.** Candidates exist only for the four earliest shock-caused stockouts at 40% (one transfer and one emergency delivery each, with assumed costs and arrival days). Other stockouts have no candidate.
+- **Narrow ranking.** Candidates exist only for the four earliest shock-caused stockouts at 40% (one transfer and one emergency delivery each, with assumed costs and arrival days); only 4 of 209 shock-caused stockouts have options. Other stockouts have no candidate.
+- **Options are evaluated one at a time.** Each option is replayed on its own for one facility and one medicine, and benefits are summed. Transfers of the same medicine from one donor share a conservative pool; different medicines from the same donor are separate pools, the donor is not re-simulated after a transfer (knock-on stockouts are not shown), and transport capacity and dispatch timing conflicts are not modeled. The map shows the run without fixes. See [How this works](docs/how-it-works.md).
 - **Funding trace is one example flow.** There is no general funding ledger.
 - **Capture is online only.** No extraction provider is configured locally, so fields are typed by hand; no real provider has been exercised end to end.
 - **No production sign-in.** The demo relies on a server-side proxy with a synthetic token, for local use only.
@@ -135,6 +138,7 @@ Commands: `cd apps/web && npm test` (Vitest), `npm run lint`, `npm run typecheck
 ## Next steps
 
 - Candidates for more than the earliest stockouts, and other kinds of action.
+- Joint donor constraints across medicines, and re-simulating donors after a transfer.
 - Reuse completed runs for identical inputs so the Kisumu verdict appears faster.
 - Production sign-in, an offline capture queue, and county tenancy on the remaining legacy paths.
 - Native-speaker review of the Swahili strings.

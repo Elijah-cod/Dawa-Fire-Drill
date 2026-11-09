@@ -1,0 +1,11 @@
+# How this works
+
+The same statements appear in the app under "How this works" (linked from the "About this demo" panel). Each one describes what the code does.
+
+- **Shock-caused stockouts.** A stockout is shock-caused when that facility and medicine does not run out in the no-shock run, or runs out earlier under the shock. The no-shock run uses the same opening stock and daily demand; only the shock's cut to scheduled deliveries differs. Stockouts that happen anyway are counted as already short before the shock (no stock at the start) or as baseline stockouts (they also happen with no shock). Code: `apps/api/dawa_api/simulation/kisumu.py`.
+- **Options.** Each option (a transfer or an emergency delivery) is replayed on its own, for one facility and one medicine, through the same stock model: its quantity arrives on its arrival day and the first stockout day is compared with the run. Other medicines at the same facility are unaffected. The optimizer (OR-Tools) then picks the set of options that fits the budget, at most one option per stockout. Code: `apps/api/dawa_api/optimization/mitigation.py`, `service.py`.
+- **Donor stock.** Transfers of the same medicine from the same donor share a conservative pool, based on the donor's stock under the shock from the dispatch day until its own first stockout, and capped by the batch's available units. A facility cannot donate a medicine it also receives.
+- **Not modeled.** Different medicines from the same donor are separate pools. The donor is not re-simulated after a transfer, so knock-on stockouts are not shown. Transport capacity and dispatch timing conflicts are not modeled. The benefits of options are evaluated one at a time and summed.
+- **Map and budget.** The map and timeline show the run without fixes; the budget changes which fixes are funded, not the map.
+- **Costs and coverage.** Costs are illustrative units for comparing options, not prices. Only 4 of 209 shock-caused stockouts (at a 40% shock; 4 of 77 at 20%, none at 100%) have options in this demo.
+- **Statuses.** Critical, Watch and Later come from each facility's first stockout day in the 90-day run (by day 45, days 46–52, after day 52 or none). They are fixed for the whole run and do not change with the selected timeline day; the cutoffs are illustrative.

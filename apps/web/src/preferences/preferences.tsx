@@ -114,6 +114,25 @@ const strings = {
     factsShortItem: "{name} from day {day}",
     factsStatus: "{critical} Critical · {watch} Watch · {stable} Later",
     and: "and",
+    howTitle: "How this works",
+    howShockCaused:
+      "A stockout is shock-caused when that facility and medicine does not run out in the no-shock run, or runs out earlier under the shock. Stockouts that happen anyway are counted as already short before the shock (no stock at the start) or as baseline stockouts (they also happen with no shock).",
+    howReplay:
+      "Each option is replayed on its own, for one facility and one medicine, through the same stock model. The optimizer (OR-Tools) then picks the set of options that fits the budget.",
+    howDonor:
+      "Donor stock: transfers of the same medicine from the same donor share a conservative pool, based on the donor's stock under the shock until its own first stockout.",
+    howNotModeled:
+      "Not modeled: different medicines from the same donor are separate pools; the donor is not re-simulated after a transfer, so knock-on stockouts are not shown; transport capacity and dispatch timing conflicts are not modeled; the benefits of options are evaluated one at a time and summed.",
+    howMap:
+      "The map and timeline show the run without fixes; the budget changes which fixes are funded, not the map.",
+    howCosts: "Costs are illustrative units, not prices.",
+    howCoverage:
+      "Only {n} of {total} shock-caused stockouts in the shown run have options in this demo.",
+    howCoverageNone:
+      "None of the {total} shock-caused stockouts in the shown run has an option that can arrive in time.",
+    howCoverageNoShock:
+      "With no shock there are no shock-caused stockouts to fix.",
+    aboutHowLink: "How this works",
     termStockout: "Stockout",
     termStockoutDef: "one facility running out of one medicine",
     termTracer: "Tracer",
@@ -194,7 +213,7 @@ const strings = {
     fixesScope:
       "These options address {coverage}; the others have no option in this demo.",
     fixesHow:
-      "OR-Tools picks what fits the budget. Cost units are relative units for comparing options, not prices.",
+      "OR-Tools picks what fits the budget. Cost units are relative units for comparing options, not prices. Each option is evaluated on its own; knock-on effects on donors are not simulated.",
     fixesBudget: "Budget (illustrative units)",
     fixesBudgetNumber: "Budget in illustrative units",
     units: "{n} units",
@@ -477,6 +496,25 @@ const strings = {
     factsStatus:
       "{critical} Hatari kubwa · {watch} Angalizo · {stable} Baadaye",
     and: "na",
+    howTitle: "Jinsi hii inavyofanya kazi",
+    howShockCaused:
+      "Kuisha kwa bidhaa kumesababishwa na mshtuko pale kituo hicho na dawa hiyo havikosi akiba katika jaribio bila mshtuko, au vinakosa mapema zaidi chini ya mshtuko. Matukio yanayotokea hata hivyo yanahesabiwa kama yaliyokuwa na upungufu kabla ya mshtuko (hakuna akiba mwanzoni) au kama matukio ya msingi (yanatokea pia bila mshtuko).",
+    howReplay:
+      "Kila chaguo kinachezwa upya peke yake, kwa kituo kimoja na dawa moja, kupitia modeli ileile ya akiba. Kisha kiboreshaji (OR-Tools) huchagua seti ya chaguo inayotosha ndani ya bajeti.",
+    howDonor:
+      "Akiba ya mtoaji: uhamisho wa dawa ileile kutoka kwa mtoaji yuleyule unashiriki hifadhi ya tahadhari, kulingana na akiba ya mtoaji chini ya mshtuko hadi kuisha kwake kwa kwanza.",
+    howNotModeled:
+      "Haijaigwa: dawa tofauti kutoka kwa mtoaji mmoja ni hifadhi tofauti; mtoaji haigwi upya baada ya uhamisho, kwa hivyo kuisha kunakofuata hakuonyeshwi; uwezo wa usafiri na migongano ya muda wa kutuma haijaigwa; manufaa ya chaguo hupimwa moja moja na kujumlishwa.",
+    howMap:
+      "Ramani na mstari wa wakati vinaonyesha jaribio bila suluhisho; bajeti hubadilisha suluhisho zinazofadhiliwa, si ramani.",
+    howCosts: "Gharama ni vipimo vya mfano, si bei.",
+    howCoverage:
+      "Ni matukio {n} tu kati ya {total} yaliyosababishwa na mshtuko katika jaribio linaloonyeshwa yenye chaguo katika onyesho hili.",
+    howCoverageNone:
+      "Hakuna kati ya matukio {total} yaliyosababishwa na mshtuko katika jaribio linaloonyeshwa lenye chaguo kinachoweza kufika kwa wakati.",
+    howCoverageNoShock:
+      "Bila mshtuko hakuna matukio yaliyosababishwa na mshtuko ya kurekebisha.",
+    aboutHowLink: "Jinsi hii inavyofanya kazi",
     termStockout: "Kuisha kwa bidhaa",
     termStockoutDef: "kituo kimoja kukosa dawa moja",
     termTracer: "Kifuatiliaji",
@@ -562,7 +600,7 @@ const strings = {
     fixesScope:
       "Chaguo hizi zinashughulikia {coverage}; mengine hayana chaguo katika onyesho hili.",
     fixesHow:
-      "OR-Tools huchagua kinachotosha ndani ya bajeti. Vipimo vya gharama ni vipimo vya kulinganisha chaguo, si bei.",
+      "OR-Tools huchagua kinachotosha ndani ya bajeti. Vipimo vya gharama ni vipimo vya kulinganisha chaguo, si bei. Kila chaguo kinapimwa peke yake; athari zinazofuata kwa watoaji hazijaigwa.",
     fixesBudget: "Bajeti (vipimo vya mfano)",
     fixesBudgetNumber: "Bajeti kwa vipimo vya mfano",
     units: "vipimo {n}",
