@@ -6,7 +6,7 @@ Dawa Fire Drill helps a county planner rehearse a supply shock, see the sequence
 
 All displayed records are **synthetic, calibrated to public aggregates**. Predictions and optimization outputs are **illustrative and unvalidated**. No screen may imply operational accuracy or a verified impact estimate. OR-Tools/PuLP ranks actions; the explanation panel only restates that result. The UI never asks the LLM to choose an action.
 
-No frontend product code begins until `DESIGN APPROVED` is recorded in `APPROVAL.md`. This design is for review, not an implementation authorization.
+The design was reviewed and approved before frontend work began; the approval record is in [`docs/process/design/APPROVAL.md`](../process/design/APPROVAL.md).
 
 ## Design direction
 
@@ -21,6 +21,6 @@ Design mockups may use the two shock magnitudes supplied by the user (40% logist
 - [Tokens and accessibility](tokens.md)
 - [Components and responsive rules](components-and-responsive.md)
 - [String plan](strings.md)
-- [Figma build checklist](figma-checklist.md)
+- [Figma build checklist](../process/design/figma-checklist.md)
 - [Static responsive prototype](prototype/README.md)
-- [Checkpoint A review checklist](REVIEW.md)
+- [Checkpoint A review checklist](../process/design/REVIEW.md)

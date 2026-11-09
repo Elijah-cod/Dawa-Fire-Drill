@@ -4,7 +4,7 @@ import { afterEach, expect, it } from "vitest";
 import fixture from "../fixtures/kisumu.json";
 import { withDisplayNames } from "../kisumu/names";
 import { runEvents } from "../kisumu/view";
-import { ORDER_PREVIEW, peakWindow, StockoutOrder } from "./stockout-order";
+import { ORDER_PREVIEW, StockoutOrder } from "./stockout-order";
 afterEach(cleanup);
 
 const panel = withDisplayNames(fixture.pilot);
@@ -66,14 +66,4 @@ it("says plainly when nothing runs out because of the shock", () => {
   expect(
     screen.getByText("Nothing runs out because of the shock in this run."),
   ).toBeTruthy();
-});
-
-it("picks the earliest of equally busy weeks", () => {
-  expect(
-    peakWindow([
-      { facility_id: "A", commodity_id: "C", day: 15 },
-      { facility_id: "B", commodity_id: "C", day: 1 },
-    ]),
-  ).toEqual({ start: 1, end: 7, count: 1 });
-  expect(peakWindow([])).toBeNull();
 });

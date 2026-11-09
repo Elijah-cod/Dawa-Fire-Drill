@@ -2,11 +2,11 @@
 
 Status: **Approved** on 2026-11-05.
 
-The user replied exactly `DESIGN APPROVED` in this repository on 2026-11-05. The reviewed artifacts are the [Phase 1 design brief](README.md), [screen specification](screens.md), and [static responsive prototype](prototype/README.md). Native Figma frames and prototype connections remain incomplete as noted in the [Figma checklist](figma-checklist.md).
+The user replied exactly `DESIGN APPROVED` in this repository on 2026-11-05. The reviewed artifacts are the [Phase 1 design brief](../../design/README.md), [screen specification](../../design/screens.md), and [static responsive prototype](../../design/prototype/README.md). Native Figma frames and prototype connections remain incomplete as noted in the [Figma checklist](figma-checklist.md).
 
-On 2026-11-07 the user approved `docs/design/` and the [county design addendum](addendum-counties.md), and authorized Phase 3 frontend work.
+On 2026-11-07 the user approved `docs/design/` and the [county design addendum](../../design/addendum-counties.md), and authorized Phase 3 frontend work.
 
-On 2026-11-08 the user approved the [Kisumu redesign preview](prototype/kisumu-v2/) (critique in [critique-v4.md](critique-v4.md), screenshots in `prototype/kisumu-v2/screenshots/v5/`) with no further preview rounds, and carried six items into the app build:
+On 2026-11-08 the user approved the [Kisumu redesign preview](../../design/prototype/kisumu-v2/) (critique in [critique-v4.md](critique-v4.md), screenshots in `prototype/kisumu-v2/screenshots/v5/`) with no further preview rounds, and carried six items into the app build:
 
 1. Fix costs, the budget slider and field, the verdict and related UI text use illustrative cost **units**; the funding trace stays in KES.
 2. The About text states precisely what is invented and what is anchored, matching `docs/data-assumptions.md`.

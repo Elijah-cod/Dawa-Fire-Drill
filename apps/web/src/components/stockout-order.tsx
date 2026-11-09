@@ -3,21 +3,6 @@ import type { ShockEvent } from "../api/candidates";
 import { commodityLabel } from "../kisumu/names";
 import { usePreferences } from "../preferences/preferences";
 
-/** The 7-day window (from day 1) with the most events; the earliest wins a tie. */
-export function peakWindow(events: ShockEvent[]) {
-  const counts = new Map<number, number>();
-  for (const event of events) {
-    const index = Math.floor((event.day - 1) / 7);
-    counts.set(index, (counts.get(index) ?? 0) + 1);
-  }
-  let best: [number, number] | null = null;
-  for (const [index, count] of [...counts].sort((a, b) => a[0] - b[0]))
-    if (!best || count > best[1]) best = [index, count];
-  return (
-    best && { start: best[0] * 7 + 1, end: best[0] * 7 + 7, count: best[1] }
-  );
-}
-
 /** How many shock-caused stockouts show before "Show all". */
 export const ORDER_PREVIEW = 10;
 

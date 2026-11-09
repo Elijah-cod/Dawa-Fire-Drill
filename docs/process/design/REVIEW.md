@@ -1,6 +1,6 @@
 # Checkpoint A: design review
 
-Review the [design brief](README.md), [exact screen copy and states](screens.md), and [responsive prototype](prototype/README.md). The [Figma file](https://www.figma.com/design/miYdEWIJdzCwcEEECAqUpW/Dawa-Fire-Drill-%E2%80%94-Phase-1-Design) contains the four planned pages but no approved frames; its generated drafts were removed because they invented quantities and costs. The static prototype is the current screen review artifact.
+Review the [design brief](../../design/README.md), [exact screen copy and states](../../design/screens.md), and [responsive prototype](../../design/prototype/README.md). The [Figma file](https://www.figma.com/design/miYdEWIJdzCwcEEECAqUpW/Dawa-Fire-Drill-%E2%80%94-Phase-1-Design) contains the four planned pages but no approved frames; its generated drafts were removed because they invented quantities and costs. The static prototype is the current screen review artifact.
 
 - [ ] The county planner can complete the three-minute path from Overview to a ranked action without instruction.
 - [ ] The ranked action order, budget ceiling, selected set, and cut line are clear. The copy does not imply an LLM made the ranking.
