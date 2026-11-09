@@ -107,7 +107,7 @@ export function FacilityMap({
   /** Selected shock (%); shows the always-visible status counts under the legend. */
   magnitude?: number;
 }) {
-  const { t, locale } = usePreferences();
+  const { t, tf, locale } = usePreferences();
   const container = useRef<HTMLDivElement>(null);
   const [mapNearViewport, setMapNearViewport] = useState(false);
   const [tilesUnavailable, setTilesUnavailable] = useState(false);
@@ -224,7 +224,9 @@ export function FacilityMap({
                 ? t("noRiskData")
                 : marker.result.days === null
                   ? t("noStockout")
-                  : `${marker.result.days} ${t("days")}`;
+                  : marker.result.days === 0
+                    ? t("outAtStart")
+                    : tf("runsOutOnDay", { day: marker.result.days });
             const short = preShock?.has(marker.facility.id)
               ? ` · ${t("alreadyShort")}`
               : "";
@@ -369,7 +371,7 @@ export function FacilityMap({
       removed = true;
       map?.remove();
     };
-  }, [markers, locale, onSelect, t, mapNearViewport, preShock]);
+  }, [markers, locale, onSelect, t, tf, mapNearViewport, preShock]);
 
   if (!markers.length) return <p>{t("facilityMapUnavailable")}</p>;
   return (

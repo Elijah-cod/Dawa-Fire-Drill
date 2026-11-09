@@ -68,7 +68,7 @@ it("updates a facility's risk and driving tracer with the selected scenario", as
   const detail = () => document.getElementById("facility-detail")!;
   await vi.waitFor(() =>
     expect(detail().textContent).toMatch(
-      /Critical.*Synthetic tracer · 7 days to stockout/,
+      /Critical.*Synthetic tracer · Runs out on day 7 of the run/,
     ),
   );
   expect(
@@ -411,6 +411,9 @@ it("sorts the facilities table and opens a facility's detail from its row", asyn
     "Tamarind Crossing Sub-County Hospital · SYN-KE-042-F031",
   );
   expect(detail.textContent).toContain("Family planning tracer 04: day 41");
+  // Day wording: the run's day number, never "days to stockout".
+  expect(detail.textContent).toContain("Runs out on day 41 of the run");
+  expect(detail.textContent).not.toMatch(/days to stockout/);
   expect(detail.textContent).toMatch(
     /Planted transfer: family planning tracer 04 from .+, \d+(\.\d+)? km away, arriving on day \d+\./,
   );
@@ -553,5 +556,32 @@ it("follows a tab change in the URL and focuses that panel's heading", async () 
         .getByRole("tab", { name: "Map and fixes" })
         .getAttribute("aria-selected"),
     ).toBe("true"),
+  );
+});
+
+it("says when a facility has no stockout in the run", async () => {
+  render(<KisumuOverview panel={fixture.pilot} scenario={fixtureScenario()} />);
+  fireEvent.click(screen.getByRole("button", { name: "0%" }));
+  fireEvent.click(screen.getByRole("tab", { name: /Facilities/ }));
+  const table = screen.getByRole("region", { name: "Facilities table" });
+  await vi.waitFor(() =>
+    expect(within(table).getAllByRole("row")[1].textContent).toMatch(
+      /Critical/,
+    ),
+  );
+  fireEvent.click(
+    within(table).getByRole("button", { name: "Mvule Ridge Dispensary" }),
+  );
+  const detail = document.getElementById("facility-detail")!;
+  await vi.waitFor(() =>
+    expect(detail.textContent).toContain("No stockout in the 90-day run"),
+  );
+  fireEvent.click(
+    within(table).getByRole("button", { name: "Acacia Ridge Dispensary" }),
+  );
+  await vi.waitFor(() =>
+    expect(detail.textContent).toContain(
+      "Out of stock at the start of the run",
+    ),
   );
 });

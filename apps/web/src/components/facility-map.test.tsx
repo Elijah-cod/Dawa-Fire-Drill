@@ -128,7 +128,7 @@ it("shows synthetic location labeling, thresholds, and an accessible risk marker
     ),
   ).toBeTruthy();
   const marker = await screen.findByRole("button", {
-    name: /Synthetic one.*Critical.*7 days.*C1/i,
+    name: /Synthetic one.*Critical.*Runs out on day 7 of the run.*C1/i,
   });
   expect(marker.getAttribute("title")).toContain("within 45 days");
   fireEvent.click(marker);
@@ -297,7 +297,7 @@ it("labels facilities that were short before the shock in the marker tooltip", a
   );
   expect(
     await screen.findByRole("button", {
-      name: "Synthetic one · Critical · Already short before the shock · 0 days to stockout · Driving commodities: C01",
+      name: "Synthetic one · Critical · Already short before the shock · Out of stock at the start of the run · Driving commodities: C01",
     }),
   ).toBeTruthy();
   expect(

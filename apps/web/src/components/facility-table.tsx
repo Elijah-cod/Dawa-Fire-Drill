@@ -235,7 +235,9 @@ export function FacilityDetail({
             ? risk.status === "unknown"
               ? t("noRiskData")
               : t("noStockout")
-            : `${risk.days} ${t("days")}`}
+            : risk.days === 0
+              ? t("outAtStart")
+              : tf("runsOutOnDay", { day: risk.days })}
         </dd>
       </dl>
       <h3 className="group-title">
