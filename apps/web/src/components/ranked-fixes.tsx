@@ -121,7 +121,7 @@ export function RankedFixes({
           step={BUDGET_STEP}
           value={budget}
           disabled={disabled}
-          aria-describedby="budget-status"
+          aria-describedby="budget-status budget-note"
           onChange={(event) => ranking.setBudget(Number(event.target.value))}
         />
         <input
@@ -140,6 +140,9 @@ export function RankedFixes({
           }}
         />
       </div>
+      <p className="hint budget-note" id="budget-note">
+        {t("fixesBudgetNote")}
+      </p>
     </>
   );
   if (noFix)

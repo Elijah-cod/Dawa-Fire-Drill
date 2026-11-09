@@ -215,6 +215,8 @@ const strings = {
     fixesHow:
       "OR-Tools picks what fits the budget. Cost units are relative units for comparing options, not prices. Each option is evaluated on its own; knock-on effects on donors are not simulated.",
     fixesBudget: "Budget (illustrative units)",
+    fixesBudgetNote:
+      "The map shows the run without fixes; the budget changes which fixes are funded, not the map.",
     fixesBudgetNumber: "Budget in illustrative units",
     units: "{n} units",
     fixesLoading: "Loading the ranked fixes…",
@@ -602,6 +604,8 @@ const strings = {
     fixesHow:
       "OR-Tools huchagua kinachotosha ndani ya bajeti. Vipimo vya gharama ni vipimo vya kulinganisha chaguo, si bei. Kila chaguo kinapimwa peke yake; athari zinazofuata kwa watoaji hazijaigwa.",
     fixesBudget: "Bajeti (vipimo vya mfano)",
+    fixesBudgetNote:
+      "Ramani inaonyesha jaribio bila suluhisho; bajeti hubadilisha suluhisho zinazofadhiliwa, si ramani.",
     fixesBudgetNumber: "Bajeti kwa vipimo vya mfano",
     units: "vipimo {n}",
     fixesLoading: "Inapakia suluhisho zilizopangwa…",

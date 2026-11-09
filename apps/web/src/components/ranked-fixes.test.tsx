@@ -329,8 +329,9 @@ it("shows the budget disabled with the reason when nothing can be ranked", () =>
   const slider = screen.getByLabelText("Budget (illustrative units)");
   expect((slider as HTMLInputElement).disabled).toBe(true);
   expect(
-    document.getElementById(slider.getAttribute("aria-describedby")!)
-      ?.textContent,
+    document.getElementById(
+      slider.getAttribute("aria-describedby")!.split(" ")[0],
+    )?.textContent,
   ).toBe(
     "The budget is not used at this shock: no transfer can arrive in time.",
   );
@@ -364,5 +365,16 @@ it("names the one medicine and facility a single funded transfer protects", asyn
   // No sentence claims a whole facility is kept stocked.
   expect(document.body.textContent).not.toMatch(
     /its facility stocked|keeps it stocked/,
+  );
+});
+
+it("says next to the budget that it changes the funded fixes, not the map", async () => {
+  renderFixes();
+  const slider = await screen.findByLabelText("Budget (illustrative units)");
+  expect(document.getElementById("budget-note")?.textContent).toBe(
+    "The map shows the run without fixes; the budget changes which fixes are funded, not the map.",
+  );
+  expect(slider.getAttribute("aria-describedby")).toBe(
+    "budget-status budget-note",
   );
 });
