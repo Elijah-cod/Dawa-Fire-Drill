@@ -1,104 +1,137 @@
 # Dawa Fire Drill
 
-A supply chain stress-test simulator for essential medicines in Kenya, designed to support more countries. The Phase 2 backend runs synthetic shock scenarios, reports illustrative stockout sequences, and ranks assumed mitigation candidates within a budget ceiling.
+A stress-test sandbox for essential-medicine supply in Kenya: pick a shock, see what runs out first, and get the cheapest fix that fits a budget.
 
-**Data policy:** All project data is synthetic. Facility mix, lead-time anchors, ten tracer demand proxies and an overall funding scale use public aggregates; individual funding stages and temporal patterns remain illustrative assumptions. Model outputs are illustrative and have not been validated. Do not use them for operational decisions. See [data assumptions](docs/data-assumptions.md).
+![Kisumu at a 40% shock: the verdict names what breaks first, how far the fixes reach and the cheapest fix](docs/screenshots/readme-verdict-1280.png)
+
+**Every number in this project is synthetic.** Facilities, names, coordinates, stock levels and costs are invented. Only some scale parameters (facility mix, lead times, demand and funding totals) are anchored to public aggregates, documented in [data assumptions](docs/data-assumptions.md). No model output has been validated. Do not use it for operational decisions.
+
+## The problem
+
+When donor logistics support or a cash release is cut, county health planners need to know three things quickly: which facilities and medicines run out first, why, and what the cheapest response is with the money they have. That reasoning usually happens in spreadsheets, after the stockouts have started. Dawa Fire Drill is a place to rehearse it in advance on a realistic but invented county, with the reasoning visible.
+
+## What it does
+
+The three-minute guided demo walks through the same screens a planner uses. The figures below are what the app shows for seed 42 and county generator version 5.
+
+1. **National overview.** Kenya's 47 counties on a schematic grid (deliberately not a boundary map) with synthetic planning proxies. Kisumu is the facility-level pilot.
+2. **Pick a shock.** Four prepared scenarios cut donor logistics support by 0, 20, 40 or 100%. At 40%, the verdict reads: *“A 40% cut in donor logistics support causes 209 stockouts within 90 days; Tamarind Crossing Sub-County Hospital (Kisumu West) runs out of family planning tracer 04 first, on day 41.”* 211 stockouts happen in total; 2 are at facilities already short before the shock, and the app keeps them apart. Facilities split 10 Critical, 18 Watch and 12 Stable. “Compare” flips to the no-shock run.
+3. **Watch it break.** A day scrubber (week steps, play, keyboard) shows facilities out per area across the 90-day run. At day 41 the run has 3 stockouts across 3 facilities; at day 90, 211 across all 40.
+4. **Cheapest fix within a budget.** OR-Tools compares a transfer from a nearby facility (10 illustrative cost units) with an emergency delivery (50 units) for each covered stockout. The page says plainly that the options cover only the 4 earliest of the 209 shock-caused stockouts. At 30 units the optimizer funds 3 transfers and cuts the fourth (Jacaranda Ridge Sub-County Hospital, day 44) because it no longer fits; at 100 units it funds all 4 for 40 units; at 5 units nothing fits. The budget slider re-ranks live, and “Why these picks?” restates the optimizer's own result.
+5. **Where the money stalls.** One synthetic funding flow shows 100,000 KES approved but not released after 90 days, with the stalled stage marked.
+6. **Honest edges.** At 100% no listed transfer can arrive in time: they arrive from day 39, but their stockouts happen by day 26, and the page says so instead of showing an empty list. Loading, in-flight, failed and offline states are all explicit.
+7. **Bin-card capture.** A facility in-charge uploads a bin-card photo; extracted fields (typed by hand when no provider is configured) are saved only after the person confirms every one.
+
+English and Swahili, light and dark themes, a guided demo with keyboard support, and a link that recreates the view (shock, budget, tab and day are in the URL).
+
+| | |
+| --- | --- |
+| ![Cheapest fixes: budget slider, cut line and paired options](docs/screenshots/readme-ranked-fix-1280.png) | ![Where it breaks: timeline and schematic area map at day 45](docs/screenshots/readme-timeline-1280.png) |
+| Cheapest fixes at 30 units | Where it breaks at day 45 (positions invented) |
+| ![Funding trace with the stalled stage marked](docs/screenshots/readme-funding-trace-1280.png) | ![Facility map at a 40% shock with clusters and counts](docs/screenshots/readme-map-40-1280.png) |
+| Funding trace: approved, not released | Facility map at 40% (OpenStreetMap tiles) |
+| ![Kisumu on a phone](docs/screenshots/readme-mobile-nav-390.png) | ![Bin-card capture awaiting confirmation](docs/screenshots/readme-capture-confirm-390.png) |
+| Kisumu at 390 px | Capture: nothing is saved until confirmed |
 
 ## Architecture
 
 ```mermaid
 flowchart LR
-  Web[Next.js web app] --> API[FastAPI /v1]
-  API --> PG[(Postgres source of truth)]
-  API --> Graph[(Neo4j funding trace)]
-  API --> Optimizer[OR-Tools ranking]
-  API --> LLM[LLM extraction and explanations]
-  API --> Country[Country adapters]
+  subgraph Browser
+    Web[Next.js app<br/>App Router, TypeScript]
+  end
+  Web -->|server-side proxy<br/>synthetic demo token| API[FastAPI /v1]
+  API --> PG[(Postgres<br/>snapshots, runs, captures<br/>row-level security)]
+  API --> Neo[(Neo4j<br/>funding trace graph)]
+  Worker[Run worker] -->|lease-fenced claims| PG
+  Worker --> Sim[Deterministic simulator<br/>versioned]
+  API --> Opt[OR-Tools ranking]
+  API --> LLM[Language-model providers<br/>extraction and explanation only]
+  Gen[Versioned synthetic generators] --> PG
 ```
 
-Nothing is deployed. The approved frontend is in progress (Phase 3, before Checkpoint C): the national overview, Kisumu pilot, ranked fixes, a funding-trace slice, bin-card capture and a guided demo run locally against the backend. See [limitations](#limitations).
+The web app never holds a token in the browser: a server-side route proxies to the API with a short-lived synthetic token minted by `scripts/demo-up.sh`. Scenario runs are queued in Postgres and processed by a worker against a pinned data snapshot and simulator version. Rankings come from OR-Tools; explanations only restate them.
 
-Phase 2b covers synthetic planning records for Kenya's 47 counties, with Kisumu as the only facility-level pilot; see [Phase 2 notes](docs/process/phases/2.md) for the demo evidence and limitations, including legacy country-only paths and the missing map.
+## Key design decisions
 
-Kisumu generator versions 3 and 4 include invented facility coordinates; they are not real sites or verified administrative locations. Versions 1 and 2 have no coordinates. Version 4 plants a synthetic transfer for the seed-42 first shock-caused stockout; existing snapshots remain unchanged. See [data assumptions](docs/data-assumptions.md). Version 5, now served by default, varies opening cover per facility and commodity so shock-caused stockouts spread over several weeks, keeps every invented location on land, and replants the transfer for the new first event.
+Short records live in [`docs/adr/`](docs/adr/).
 
-## Screenshots
+- **Synthetic data with versioned generators** ([ADR 0001](docs/adr/0001-synthetic-data-versioned-generators.md)). No real facility data is used. Generators are versioned (county generator v1–v5) and seeded, and stored snapshots never change, so every run is reproducible and older results stay explainable. Tradeoff: nothing here says anything about real outcomes.
+- **The optimizer decides; AI only explains** ([ADR 0002](docs/adr/0002-optimizer-decides-ai-explains.md)). OR-Tools selects the funded set; language models may only extract bin-card fields or restate the optimizer's result, and their output never changes a ranking. Tradeoff: explanations are plain and English-only rather than persuasive.
+- **Row-level tenancy** ([ADR 0003](docs/adr/0003-row-level-tenancy.md)). Postgres row-level security scopes scenario rows to the country in a transaction-local setting taken from the signed token, never from a header or payload. Tradeoff: the app must run as a non-superuser role, and some legacy paths are still country-scoped only.
+- **Deterministic, versioned simulation** ([ADR 0004](docs/adr/0004-deterministic-versioned-simulation.md)) and **a Postgres-backed queue** ([ADR 0005](docs/adr/0005-postgres-backed-queue.md)) with lease tokens instead of a separate broker.
+- **A language-model provider abstraction** ([ADR 0006](docs/adr/0006-llm-provider-abstraction.md)) with mocked providers in CI and a manual fallback when no provider is configured.
+- **Illustrative cost units** ([ADR 0007](docs/adr/0007-illustrative-cost-units.md)): fix costs are “units”, not shillings, because they are not calibrated to real prices; the funding trace keeps KES.
+- **Honest edge states.** The UI says when fixes cover only some stockouts, when nothing fits, when no transfer can arrive in time, and which facilities were already short before the shock.
 
-All screens show synthetic data; every number is illustrative and unvalidated.
+## Tech stack
 
-| | |
-| --- | --- |
-| ![Kisumu verdict: what breaks first, how far the fixes reach and the cheapest fix](docs/screenshots/readme-verdict-1280.png) | ![Cheapest fixes: budget slider, cut line and paired options](docs/screenshots/readme-ranked-fix-1280.png) |
-| Kisumu at 40%: the verdict, scenario presets and tabs (1280 px) | Cheapest fixes at 30 units: three transfers funded, the fourth cut by what is left of the budget |
-| ![Where it breaks: timeline and schematic area map at day 45](docs/screenshots/readme-timeline-1280.png) | ![Funding trace with the stalled stage marked](docs/screenshots/readme-funding-trace-1280.png) |
-| Where it breaks at day 45: week steps, play and facilities out per area (positions invented) | Funding trace: stage bar stalled at Released; 100,000 KES approved, not released, 90 days |
-| ![Facility map at a 40% shock with clusters and counts](docs/screenshots/readme-map-40-1280.png) | ![National overview with the guided demo open](docs/screenshots/readme-overview-tour-1280.png) |
-| Facilities tab, facility map at 40%: clusters show their status mix; 10 Critical, 18 Watch, 12 Stable | National overview with the guided demo (1280 px) |
-| ![Kisumu on a phone: verdict first, Change scenario on the first screen](docs/screenshots/readme-mobile-nav-390.png) | ![Guided demo on a phone at the shock step](docs/screenshots/readme-tour-mobile-390.png) |
-| Kisumu at 390 px: the verdict first, Change scenario on the first screen, bottom navigation bar | Guided demo at 390 px: the shock step opens the scenario presets |
-| ![Bin-card capture awaiting human confirmation](docs/screenshots/readme-capture-confirm-390.png) | |
-| Bin-card capture: nothing is saved until “Confirm and save” | |
+- **Frontend:** Next.js 16 (App Router), React 19, strict TypeScript, Tailwind CSS 4 with CSS-variable tokens, MapLibre GL with OpenStreetMap tiles, a self-hosted Source Serif 4 display face.
+- **Backend:** Python 3.12, FastAPI, Pydantic v2, SQLAlchemy 2 (async), Alembic, Postgres 16 with row-level security, Neo4j 5, OR-Tools, pandas and statsmodels.
+- **Tooling:** Vitest and Testing Library, Playwright with axe, Lighthouse CI, pytest with Hypothesis and Schemathesis, Ruff, mypy, ESLint, Prettier, gitleaks, pip-audit, npm audit, Bandit, Docker Compose, GitHub Actions.
 
-## Local quickstart
+## Quickstart
 
-Requirements: Docker with Compose, [`uv`](https://docs.astral.sh/uv/), Node.js with npm, and `lsof`. From the repository root:
+Requirements: Docker with Compose, [`uv`](https://docs.astral.sh/uv/), Node.js 24 with npm, and `lsof`. From a fresh clone:
 
 ```sh
 docker compose -f infra/compose.yaml up -d --build
-curl --fail http://localhost:8000/health
-curl --fail http://localhost:8000/ready
+curl --fail --retry 20 --retry-delay 3 --retry-all-errors http://localhost:8000/ready
 docker compose -f infra/compose.yaml exec -T api python -m dawa_api.ingestion.persist --country KE --seed 42
 docker compose -f infra/compose.yaml exec -T api python -m dawa_api.ingestion.seed_counties --seed 42
 (cd apps/web && npm ci)
 bash scripts/demo-up.sh
 ```
 
-Open `http://localhost:3300/` and choose **Try the 3-minute demo**. Run the demo with `bash scripts/demo-up.sh`, not `npm run dev`: in development mode React mounts components twice, which can stall the guided demo's automatic rank on “Ranking feasible actions…”. When you are done:
+Open `http://localhost:3300/` and choose **Try the 3-minute demo**. Stop with:
 
 ```sh
 bash scripts/demo-down.sh
 docker compose -f infra/compose.yaml down
 ```
 
-The health response identifies the synthetic-data policy. API documentation is at `http://localhost:8000/docs` while the local stack runs. The local Compose database credentials are disposable development defaults; do not use them in a deployed environment.
+`scripts/demo-up.sh` refuses to run outside a local environment. It generates a throwaway signing secret, recreates only the API container with demo role switching on, mints a synthetic admin token valid for 4 hours, builds the web app and serves it in production mode on port 3300. The token lives only in the web server's process environment and is never printed or written to disk; `scripts/demo-down.sh` removes it and restores the API's default settings. API docs are at `http://localhost:8000/docs` while the stack runs. The Compose database credentials are disposable local defaults.
 
-### What the demo scripts do
 
-`bash scripts/demo-up.sh` starts a local synthetic demo session after the Compose stack is up and seeded. It refuses to run unless `APP_ENV` is unset or `local`, the compose file is this repository's `infra/compose.yaml`, and port 3300 is free. It generates a throwaway signing secret and the synthetic issuer `https://synthetic-demo.invalid`, recreates only the `api` container with demo role switching on, waits for `/ready`, mints a synthetic admin token valid for 4 hours (national planning plus Kisumu scope), raises the local per-subject rate limit to 1,200 requests per minute so the browser suite can share one identity, then builds the web app and starts it in production mode at `http://localhost:3300/kisumu`. The token reaches the web server only through its process environment; neither value is printed or written to a file. The web log and process ID stay in a private (`0700`) temporary directory until `bash scripts/demo-down.sh` stops the web server, deletes that directory, and recreates the `api` container with default settings (role switching off, no signing material). While a session runs, the secret is visible in the local container configuration and the token in the web process environment to the same OS user. `bash scripts/demo-up.sh -- npx playwright test` runs a local check from `apps/web` with the token in that command's environment as `E2E_DEMO_TOKEN`, which the token-leak browser test needs as its canary; the session keeps running afterwards. Requires Docker, `uv`, Node.js and `lsof`. Never use real credentials or run it against a shared or deployed environment.
+## Tests
 
-## Three-minute demo script
+Measured on the current code:
 
-Start at `http://localhost:3300/` and press **Try the 3-minute demo**. Each step has a caption, **Back**, **Next step** and **Exit demo**; Escape also exits. The demo only navigates, opens the tab each step needs and switches to the facility role for capture; everything shown comes from the normal screens.
+| Suite | Result | What it covers |
+| --- | --- | --- |
+| Web unit and component tests (Vitest) | 162 passed | Verdict wording at each shock, ranking hook (debounce, stale responses, offline, retry), tabs and keyboard, URL link state, navigation highlight, filters, timeline counts, fixtures |
+| Backend (pytest) | 154 passed, 86% line coverage | Generators, simulation, optimization, finance flow, auth and roles, tenancy, idempotency, uploads, Alembic migrations, Hypothesis invariants, Schemathesis |
+| Browser (Playwright, 390, 768, 1280 and 1536 px) | 112 passed | Guided demo, every navigation link and back/forward, presets against backend runs, budget slider at 5/30/100 units, timeline at days 0/41/90, facilities table and map, Swahili and dark theme, axe on each flow, a token-leak canary |
+| Design prototype check | 66 screen/width combinations and 2 dark-theme checks passed | The static design prototype |
+| Lighthouse | `/` 1.00 performance; `/kisumu` 0.74 page load (see limitations); interaction flow 1.00 with layout shift 0.000 | Accessibility and best practices 1.00 on both pages |
 
-1. **National overview (≈20 s).** “Forty-seven counties on a schematic grid, not a map. Every value is synthetic and illustrative.”
-2. **Kisumu pilot (≈20 s).** “Kisumu is the only facility-level pilot: forty invented facilities with invented names at invented locations. The page answers first: what breaks, how far the fixes reach, and the cheapest fix within the budget.”
-3. **Apply a 40% shock (≈20 s).** “Four prepared scenarios; at a 40% cut in donor logistics support, 10 facilities are Critical, 18 Watch and 12 Stable. Compare flips to the no-shock run, where only the two facilities already short before the shock are Critical.”
-4. **First stockout (≈30 s).** “The verdict: 209 stockouts caused by the shock; Tamarind Crossing Sub-County Hospital (Kisumu West) runs out of family planning tracer 04 first, on day 41. The fixes address only the 4 earliest of those 209. ‘209 stockouts’ opens the full order; the timeline under Where it breaks plays the run week by week.”
-5. **Funding trace (≈30 s).** “One synthetic flow: the stage bar shows money approved but stalled before release; 100,000 KES has waited 90 days.”
-6. **Ranked fix (≈40 s).** “For each of the four earliest shock-caused stockouts, OR-Tools compares a 10-unit transfer from a nearby facility with a 50-unit emergency delivery, maximizing modeled days deferred within a 30-unit budget (illustrative cost units, not prices). It funds three transfers; the fourth sits below the cut line because it no longer fits the remaining budget, and every emergency delivery costs more than the budget. The budget slider re-ranks live. Costs are assumptions, and ‘Why these picks?’ only restates the optimizer's result.”
-7. **Bin-card capture (≈20 s).** “The facility in-charge uploads a synthetic bin-card photo. With no extraction provider configured locally, the fields come back empty, focus moves to the first one, and they type all four values from the photo. Nothing is saved until they confirm.”
-
-Press **Finish demo**. To show a different budget, move “Budget (illustrative units)”: at 100 units all four transfers are funded and each emergency delivery is excluded because a cheaper option covers the same stockout; at 5 units nothing fits and every action is excluded as over the ceiling.
-
-For the Python test suite, install `uv`, then run `cd apps/api && uv sync --frozen --extra dev && uv run --frozen pytest -q`. Web checks run from `apps/web`: `npm run lint`, `npm run typecheck`, `npx vitest run`; browser tests need a running demo session (`bash scripts/demo-up.sh -- npx playwright test`). The authenticated synthetic scenario demo and its prerequisites are in [Phase 2 notes](docs/process/phases/2.md).
-
-See [agent rules](AGENTS.md), [current progress](docs/process/PROGRESS.md), [design approval gate](docs/process/design/APPROVAL.md), and [phase 0 notes](docs/process/phases/0.md). Environment templates are in `apps/api/.env.example` and `apps/web/.env.example`.
+Commands: `cd apps/web && npm test` (Vitest), `npm run lint`, `npm run typecheck`; `cd apps/api && uv run --frozen pytest -q`. The browser suite needs a running demo: `bash scripts/demo-up.sh -- npx playwright test` (after `npx playwright install chromium`).
 
 ## Limitations
 
-- **Synthetic and unvalidated.** All data is invented or calibrated only to public aggregates; forecasts, stockout days, deferrals and rankings are illustrative and have not been validated against real outcomes. Do not use them for operational decisions.
-- **Not a geographic map of counties.** The national view is a schematic 47-county grid because boundary data rights are unresolved. Kisumu facility locations are invented.
-- **Narrow ranking.** The ranked fix compares planted candidates for the four earliest shock-caused stockouts: one synthetic transfer and one emergency delivery each, with assumed costs (10 and 50 illustrative units) and the same assumed quantity and arrival day. Candidates are not generated for other stockouts or other kinds of action.
-- **Funding trace is a slice.** One planted stalled-release flow with a four-step stage bar, amounts and ageing. The partial-graph state, filters and a dedicated Funding page are not built.
-- **Capture is online only and unreviewed for extraction quality.** There is no offline queue. The local stack has no extraction provider, so fields are typed by hand when extraction returns empty or partial values. If the upload itself fails, no capture record exists and manual entry cannot be offered; the user must retake or retry the photo. No real LLM provider has been exercised end to end.
-- **Language.** Swahili strings, and the English-only optimizer explanation, need native-speaker review.
-- **No production sign-in.** The demo uses a server-side proxy with a privileged synthetic token, allowed only in local or staging environments behind external access control.
-- **Risk cutoffs are tuned, not a standard.** Map labels use Critical within 45 days, Watch 46–52 and Stable beyond 52. These cutoffs were tuned to make this synthetic scenario readable, are relative to the 90-day simulation horizon, and are not a standard. A facility takes the status of its worst commodity.
-- **Map clusters show a mix of statuses.** The invented facilities sit in clusters of five or six within about 300 m of each other, so at county zoom their markers would stack. The map therefore groups them into one cluster labeled with its size and status mix (for example “6 · 2 Crit · 2 Watch · 2 Stable”) and the worst-status symbol. Groups merge until no two labels overlap, so on a phone most of the county is one cluster; Enter or a click zooms in step by step until facilities separate. The counts line under the legend always gives the full split.
-- **Four mobile destinations, not five.** The phone bottom bar links Overview, Kisumu, Funding trace and Bin-card capture. The approved design's five destinations include Scenarios, Actions and Stock, which are not built yet.
-- **Kisumu page-load performance is below budget.** Lighthouse page load scores 1.00 on `/` but 0.73–0.75 on `/kisumu` (accessibility and best practices 1.00, layout shift 0, total blocking time 90–150 ms), under the 0.80 budget. The cause is Largest Contentful Paint (about 9.9 s under Lighthouse's simulated throttling; about 2 s in an unthrottled browser): the page's largest text is the data-driven verdict, which can only appear once the backend scenario run completes (session, pilot panel, run submission and polling, in sequence). The page shows the title and the framing question at full size immediately and reserves the verdict's space, but the browser still counts the verdict text as the largest paint when it replaces the framing. Faster runs need backend changes (for example reusing a completed run for the same inputs), which were out of scope for the redesign. Interactive use is not affected: moving the budget and the timeline scores 1.00 with layout shift 0.000. The flow is not in CI. See [progress](docs/process/PROGRESS.md) and [Phase 3 notes](docs/process/phases/3.md).
+- **Synthetic and unvalidated.** Stockout days, deferrals, risk labels and rankings are illustrative and have not been compared with real outcomes.
+- **Narrow ranking.** Candidates exist only for the four earliest shock-caused stockouts at 40% (one transfer and one emergency delivery each, with assumed costs and arrival days). Other stockouts have no candidate.
+- **Funding trace is one planted flow.** There is no general funding ledger.
+- **Capture is online only.** No extraction provider is configured locally, so fields are typed by hand; no real provider has been exercised end to end.
+- **No production sign-in.** The demo relies on a server-side proxy with a synthetic token, for local use only.
+- **Risk cutoffs are tuned for readability** (Critical within 45 days, Watch 46–52, Stable beyond 52) and are not a standard.
+- **Kisumu page-load performance is under its 0.80 Lighthouse budget** (0.73–0.75 measured). The largest text is the data-driven verdict, which waits for the backend scenario run (about 2 s unthrottled, about 9.9 s under Lighthouse's simulated throttling). The title and framing question paint immediately with space reserved, and layout shift is 0; faster runs would need backend changes such as reusing a completed run.
+- **Language.** Swahili strings have not been reviewed by a native speaker; the optimizer explanation is English-only and labelled as such.
+- **Not a county map.** The national view is a schematic grid because boundary data rights are unresolved; Kisumu facility locations are invented.
 
 ## Next steps
 
-- Risk from the share of commodities at risk, with per-commodity thresholds from real lead times.
-- Kisumu items cut from the redesign for time: a CSV export of the ranked action list (labeled synthetic), animated before/after transitions between the no-shock and shock runs, micro-interactions (count-up numbers, toasts, a keyboard-shortcut sheet) and a spotlight for the guided demo. The “Copy link” behavior is covered by the URL, which already carries shock, budget, tab and day.
+- Candidates for more than the earliest stockouts, and other kinds of action.
+- Reuse completed runs for identical inputs so the Kisumu verdict appears faster.
+- Production sign-in, an offline capture queue, and county tenancy on the remaining legacy paths.
+- Native-speaker review of the Swahili strings.
+- Items cut from the Kisumu redesign for time: a CSV export of the ranked actions, animated before/after transitions, micro-interactions (count-up numbers, toasts, a shortcut sheet) and a spotlight for the guided demo.
+
+## How this was built
+
+I designed the product, set the rules it follows (synthetic data only, the optimizer decides, no unvalidated claims), and directed and reviewed the work. AI coding agents implemented much of the code under that direction and review, in small commits with tests in each change. The working notes from that process (progress log, phase notes, design critiques and decisions) are kept in [`docs/process/`](docs/process/).
+
+## More
+
+- [Case study](docs/case-study.md) · [Architecture decisions](docs/adr/) · [Data assumptions](docs/data-assumptions.md) · [API notes](docs/api/README.md) · [Design](docs/design/README.md) · [Engineering guidelines](AGENTS.md) · [Changelog](CHANGELOG.md)
+- Licence: [MIT](LICENSE). Third-party components and attributions: [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
