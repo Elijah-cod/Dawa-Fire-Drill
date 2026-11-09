@@ -315,7 +315,7 @@ test("facilities can be sorted, filtered and opened", async ({ page }) => {
   const detail = page.locator("#facility-detail");
   await expect(detail).toContainText("Family planning tracer 04: day 41");
   await expect(detail).toContainText(
-    "Planted transfer: family planning tracer 04",
+    "Example transfer: family planning tracer 04",
   );
   await noSidewaysScroll(page);
   await noSeriousAxe(page);

@@ -417,8 +417,9 @@ it("sorts the facilities table and opens a facility's detail from its row", asyn
   // Day wording: the run's day number, never "days to stockout".
   expect(detail.textContent).toContain("Runs out on day 41 of the run");
   expect(detail.textContent).not.toMatch(/days to stockout/);
+  expect(detail.textContent).not.toMatch(/Planted/);
   expect(detail.textContent).toMatch(
-    /Planted transfer: family planning tracer 04 from .+, \d+(\.\d+)? km away, arriving on day \d+\./,
+    /Example transfer: family planning tracer 04 from .+, \d+(\.\d+)? km away, arriving on day \d+\./,
   );
   expect(
     rows().find((row) => row.getAttribute("aria-selected") === "true")

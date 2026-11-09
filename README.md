@@ -124,7 +124,7 @@ Commands: `cd apps/web && npm test` (Vitest), `npm run lint`, `npm run typecheck
 
 - **Synthetic and unvalidated.** Stockout days, deferrals, risk labels and rankings are illustrative and have not been compared with real outcomes.
 - **Narrow ranking.** Candidates exist only for the four earliest shock-caused stockouts at 40% (one transfer and one emergency delivery each, with assumed costs and arrival days). Other stockouts have no candidate.
-- **Funding trace is one planted flow.** There is no general funding ledger.
+- **Funding trace is one example flow.** There is no general funding ledger.
 - **Capture is online only.** No extraction provider is configured locally, so fields are typed by hand; no real provider has been exercised end to end.
 - **No production sign-in.** The demo relies on a server-side proxy with a synthetic token, for local use only.
 - **Risk cutoffs are tuned for readability** and are not a standard: Critical when a facility's first stockout is by day 45, Watch on days 46–52, Later after day 52 or none in the run. They are fixed for the whole run and do not change with the selected timeline day.

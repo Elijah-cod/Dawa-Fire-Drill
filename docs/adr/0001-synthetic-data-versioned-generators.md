@@ -13,6 +13,6 @@ All data comes from seeded generators in `apps/api/dawa_api/ingestion`. Each gen
 ## Consequences
 
 - Any run can be reproduced from its seed, generator version and simulator version, and an old result stays explainable after the generator changes.
-- Planted cases (a facility already short on day 1, a stalled funding release, transfer routes for the earliest stockouts) make the demo legible.
+- Example cases planted by the generator (a facility already short on day 1, a stalled funding release, transfer routes for the earliest stockouts) make the demo legible.
 - Nothing in the project says anything about real outcomes; the README and UI say so plainly.
 - Adding real data later means writing an adapter (`dawa_api.ingestion.aggregate_adapters` is a stub that raises until configured), not changing the generators.

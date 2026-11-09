@@ -181,8 +181,8 @@ const strings = {
     detailStockouts: "Stockouts in this run ({n})",
     detailStockout: "{medicine}: day {day}",
     detailIncoming:
-      "Planted transfer: {medicine} from {donor}, {km} km away, arriving on day {day}.",
-    detailOutgoing: "Planted donor: {medicine} for {recipient}.",
+      "Example transfer: {medicine} from {donor}, {km} km away, arriving on day {day}.",
+    detailOutgoing: "Example donor: {medicine} for {recipient}.",
     fixesTitle: "Cheapest fixes",
     fixesCoverEarliest: "the {n} earliest of {total} shock-caused stockouts",
     fixesCoverSome:
@@ -544,8 +544,8 @@ const strings = {
     detailStockouts: "Matukio ya kuisha katika jaribio hili ({n})",
     detailStockout: "{medicine}: siku ya {day}",
     detailIncoming:
-      "Uhamisho uliopangwa: {medicine} kutoka {donor}, umbali wa km {km}, unafika siku ya {day}.",
-    detailOutgoing: "Mtoaji aliyepangwa: {medicine} kwa {recipient}.",
+      "Mfano wa uhamisho: {medicine} kutoka {donor}, umbali wa km {km}, unafika siku ya {day}.",
+    detailOutgoing: "Mtoaji wa mfano: {medicine} kwa {recipient}.",
     fixesTitle: "Suluhisho za gharama nafuu zaidi",
     fixesCoverEarliest:
       "matukio {n} ya mapema zaidi kati ya {total} yaliyosababishwa na mshtuko",
