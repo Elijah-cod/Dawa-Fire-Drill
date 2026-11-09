@@ -796,12 +796,12 @@ input {
   gap: var(--space-2);
   margin-top: var(--space-3);
 }
-.btn--primary {
+.btn.btn--primary {
   background: var(--primary);
   border-color: var(--primary);
   color: var(--primary-ink);
 }
-.btn--primary:hover {
+.btn.btn--primary:hover {
   background: var(--primary-strong);
 }
 .tour-start.button-primary {

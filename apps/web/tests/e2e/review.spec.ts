@@ -154,6 +154,14 @@ test("verdict links and next actions open the right tab and move focus", async (
   await page.goto(KISUMU);
   await ready(page);
   const verdict = page.getByRole("region", { name: "What breaks first" });
+  // "Play the timeline" is the filled primary action; "Move the budget" is secondary.
+  const fill = (name: string) =>
+    verdict
+      .getByRole("button", { name })
+      .evaluate((element) => getComputedStyle(element).backgroundColor);
+  expect(await fill("Play the timeline")).not.toBe(
+    await fill("Move the budget"),
+  );
   await verdict.getByRole("link", { name: "209 stockouts" }).click();
   await expect(page.locator("#stockout-order")).toBeFocused();
   await verdict
