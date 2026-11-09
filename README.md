@@ -114,11 +114,11 @@ Measured on the current code:
 
 | Suite | Result | What it covers |
 | --- | --- | --- |
-| Web unit and component tests (Vitest) | 171 passed | Verdict wording at each shock, ranking hook (debounce, stale responses, offline, retry), tabs and keyboard, URL link state, navigation highlight, filters, timeline counts, fixtures |
+| Web unit and component tests (Vitest) | 180 passed | Verdict wording at each shock, ranking hook (debounce, stale responses, offline, retry), tabs and keyboard, URL link state, navigation highlight, filters, timeline counts, fixtures |
 | Backend (pytest) | 154 passed, 86% line coverage | Generators, simulation, optimization, finance flow, auth and roles, tenancy, idempotency, uploads, Alembic migrations, Hypothesis invariants, Schemathesis |
-| Browser (Playwright, 390, 768, 1280 and 1536 px; run locally, not in CI) | 120 passed | Guided demo, every navigation link and back/forward, presets against backend runs, budget slider at 5/30/100 units, timeline at days 0/41/90 and its loading state, facilities table and map, Swahili and dark theme, axe on each flow, a token-leak canary |
+| Browser (Playwright, 390, 768, 1280 and 1536 px; run locally, not in CI) | 153 passed, 3 skipped (a phone-only test at the wider widths) | Guided demo and its return path, every navigation link and back/forward, reload, radio-group and disclosure semantics, search, sort and filters, presets against backend runs, budget slider at 5/30/100 units, timeline at days 0/41/90 and its loading state, facilities table and map, Swahili and dark theme, the phone bottom bar with large text, axe on every Kisumu tab in light, dark and Swahili, a token-leak canary |
 | Design prototype check | 66 screen/width combinations and 2 dark-theme checks passed | The static design prototype |
-| Lighthouse | `/` 1.00 performance; `/kisumu` 0.74 page load (see limitations); interaction flow 1.00 with layout shift 0.000 | Accessibility and best practices 1.00 on both pages |
+| Lighthouse | `/` 0.97–1.00 performance; `/kisumu` 0.74 page load (see limitations); interaction flow 1.00 with layout shift 0.000 | Accessibility and best practices 1.00 on both pages |
 
 Commands: `cd apps/web && npm test` (Vitest), `npm run lint`, `npm run typecheck`; `cd apps/api && uv run --frozen pytest -q`. The browser suite runs locally, not in CI, because it needs the full stack and a running demo: `bash scripts/demo-up.sh -- npx playwright test` (after `npx playwright install chromium`).
 

@@ -30,7 +30,7 @@ At a 40% cut in donor logistics support (seed 42, county generator v5): 209 stoc
 
 ## How it was checked
 
-Measured on the final code: 162 web unit and component tests, 154 backend tests (86% line coverage), 112 Playwright tests across four viewport widths with axe accessibility checks and a token-leak canary, Lighthouse 1.00 on the overview and on the interaction flow, and gitleaks over the full history with no findings. Architecture decisions are recorded in [`docs/adr/`](adr/).
+Measured on the final code: 180 web unit and component tests, 154 backend tests (86% line coverage), 153 Playwright tests across four viewport widths with axe accessibility checks in light, dark and Swahili and a token-leak canary, Lighthouse 0.97–1.00 on the overview and 1.00 on the interaction flow, and gitleaks over the full history with no findings. Architecture decisions are recorded in [`docs/adr/`](adr/).
 
 ## How it was built
 
