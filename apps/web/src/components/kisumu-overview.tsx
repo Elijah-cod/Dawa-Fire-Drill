@@ -368,6 +368,7 @@ export function KisumuOverview({
           </span>
         )}
       </div>
+      <p className="purpose">{t("kisumuPurpose")}</p>
       {canRun && (
         <button
           type="button"
@@ -411,6 +412,39 @@ export function KisumuOverview({
                   )
                 }
               />
+            ) : undefined
+          }
+          actions={
+            !pending && events && events.shock.length > 0 ? (
+              <>
+                <button
+                  type="button"
+                  className="btn btn--primary"
+                  onClick={() => {
+                    // Play the run from day 0; under reduced motion, step by week.
+                    setTab("overview");
+                    setDay(0);
+                    requestAnimationFrame(() => {
+                      const play = document.getElementById("play");
+                      if (play) {
+                        reveal(play);
+                        play.click();
+                      } else reveal("next-week");
+                    });
+                  }}
+                >
+                  {t("actionPlay")}
+                </button>
+                {covered && rank && (
+                  <button
+                    type="button"
+                    className="btn"
+                    onClick={() => show("overview", "budget")}
+                  >
+                    {t("actionBudget")}
+                  </button>
+                )}
+              </>
             ) : undefined
           }
           onShowOrder={() => show("order", "stockout-order")}

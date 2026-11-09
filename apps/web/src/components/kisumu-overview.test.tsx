@@ -265,7 +265,7 @@ it("answers what breaks first at each prepared shock from the backend runs", asy
     "The fixes address only the 4 earliest of 209 shock-caused stockouts.",
   );
   expect(verdict().textContent).toContain(
-    "211 stockouts in total: 209 caused by the shock, 2 already short before it (Acacia Ridge Dispensary from day 1 and Cedar Ridge Dispensary from day 6)",
+    "211 stockouts = 209 caused by the shock + 2 already short before it",
   );
   expect(verdict().textContent).toContain("10 Critical · 18 Watch · 12 Later");
 
@@ -613,4 +613,38 @@ it("defines stockout and tracer where they are first used, once the run arrives"
     "Stockout: one facility running out of one medicine. Tracer: a medicine tracked in this demo.",
   );
   expect(container.querySelectorAll("#verdict dfn")).toHaveLength(2);
+});
+
+it("says who the page is for and offers a next action under the verdict", async () => {
+  const { container } = render(
+    <KisumuOverview panel={fixture.pilot} scenario={fixtureScenario()} />,
+  );
+  expect(container.querySelector(".purpose")?.textContent).toBe(
+    "For county health planners: rehearse which medicines run out first when donor logistics support is cut, and which fixes fit the budget.",
+  );
+  const verdict = await screen.findByRole("region", {
+    name: "What breaks first",
+  });
+  const play = await within(verdict).findByRole("button", {
+    name: "Play the timeline",
+  });
+  // Without a ranking service there is no budget to move.
+  expect(
+    within(verdict).queryByRole("button", { name: "Move the budget" }),
+  ).toBeNull();
+  fireEvent.click(screen.getByRole("tab", { name: /Facilities/ }));
+  fireEvent.click(play);
+  expect(
+    screen
+      .getByRole("tab", { name: "Map and fixes" })
+      .getAttribute("aria-selected"),
+  ).toBe("true");
+  await vi.waitFor(() =>
+    expect(document.getElementById("readout")?.textContent).toMatch(
+      /^Day \d+ of 90/,
+    ),
+  );
+  expect(container.querySelector(".verdict-facts")?.textContent).toBe(
+    "211 stockouts = 209 caused by the shock + 2 already short before it10 Critical · 18 Watch · 12 Later",
+  );
 });

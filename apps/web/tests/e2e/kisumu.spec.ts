@@ -55,7 +55,7 @@ test("Kisumu leads with what breaks first and the cheapest fix, from the backend
     { timeout: 30000 },
   );
   await expect(verdict(page)).toContainText(
-    "211 stockouts in total: 209 caused by the shock, 2 already short before it (Acacia Ridge Dispensary from day 1 and Cedar Ridge Dispensary from day 6)",
+    "211 stockouts = 209 caused by the shock + 2 already short before it",
   );
   await expect(verdict(page)).toContainText(
     "10 Critical · 18 Watch · 12 Later",

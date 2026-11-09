@@ -4,7 +4,7 @@ import AxeBuilder from "@axe-core/playwright";
 test("guided demo walks overview to capture by keyboard", async ({ page }) => {
   test.setTimeout(120000);
   await page.goto("http://localhost:3300/");
-  const start = page.getByRole("button", { name: "Try the 3-minute demo" });
+  const start = page.getByRole("button", { name: "Try the tour (about 3 minutes)" });
   await start.focus();
   await page.keyboard.press("Enter");
   const tour = page.getByRole("region", { name: "National overview" });
@@ -89,7 +89,7 @@ test("guided demo walks overview to capture by keyboard", async ({ page }) => {
     page.getByRole("region", { name: "Bin-card capture" }),
   ).toHaveCount(0);
   await expect(
-    page.getByRole("button", { name: "Try the 3-minute demo" }),
+    page.getByRole("button", { name: "Try the tour (about 3 minutes)" }),
   ).toBeVisible();
 });
 

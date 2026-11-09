@@ -22,6 +22,7 @@ export function KisumuVerdict({
   counts,
   busy,
   budgetLine,
+  actions,
   onShowOrder,
   onShowFacility,
 }: {
@@ -34,6 +35,8 @@ export function KisumuVerdict({
   busy: boolean;
   /** The budget sentence from the fixes, when a ranking is on screen. */
   budgetLine?: ReactNode;
+  /** Next actions shown under the verdict once the run is on screen. */
+  actions?: ReactNode;
   onShowOrder: () => void;
   onShowFacility: (id: string) => void;
 }) {
@@ -122,16 +125,6 @@ export function KisumuVerdict({
     }
   }
   const short = events?.alreadyShort ?? [];
-  const shortList = short.map((item) =>
-    tf("factsShortItem", {
-      name: facility(item.facility_id)?.name ?? item.facility_id,
-      day: item.day,
-    }),
-  );
-  const joined =
-    shortList.length < 2
-      ? shortList.join("")
-      : `${shortList.slice(0, -1).join(", ")} ${t("and")} ${shortList.at(-1)}`;
   return (
     <section
       className="verdict"
@@ -144,6 +137,8 @@ export function KisumuVerdict({
       <p className="verdict-line verdict-lead">{lead}</p>
       {scope && <p className="verdict-line verdict-scope">{scope}</p>}
       <p className="verdict-line verdict-fix">{fix}</p>
+      {actions && <div className="verdict-actions">{actions}</div>}
+      {/* Supporting counts in one compact row; the full order is one click away. */}
       {events && (
         <ul className="verdict-facts">
           <li>
@@ -152,7 +147,6 @@ export function KisumuVerdict({
               caused: events.shock.length,
               short: short.length,
             })}
-            {short.length > 0 && ` (${joined})`}
           </li>
           {counts && <li>{tf("factsStatus", counts)}</li>}
         </ul>

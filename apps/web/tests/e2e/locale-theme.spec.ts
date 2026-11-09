@@ -26,7 +26,7 @@ test("guided demo works in Swahili and dark theme, keeping the English-only expl
   await page.goto("http://localhost:3300/");
   await swahiliDark(page);
   await page
-    .getByRole("button", { name: "Jaribu onyesho la dakika 3" })
+    .getByRole("button", { name: "Jaribu ziara (kama dakika 3)" })
     .click();
   for (let step = 0; step < 5; step++)
     await page.getByRole("button", { name: "Hatua inayofuata" }).click();

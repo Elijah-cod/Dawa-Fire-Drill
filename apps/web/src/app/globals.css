@@ -760,6 +760,33 @@ input {
 .verdict-facts strong {
   color: var(--ink);
 }
+.purpose {
+  margin: var(--space-1) 0 0;
+  max-width: 72ch;
+  color: var(--ink);
+}
+.verdict-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin-top: var(--space-3);
+}
+.btn--primary {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: var(--primary-ink);
+}
+.btn--primary:hover {
+  background: var(--primary-strong);
+}
+.tour-start.button-primary {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: var(--primary-ink);
+}
+.tour-start.button-primary:hover {
+  background: var(--primary-strong);
+}
 .terms {
   margin: var(--space-2) 0 0;
   font-size: var(--text-sm);

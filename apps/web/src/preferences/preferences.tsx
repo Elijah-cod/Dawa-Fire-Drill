@@ -110,8 +110,12 @@ const strings = {
       "None of the {n} listed transfers can arrive in time: they arrive from day {arrival}, but their stockouts happen by day {day}.",
     verdictUnavailable: "Stockout details are unavailable for this run.",
     factsTotal:
-      "{total} stockouts in total: {caused} caused by the shock, {short} already short before it",
-    factsShortItem: "{name} from day {day}",
+      "{total} stockouts = {caused} caused by the shock + {short} already short before it",
+    kisumuPurpose:
+      "For county health planners: rehearse which medicines run out first when donor logistics support is cut, and which fixes fit the budget.",
+    actionPlay: "Play the timeline",
+    actionBudget: "Move the budget",
+    verdictActions: "Next steps",
     factsStatus: "{critical} Critical · {watch} Watch · {stable} Later",
     and: "and",
     howTitle: "How this works",
@@ -351,7 +355,7 @@ const strings = {
     captureSaving: "Saving…",
     captureSaveError: "Could not save these values. Check them and try again.",
     captureSaved: "Saved to this synthetic facility:",
-    tourStart: "Try the 3-minute demo",
+    tourStart: "Try the tour (about 3 minutes)",
     tourLabel: "Guided demo",
     tourStep: "Step",
     tourBack: "Back",
@@ -493,8 +497,12 @@ const strings = {
     verdictUnavailable:
       "Maelezo ya kuisha kwa bidhaa hayapatikani kwa jaribio hili.",
     factsTotal:
-      "Jumla ya matukio {total} ya kuisha kwa bidhaa: {caused} yamesababishwa na mshtuko, {short} yalikuwepo kabla yake",
-    factsShortItem: "{name} kuanzia siku {day}",
+      "Matukio {total} ya kuisha kwa bidhaa = {caused} yamesababishwa na mshtuko + {short} yalikuwepo kabla yake",
+    kisumuPurpose:
+      "Kwa wapangaji wa afya wa kaunti: fanya mazoezi ya dawa zipi zinaisha kwanza msaada wa usafirishaji wa wafadhili ukipunguzwa, na suluhisho zipi zinatosha bajeti.",
+    actionPlay: "Cheza mstari wa wakati",
+    actionBudget: "Badilisha bajeti",
+    verdictActions: "Hatua zinazofuata",
     factsStatus:
       "{critical} Hatari kubwa · {watch} Angalizo · {stable} Baadaye",
     and: "na",
@@ -742,7 +750,7 @@ const strings = {
     captureSaveError:
       "Haikuwezekana kuhifadhi thamani hizi. Zikague ujaribu tena.",
     captureSaved: "Imehifadhiwa kwa kituo hiki cha mfano:",
-    tourStart: "Jaribu onyesho la dakika 3",
+    tourStart: "Jaribu ziara (kama dakika 3)",
     tourLabel: "Onyesho la kuongozwa",
     tourStep: "Hatua",
     tourBack: "Rudi",

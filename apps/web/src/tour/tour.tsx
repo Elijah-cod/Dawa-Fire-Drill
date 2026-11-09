@@ -170,7 +170,7 @@ export function StartTourButton() {
   const { t } = usePreferences();
   if (step) return null;
   return (
-    <button type="button" className="tour-start" onClick={start}>
+    <button type="button" className="tour-start button-primary" onClick={start}>
       {t("tourStart")}
     </button>
   );

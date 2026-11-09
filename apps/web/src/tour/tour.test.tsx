@@ -57,7 +57,7 @@ it("walks the seven demo steps in order", () => {
 it("starts on the overview, moves focus to the caption and navigates to Kisumu", () => {
   renderTour();
   fireEvent.click(
-    screen.getByRole("button", { name: "Try the 3-minute demo" }),
+    screen.getByRole("button", { name: "Try the tour (about 3 minutes)" }),
   );
   expect(screen.getByTestId("step").textContent).toBe("overview");
   expect(window.location.search).toBe("?tour=overview");
@@ -69,7 +69,7 @@ it("starts on the overview, moves focus to the caption and navigates to Kisumu",
       .disabled,
   ).toBe(true);
   expect(
-    screen.queryByRole("button", { name: "Try the 3-minute demo" }),
+    screen.queryByRole("button", { name: "Try the tour (about 3 minutes)" }),
   ).toBeNull();
   fireEvent.click(screen.getByRole("button", { name: "Next step" }));
   expect(navigation.push).toHaveBeenCalledWith("/kisumu?tour=kisumu");
@@ -80,7 +80,7 @@ it("marks and scrolls to the current step's target", async () => {
   try {
     renderTour();
     fireEvent.click(
-      screen.getByRole("button", { name: "Try the 3-minute demo" }),
+      screen.getByRole("button", { name: "Try the tour (about 3 minutes)" }),
     );
     await act(async () => {
       vi.advanceTimersByTime(300);
@@ -117,7 +117,7 @@ it("ends from the last step with Finish demo", () => {
   fireEvent.click(screen.getByRole("button", { name: "Finish demo" }));
   expect(screen.getByTestId("step").textContent).toBe("none");
   expect(
-    screen.getByRole("button", { name: "Try the 3-minute demo" }),
+    screen.getByRole("button", { name: "Try the tour (about 3 minutes)" }),
   ).toBeTruthy();
 });
 
