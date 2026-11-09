@@ -24,6 +24,8 @@ const strings = {
     banner:
       "Facilities, names, locations and costs are invented. Results are illustrative, not validated.",
     aboutLink: "About this demo",
+    staticDemo:
+      "Static synthetic demo: it runs in your browser from bundled fixtures, with no backend or sign-in.",
     aboutSandbox:
       "This is a stress-test sandbox, not a live monitoring system or a government system.",
     aboutInvented:
@@ -371,6 +373,8 @@ const strings = {
     banner:
       "Vituo, majina, maeneo na gharama ni vya kubuni. Matokeo ni ya mfano na hayajathibitishwa.",
     aboutLink: "Kuhusu onyesho hili",
+    staticDemo:
+      "Onyesho tuli la mfano: linaendeshwa kwenye kivinjari chako kutoka kwa data iliyopakiwa, bila seva wala kuingia.",
     aboutSandbox:
       "Hiki ni chombo cha majaribio ya mshtuko, si mfumo wa ufuatiliaji wa moja kwa moja wala mfumo wa serikali.",
     aboutInvented:

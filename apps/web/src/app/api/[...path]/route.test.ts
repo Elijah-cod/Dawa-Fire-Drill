@@ -1,5 +1,5 @@
 import { afterEach, expect, it, vi } from "vitest";
-import { GET } from "./route";
+import { GET } from "./route.proxy";
 
 afterEach(() => {
   vi.unstubAllEnvs();

@@ -14,7 +14,9 @@
     "test:design-prototype": "node scripts/verify-design-prototype.mjs",
     "format:check": "prettier --check .",
     "test:lighthouse": "lhci autorun",
-    "test:lighthouse:ranked": "node scripts/lighthouse-ranked.mjs"
+    "test:lighthouse:ranked": "node scripts/lighthouse-ranked.mjs",
+    "test:static-demo": "node scripts/verify-static-demo.mjs",
+    "build:static-demo": "STATIC_DEMO=1 next build --webpack"
   },
   "devDependencies": {
     "@axe-core/playwright": "4.14.0",

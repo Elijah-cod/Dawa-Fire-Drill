@@ -16,7 +16,11 @@ export const MOCK_RUN_IDS: Record<number, string> = {
 
 /** Reproducible backend-generated synthetic fixtures for development and tests only. */
 export function createMockClient(role: Role) {
-  if (process.env.NODE_ENV === "production")
+  // Fixtures are allowed in production only in the static public demo build.
+  if (
+    process.env.NODE_ENV === "production" &&
+    process.env.NEXT_PUBLIC_STATIC_DEMO !== "1"
+  )
     throw new Error("Mock API is disabled in production");
   const session: Session = { role, expiresAt: Date.now() + 60 * 60 * 1000 };
   return {

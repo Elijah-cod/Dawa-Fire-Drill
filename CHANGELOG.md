@@ -1,5 +1,8 @@
 # Changelog
 
+- Static public demo: `STATIC_DEMO=1` builds the frontend from bundled fixtures with no backend calls, no API proxy, no token and no role switcher, refuses to build or start with server-side secrets set, and is checked by `npm run test:static-demo`. Deployment notes in `docs/deploy-demo.md`.
+- Portfolio preparation: MIT licence and third-party notices, working notes moved to `docs/process/`, dead code removed, README rewritten, case study and architecture decision records added.
+
 - Navigation: "Funding trace" opens the Kisumu Funding trace tab with focus on its heading, "Bin-card capture" works from any page, the sidebar and bottom bar highlight exactly the view the URL shows, and back and forward restore the view and highlight. The sidebar no longer repeats the synthetic note.
 
 - Kisumu: the framing question shows at once while the first run loads; shock, budget, tab and day are kept in the URL so a link recreates the view; the phone tab strip shows that it scrolls; README screenshots and the Swahili review list are refreshed, and the page-load performance gap is documented.

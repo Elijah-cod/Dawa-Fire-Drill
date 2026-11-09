@@ -77,6 +77,12 @@ describe("OpenAPI-typed synthetic mock", () => {
     vi.stubEnv("NODE_ENV", "production");
     expect(() => createMockClient("planner")).toThrow("disabled in production");
   });
+  it("allows fixtures in production only for the static public demo", () => {
+    vi.stubEnv("NODE_ENV", "production");
+    vi.stubEnv("NEXT_PUBLIC_STATIC_DEMO", "1");
+    expect(createMockClient("planner").session.role).toBe("planner");
+    vi.unstubAllEnvs();
+  });
 });
 
 it("returns only the recorded optimizer fixtures for the exact synthetic demo inputs", async () => {

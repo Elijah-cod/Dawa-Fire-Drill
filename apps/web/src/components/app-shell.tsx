@@ -30,7 +30,12 @@ export function AppShell({ children }: { children: ReactNode }) {
             <PreferenceControls />
           </header>
           <div className="synthetic-banner" role="note">
-            <span>{t("banner")}</span>
+            <span>
+              {process.env.NEXT_PUBLIC_STATIC_DEMO === "1" && (
+                <strong className="static-demo">{t("staticDemo")} </strong>
+              )}
+              {t("banner")}
+            </span>
             <button
               type="button"
               className="link-button"

@@ -90,7 +90,11 @@ bash scripts/demo-down.sh
 docker compose -f infra/compose.yaml down
 ```
 
+The Compose file declares no volumes, so `docker compose down` deletes the local database; run the two seeding commands again after the next `up`.
+
 `scripts/demo-up.sh` refuses to run outside a local environment. It generates a throwaway signing secret, recreates only the API container with demo role switching on, mints a synthetic admin token valid for 4 hours, builds the web app and serves it in production mode on port 3300. The token lives only in the web server's process environment and is never printed or written to disk; `scripts/demo-down.sh` removes it and restores the API's default settings. API docs are at `http://localhost:8000/docs` while the stack runs. The Compose database credentials are disposable local defaults.
+
+A static, read-only build of the frontend that uses bundled fixtures and no backend can be checked with `cd apps/web && npm run test:static-demo`; deployment notes are in [`docs/deploy-demo.md`](docs/deploy-demo.md).
 
 
 ## Tests
