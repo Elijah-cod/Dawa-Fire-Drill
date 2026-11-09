@@ -589,3 +589,19 @@ it("says when a facility has no stockout in the run", async () => {
     ),
   );
 });
+
+it("defines stockout and tracer where they are first used", () => {
+  const { container } = render(
+    <KisumuOverview
+      panel={fixture.pilot}
+      scenario={{
+        submit: vi.fn(() => new Promise<never>(() => {})),
+        read: vi.fn(),
+      }}
+    />,
+  );
+  expect(container.querySelector("#verdict .terms")?.textContent).toBe(
+    "Stockout: one facility running out of one medicine. Tracer: a medicine tracked in this demo.",
+  );
+  expect(container.querySelectorAll("#verdict dfn")).toHaveLength(2);
+});

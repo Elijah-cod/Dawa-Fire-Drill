@@ -735,6 +735,16 @@ input {
 .verdict-facts strong {
   color: var(--ink);
 }
+.terms {
+  margin: var(--space-2) 0 0;
+  font-size: var(--text-sm);
+  color: var(--muted);
+}
+.terms dfn {
+  font-style: normal;
+  font-weight: 700;
+  color: var(--ink);
+}
 .btn {
   display: inline-flex;
   align-items: center;

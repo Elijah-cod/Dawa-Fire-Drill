@@ -33,7 +33,7 @@ const strings = {
     aboutMethod:
       "Runs come from a reproducible generator (version 5, seed 42). OR-Tools ranks the fixes; the plain-language explanation only restates its result.",
     aboutTerms:
-      "A stockout is one facility running out of one commodity within the 90-day run. Costs are illustrative units, not calibrated to real prices.",
+      "A stockout is one facility running out of one medicine within the 90-day run. A tracer is a medicine tracked in this demo. Cost units are relative units for comparing options, not prices.",
     syntheticNote: "Synthetic examples only. Illustrative and unvalidated.",
     gridTitle: "Kenya counties",
     gridDescription:
@@ -114,6 +114,10 @@ const strings = {
     factsShortItem: "{name} from day {day}",
     factsStatus: "{critical} Critical · {watch} Watch · {stable} Later",
     and: "and",
+    termStockout: "Stockout",
+    termStockoutDef: "one facility running out of one medicine",
+    termTracer: "Tracer",
+    termTracerDef: "a medicine tracked in this demo",
     controlsLabel: "Scenario",
     shockPresets: "Donor logistics support cut",
     shockHint: "Four scenarios are prepared for this demo.",
@@ -190,7 +194,7 @@ const strings = {
     fixesScope:
       "These options address {coverage}; the others have no option in this demo.",
     fixesHow:
-      "OR-Tools picks what fits the budget. Costs are illustrative units, not calibrated to real prices.",
+      "OR-Tools picks what fits the budget. Cost units are relative units for comparing options, not prices.",
     fixesBudget: "Budget (illustrative units)",
     fixesBudgetNumber: "Budget in illustrative units",
     units: "{n} units",
@@ -388,7 +392,7 @@ const strings = {
     aboutMethod:
       "Majaribio yanatoka kwa jenereta inayorudiwa (toleo 5, mbegu 42). OR-Tools hupanga suluhisho; maelezo kwa lugha rahisi hurudia tu matokeo yake.",
     aboutTerms:
-      "Kuisha kwa bidhaa ni kituo kimoja kukosa bidhaa moja ndani ya siku 90 za jaribio. Gharama ni vipimo vya mfano, havijapimwa kwa bei halisi.",
+      "Kuisha kwa bidhaa ni kituo kimoja kukosa dawa moja ndani ya siku 90 za jaribio. Kifuatiliaji ni dawa inayofuatiliwa katika onyesho hili. Vipimo vya gharama ni vipimo vya kulinganisha chaguo, si bei.",
     syntheticNote:
       "Mifano iliyobuniwa pekee. Matokeo ni ya mfano na hayajathibitishwa.",
     gridTitle: "Kaunti za Kenya",
@@ -473,6 +477,10 @@ const strings = {
     factsStatus:
       "{critical} Hatari kubwa · {watch} Angalizo · {stable} Baadaye",
     and: "na",
+    termStockout: "Kuisha kwa bidhaa",
+    termStockoutDef: "kituo kimoja kukosa dawa moja",
+    termTracer: "Kifuatiliaji",
+    termTracerDef: "dawa inayofuatiliwa katika onyesho hili",
     controlsLabel: "Hali",
     shockPresets: "Kupunguzwa kwa msaada wa usafirishaji wa wafadhili",
     shockHint: "Hali nne zimeandaliwa kwa onyesho hili.",
@@ -554,7 +562,7 @@ const strings = {
     fixesScope:
       "Chaguo hizi zinashughulikia {coverage}; mengine hayana chaguo katika onyesho hili.",
     fixesHow:
-      "OR-Tools huchagua kinachotosha ndani ya bajeti. Gharama ni vipimo vya mfano, havijapimwa kwa bei halisi.",
+      "OR-Tools huchagua kinachotosha ndani ya bajeti. Vipimo vya gharama ni vipimo vya kulinganisha chaguo, si bei.",
     fixesBudget: "Bajeti (vipimo vya mfano)",
     fixesBudgetNumber: "Bajeti kwa vipimo vya mfano",
     units: "vipimo {n}",
