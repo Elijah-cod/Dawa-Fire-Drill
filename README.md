@@ -12,11 +12,11 @@ When donor logistics support or a cash release is cut, county health planners ne
 
 ## What it does
 
-The three-minute guided demo walks through the same screens a planner uses. The figures below are what the app shows for seed 42 and county generator version 5.
+The page is for county health planners rehearsing which medicines run out first when donor logistics support is cut, and which fixes fit the budget. The guided tour (about 3 minutes) starts on the national overview, walks through the same screens a planner uses and can return you to the view you started from. The figures below are what the app shows for seed 42 and county generator version 5.
 
 1. **National overview.** Kenya's 47 counties on a schematic grid (deliberately not a boundary map) with synthetic planning proxies. Kisumu is the facility-level pilot.
-2. **Pick a shock.** Four prepared scenarios cut donor logistics support by 0, 20, 40 or 100%. At 40%, the verdict reads: *“A 40% cut in donor logistics support causes 209 stockouts within 90 days; Tamarind Crossing Sub-County Hospital (Kisumu West) runs out of family planning tracer 04 first, on day 41.”* 211 stockouts happen in total; 2 are at facilities already short before the shock, and the app keeps them apart. Facilities split 10 Critical, 18 Watch and 12 Later (status is set by each facility's first stockout in the run). “Compare” flips to the no-shock run.
-3. **Watch it break.** A day scrubber (week steps, play, keyboard) shows facilities out per area across the 90-day run. At day 41 the run has 3 stockouts across 3 facilities; at day 90, 211 across all 40.
+2. **Pick a shock.** Four prepared scenarios cut donor logistics support by 0, 20, 40 or 100%. At 40%, the verdict reads: *“A 40% cut in donor logistics support causes 209 stockouts within 90 days; Tamarind Crossing Sub-County Hospital (Kisumu West) runs out of family planning tracer 04 first, on day 41.”* A compact row under the verdict reads “211 stockouts = 209 caused by the shock + 2 already short before it”, and the app keeps the two groups apart. Facilities split 10 Critical, 18 Watch and 12 Later (status is set by each facility's first stockout in the run). “Compare” flips to the no-shock run. Under the verdict, “Play the timeline” and “Move the budget” lead to the next step.
+3. **Watch it break.** A day scrubber (week steps, play, keyboard) shows facilities out per area across the 90-day run. At day 41 the run has 3 stockouts across 3 facilities; at day 90, 211 across all 40. The stockout order can be filtered by area and medicine and says which part of the list is showing; the facilities table has name search, a results count and a visible sort direction.
 4. **Cheapest fix within a budget.** OR-Tools compares a transfer from a nearby facility (10 illustrative cost units) with an emergency delivery (50 units) for each covered stockout. The page says plainly that the options cover only the 4 earliest of the 209 shock-caused stockouts. At 30 units the optimizer funds 3 transfers and cuts the fourth (Jacaranda Ridge Sub-County Hospital, day 44) because it no longer fits; at 100 units it funds all 4 for 40 units; at 5 units nothing fits. The budget slider re-ranks live, and “Why these picks?” restates the optimizer's own result.
 5. **Where the money stalls.** One synthetic funding flow shows 100,000 KES approved but not released after 90 days, with the stalled stage marked.
 6. **Honest edges.** At 100% no listed transfer can arrive in time: they arrive from day 39, but their stockouts happen by day 26, and the page says so instead of showing an empty list. Loading, in-flight, failed and offline states are all explicit.
@@ -24,7 +24,7 @@ The three-minute guided demo walks through the same screens a planner uses. The 
 
 [How this works](docs/how-it-works.md) states exactly what the model compares, replays and leaves out.
 
-English and Swahili (the Swahili is an unreviewed translation), light and dark themes, a guided demo with keyboard support, and a link that recreates the view (shock, budget, tab and day are in the URL).
+English and Swahili (the Swahili is an unreviewed translation), light and dark themes, a guided tour with keyboard support, and a link that recreates the view (shock, budget, tab and day are in the URL).
 
 | | |
 | --- | --- |
@@ -85,7 +85,7 @@ docker compose -f infra/compose.yaml exec -T api python -m dawa_api.ingestion.se
 bash scripts/demo-up.sh
 ```
 
-Open `http://localhost:3300/` and choose **Try the 3-minute demo**. Stop with:
+Open `http://localhost:3300/` and choose **Try the tour (about 3 minutes)**. Stop with:
 
 ```sh
 bash scripts/demo-down.sh
