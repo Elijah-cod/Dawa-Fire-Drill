@@ -346,6 +346,10 @@ p {
   max-width: 65ch;
   margin-bottom: 1.5rem;
 }
+/* Holds one line so the panel below does not move when "Loading…" clears. */
+.overview-status {
+  min-height: 1.5em;
+}
 .panel {
   background: var(--surface);
   border: 1px solid var(--border);

@@ -75,7 +75,7 @@ export function NationalOverview({
       <div className="eyebrow">{t("overview")} / Kenya</div>
       <h1>{t("overviewTitle")}</h1>
       <p className="lead">{t("overviewLead")}</p>
-      <div role="status" aria-live="polite">
+      <div className="overview-status" role="status" aria-live="polite">
         {!online && t("offline")}
         {status === "loading" && t("loading")}
         {status === "error" && online && (
