@@ -361,6 +361,10 @@ p {
 .tour-actions button:disabled {
   opacity: 0.5;
 }
+.tour-waiting {
+  margin: var(--space-1) 0 0;
+  font-size: var(--text-sm);
+}
 .tour-actions .tour-primary {
   background: var(--primary);
   color: var(--surface);

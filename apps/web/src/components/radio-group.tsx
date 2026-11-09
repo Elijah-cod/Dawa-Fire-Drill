@@ -31,9 +31,9 @@ export function RadioGroup<T extends string | number>({
   const select = (index: number) => {
     const option = options[index];
     onChange(option.value);
-    group.current
-      ?.querySelectorAll<HTMLButtonElement>('[role="radio"]')
-      [index]?.focus();
+    const radios =
+      group.current?.querySelectorAll<HTMLButtonElement>('[role="radio"]');
+    radios?.item(index)?.focus();
   };
   const onKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
     if (disabled) return;

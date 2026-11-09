@@ -364,7 +364,9 @@ const strings = {
     tourExit: "Exit demo",
     tour_overview_title: "National overview",
     tour_overview_text:
-      "All 47 counties on a schematic grid with illustrative risk. Every number is synthetic.",
+      "The tour starts here, on the national overview, and takes about 3 minutes. All 47 counties are on a schematic grid with illustrative risk; every number is synthetic. If you started elsewhere, “Back to where I started” returns you there with your view.",
+    tourWaiting: "Waiting for this part of the page to appear…",
+    tourReturn: "Back to where I started",
     tour_kisumu_title: "Kisumu pilot",
     tour_kisumu_text:
       "Forty invented facilities on synthetic map locations, each with a non-color risk symbol.",
@@ -759,7 +761,9 @@ const strings = {
     tourExit: "Toka kwenye onyesho",
     tour_overview_title: "Muhtasari wa kitaifa",
     tour_overview_text:
-      "Kaunti zote 47 kwenye gridi ya mchoro yenye hatari ya mfano. Kila nambari ni ya kubuni.",
+      "Ziara inaanzia hapa, kwenye muhtasari wa kitaifa, na inachukua kama dakika 3. Kaunti zote 47 ziko kwenye gridi ya mchoro yenye hatari ya mfano; kila nambari ni ya kubuni. Ukianzia mahali pengine, “Rudi nilipoanzia” inakurudisha huko na mwonekano wako.",
+    tourWaiting: "Inasubiri sehemu hii ya ukurasa ionekane…",
+    tourReturn: "Rudi nilipoanzia",
     tour_kisumu_title: "Majaribio ya Kisumu",
     tour_kisumu_text:
       "Vituo arobaini vya kubuni kwenye maeneo ya ramani ya mfano, kila kimoja na alama ya hatari isiyotegemea rangi.",

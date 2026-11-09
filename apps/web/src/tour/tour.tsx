@@ -38,14 +38,43 @@ type Tour = {
   start: () => void;
   go: (index: number) => void;
   exit: () => void;
+  /** Where the tour was started, when that was not the overview (path and query). */
+  origin: string | null;
+  /** Leave the tour and reload the page it was started from, restoring its view. */
+  returnToStart: () => void;
 };
 const TourContext = createContext<Tour>({
   step: null,
   start: () => {},
   go: () => {},
   exit: () => {},
+  origin: null,
+  returnToStart: () => {},
 });
 export const useTour = () => useContext(TourContext);
+
+/** Full-page navigation, replaceable in tests. */
+export const tourNavigation = {
+  assign: (url: string) => window.location.assign(url),
+};
+
+/** The page the tour was started from survives the tour's own navigation and reloads. */
+const ORIGIN_KEY = "dawa.tour.origin";
+function readOrigin(): string | null {
+  try {
+    return window.sessionStorage.getItem(ORIGIN_KEY);
+  } catch {
+    return null;
+  }
+}
+function writeOrigin(value: string | null) {
+  try {
+    if (value) window.sessionStorage.setItem(ORIGIN_KEY, value);
+    else window.sessionStorage.removeItem(ORIGIN_KEY);
+  } catch {
+    // Storage can be unavailable (private mode); the tour still works without a way back.
+  }
+}
 
 function stepFromLocation(): TourStep | null {
   const id = new URLSearchParams(window.location.search).get("tour");
@@ -56,8 +85,11 @@ export function TourProvider({ children }: { children: ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
   const [step, setStep] = useState<TourStep | null>(null);
+  const [origin, setOrigin] = useState<string | null>(null);
   useEffect(() => {
-    setStep(stepFromLocation());
+    const current = stepFromLocation();
+    setStep(current);
+    setOrigin(current ? readOrigin() : null);
   }, [pathname]);
   const go = useCallback(
     (index: number) => {
@@ -72,6 +104,8 @@ export function TourProvider({ children }: { children: ReactNode }) {
   );
   const exit = useCallback(() => {
     setStep(null);
+    writeOrigin(null);
+    setOrigin(null);
     // Leave the rest of the URL (such as the Kisumu tab) as it is.
     const query = new URLSearchParams(window.location.search);
     query.delete("tour");
@@ -82,9 +116,28 @@ export function TourProvider({ children }: { children: ReactNode }) {
       `${pathname}${search ? `?${search}` : ""}`,
     );
   }, [pathname]);
+  const start = useCallback(() => {
+    // Remember the view the tour starts from (the Kisumu URL holds shock, budget, tab and day).
+    const query = new URLSearchParams(window.location.search);
+    query.delete("tour");
+    const search = query.toString();
+    const from = `${window.location.pathname}${search ? `?${search}` : ""}`;
+    const kept = from === "/" ? null : from;
+    writeOrigin(kept);
+    setOrigin(kept);
+    go(0);
+  }, [go]);
+  const returnToStart = useCallback(() => {
+    const target = origin;
+    writeOrigin(null);
+    setOrigin(null);
+    setStep(null);
+    // A full load so the page reads its whole view (shock, budget, tab and day) from the URL.
+    if (target) tourNavigation.assign(target);
+  }, [origin]);
   const value = useMemo(
-    () => ({ step, start: () => go(0), go, exit }),
-    [step, go, exit],
+    () => ({ step, start, go, exit, origin, returnToStart }),
+    [step, start, go, exit, origin, returnToStart],
   );
   return (
     <TourContext.Provider value={value}>
@@ -94,8 +147,22 @@ export function TourProvider({ children }: { children: ReactNode }) {
   );
 }
 
+/** How long a step waits for its target to become visible before letting the user go on. */
+export const TARGET_WAIT_MS = 15000;
+
+function visible(element: Element) {
+  const box = element.getBoundingClientRect();
+  return (
+    box.width > 0 &&
+    box.height > 0 &&
+    (typeof (element as HTMLElement).checkVisibility !== "function" ||
+      (element as HTMLElement).checkVisibility())
+  );
+}
+
 function TourPanel() {
-  const { step, go, exit } = useTour();
+  const { step, go, exit, origin, returnToStart } = useTour();
+  const [ready, setReady] = useState(false);
   const { t } = usePreferences();
   const title = useRef<HTMLHeadingElement>(null);
   const index = TOUR_STEPS.findIndex((item) => item.id === step);
@@ -108,10 +175,17 @@ function TourPanel() {
     ).matches;
     let marked: Element | null = null;
     let attempts = 0;
+    setReady(false);
+    // Wait until the step's target is on the page and visible (for example after a tab,
+    // a role or the phone scenario panel has switched), then mark and scroll to it.
     const timer = window.setInterval(() => {
       const target = document.querySelector(current.target);
-      if (target || ++attempts > 40) window.clearInterval(timer);
-      if (!target) return;
+      const shown = !!target && visible(target);
+      if (shown || ++attempts > TARGET_WAIT_MS / 250) {
+        window.clearInterval(timer);
+        setReady(true);
+      }
+      if (!target || !shown) return;
       marked = target.closest("section") ?? target;
       marked.setAttribute("data-tour-active", "true");
       target.scrollIntoView({
@@ -142,6 +216,11 @@ function TourPanel() {
         {t(`tour_${current.id}_title`)}
       </h2>
       <p aria-live="polite">{t(`tour_${current.id}_text`)}</p>
+      {!ready && (
+        <p className="tour-waiting" role="status">
+          {t("tourWaiting")}
+        </p>
+      )}
       <div className="tour-actions">
         <button
           type="button"
@@ -153,6 +232,7 @@ function TourPanel() {
         <button
           type="button"
           className="tour-primary"
+          disabled={!ready}
           onClick={() => (last ? exit() : go(index + 1))}
         >
           {last ? t("tourFinish") : t("tourNext")}
@@ -160,6 +240,11 @@ function TourPanel() {
         <button type="button" onClick={exit}>
           {t("tourExit")}
         </button>
+        {origin && (
+          <button type="button" onClick={returnToStart}>
+            {t("tourReturn")}
+          </button>
+        )}
       </div>
     </section>
   );
