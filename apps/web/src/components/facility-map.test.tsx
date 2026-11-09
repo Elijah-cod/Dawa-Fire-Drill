@@ -130,7 +130,7 @@ it("shows synthetic location labeling, thresholds, and an accessible risk marker
   const marker = await screen.findByRole("button", {
     name: /Synthetic one.*Critical.*Runs out on day 7 of the run.*C1/i,
   });
-  expect(marker.getAttribute("title")).toContain("within 45 days");
+  expect(marker.getAttribute("title")).toContain("first stockout by day 45");
   fireEvent.click(marker);
   expect(select).toHaveBeenCalledWith("SYN-1");
 });
@@ -384,16 +384,16 @@ it("clusters nearby facilities with count and worst status, then separates them 
     />,
   );
   const cluster = await screen.findByRole("button", {
-    name: "3 · 1 Crit · 1 Watch · 1 Stable · 3 synthetic facilities: 1 Critical, 1 Watch, 1 Stable; worst status Critical. Press Enter to zoom in.",
+    name: "3 · 1 Crit · 1 Watch · 1 Later · 3 synthetic facilities: 1 Critical, 1 Watch, 1 Later; worst status Critical. Press Enter to zoom in.",
   });
-  expect(cluster.textContent).toBe("!3 · 1 Crit · 1 Watch · 1 Stable");
+  expect(cluster.textContent).toBe("!3 · 1 Crit · 1 Watch · 1 Later");
   expect(cluster.dataset.count).toBe("3");
   expect(screen.queryByRole("button", { name: /^Synthetic A/ })).toBeNull();
   expect(document.querySelector(".risk-summary")?.textContent).toBe(
-    "40% shock · 3 facilities: 1 Critical · 1 Watch · 1 Stable · 1 already short before the shock",
+    "40% shock · 3 facilities: 1 Critical · 1 Watch · 1 Later · 1 already short before the shock",
   );
   act(() => cluster.click());
-  const first = screen.getByRole("button", { name: /^Synthetic A · Stable/ });
+  const first = screen.getByRole("button", { name: /^Synthetic A · Later/ });
   expect(document.activeElement).toBe(first);
   expect(
     screen.getByRole("button", {

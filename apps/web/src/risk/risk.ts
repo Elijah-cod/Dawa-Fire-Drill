@@ -159,22 +159,23 @@ export function risksForRun(
 }
 
 export function riskLegend(locale: "en" | "sw" = "en"): string[] {
+  const { criticalDays, watchDays, horizonDays } = RISK_THRESHOLDS;
   if (locale === "sw") {
     return [
-      `Hatari kubwa: bidhaa imeisha au itaisha ndani ya siku ${RISK_THRESHOLDS.criticalDays}`,
-      `Angalizo: siku ${RISK_THRESHOLDS.criticalDays + 1}–${RISK_THRESHOLDS.watchDays}`,
-      `Tulivu: bidhaa haitaisha ndani ya siku ${RISK_THRESHOLDS.watchDays}`,
+      `Hatari kubwa: haina akiba tangu mwanzo au kuisha kwa kwanza kufikia siku ya ${criticalDays}`,
+      `Angalizo: kuisha kwa kwanza siku ${criticalDays + 1}–${watchDays}`,
+      `Baadaye: kuisha kwa kwanza baada ya siku ya ${watchDays}, au hakuna katika jaribio`,
       "Haijulikani: hakuna utabiri au uigaji",
-      `Lebo zinahusiana na kipindi cha uigaji cha siku ${RISK_THRESHOLDS.horizonDays}. Viwango vilirekebishwa ili mfano huu wa kubuni usomeke; si kiwango rasmi.`,
+      `Viwango hivi ni vya jaribio zima la siku ${horizonDays} na havibadiliki na siku iliyochaguliwa kwenye mstari wa wakati. Vilirekebishwa ili mfano huu wa kubuni usomeke; ni vya mfano, si kiwango rasmi.`,
       "Viwango ni vya mfano, si viwango vya kitabibu au kiutendaji.",
     ];
   }
   return [
-    `Critical: already stocked out or within ${RISK_THRESHOLDS.criticalDays} days`,
-    `Watch: ${RISK_THRESHOLDS.criticalDays + 1}–${RISK_THRESHOLDS.watchDays} days`,
-    `Stable: no stockout within ${RISK_THRESHOLDS.watchDays} days`,
+    `Critical: out of stock at the start, or first stockout by day ${criticalDays}`,
+    `Watch: first stockout on days ${criticalDays + 1}–${watchDays}`,
+    `Later: first stockout after day ${watchDays}, or none in the run`,
     "Unknown: no forecast or run is available",
-    `Labels are relative to the ${RISK_THRESHOLDS.horizonDays}-day simulation horizon. The cutoffs were tuned to make this synthetic scenario readable; they are not a standard.`,
+    `These thresholds are fixed for the whole ${horizonDays}-day run and do not change with the selected timeline day. They were tuned to make this synthetic scenario readable; they are illustrative, not a standard.`,
     "Illustrative thresholds, not clinical or operational standards.",
   ];
 }

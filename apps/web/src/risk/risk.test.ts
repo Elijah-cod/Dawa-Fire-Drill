@@ -77,13 +77,20 @@ describe("illustrative facility stockout risk", () => {
   });
   it("builds legend text from the configured cutoffs", () => {
     expect(riskLegend()).toContain(
-      "Critical: already stocked out or within 45 days",
+      "Critical: out of stock at the start, or first stockout by day 45",
     );
-    expect(riskLegend()).toContain("Watch: 46–52 days");
-    expect(riskLegend()).toContain("Stable: no stockout within 52 days");
-    expect(riskLegend("sw")).toContain("Angalizo: siku 46–52");
+    expect(riskLegend()).toContain("Watch: first stockout on days 46–52");
     expect(riskLegend()).toContain(
-      "Labels are relative to the 90-day simulation horizon. The cutoffs were tuned to make this synthetic scenario readable; they are not a standard.",
+      "Later: first stockout after day 52, or none in the run",
+    );
+    expect(riskLegend().join(" ")).toContain(
+      "do not change with the selected timeline day",
+    );
+    expect(riskLegend("sw")).toContain(
+      "Angalizo: kuisha kwa kwanza siku 46–52",
+    );
+    expect(riskLegend()).toContain(
+      "These thresholds are fixed for the whole 90-day run and do not change with the selected timeline day. They were tuned to make this synthetic scenario readable; they are illustrative, not a standard.",
     );
     expect(riskLegend()).toContain(
       "Illustrative thresholds, not clinical or operational standards.",

@@ -111,7 +111,7 @@ test("clustered map works in Swahili and dark theme", async ({
     await page.getByRole("button", { name: "Fungua ramani ya vituo" }).click();
   const map = page.locator(mobile ? "dialog" : ".desktop-grid").first();
   await expect(map.locator(".risk-summary")).toHaveText(
-    "40% mshtuko · 40 vituo: 10 Hatari kubwa · 18 Angalizo · 12 Tulivu · 2 tayari vilikuwa na upungufu kabla ya mshtuko",
+    "40% mshtuko · 40 vituo: 10 Hatari kubwa · 18 Angalizo · 12 Baadaye · 2 tayari vilikuwa na upungufu kabla ya mshtuko",
     { timeout: 30000 },
   );
   // The map loads lazily when it nears the viewport.

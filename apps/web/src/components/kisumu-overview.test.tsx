@@ -80,7 +80,7 @@ it("updates a facility's risk and driving tracer with the selected scenario", as
   ).toBeGreaterThan(0);
   fireEvent.click(screen.getByRole("button", { name: "0%" }));
   await vi.waitFor(() =>
-    expect(detail().textContent).toMatch(/Stable.*Synthetic tracer/),
+    expect(detail().textContent).toMatch(/Later.*Synthetic tracer/),
   );
 });
 
@@ -228,7 +228,7 @@ it("explains Critical at no shock for facilities already short before the shock"
   fireEvent.click(
     screen.getByRole("button", { name: "Mvule Ridge Dispensary" }),
   );
-  await vi.waitFor(() => expect(detail().textContent).toMatch(/StatusStable/));
+  await vi.waitFor(() => expect(detail().textContent).toMatch(/StatusLater/));
   expect(document.getElementById("facility-detail")?.textContent).not.toMatch(
     /Already short/,
   );
@@ -267,7 +267,7 @@ it("answers what breaks first at each prepared shock from the backend runs", asy
   expect(verdict().textContent).toContain(
     "211 stockouts in total: 209 caused by the shock, 2 already short before it (Acacia Ridge Dispensary from day 1 and Cedar Ridge Dispensary from day 6)",
   );
-  expect(verdict().textContent).toContain("10 Critical · 18 Watch · 12 Stable");
+  expect(verdict().textContent).toContain("10 Critical · 18 Watch · 12 Later");
 
   fireEvent.click(screen.getByRole("button", { name: "20%" }));
   await vi.waitFor(() =>
@@ -275,7 +275,7 @@ it("answers what breaks first at each prepared shock from the backend runs", asy
       "The fixes address only 4 of 77 shock-caused stockouts (days 47 to 74).",
     ),
   );
-  expect(verdict().textContent).toContain("2 Critical · 5 Watch · 33 Stable");
+  expect(verdict().textContent).toContain("2 Critical · 5 Watch · 33 Later");
 
   fireEvent.click(screen.getByRole("button", { name: "100%" }));
   await vi.waitFor(() =>
@@ -283,6 +283,7 @@ it("answers what breaks first at each prepared shock from the backend runs", asy
       "None of the 4 listed transfers can arrive in time: they arrive from day 39, but their stockouts happen by day 26.",
     ),
   );
+  expect(verdict().textContent).toContain("40 Critical · 0 Watch · 0 Later");
   expect(verdict().textContent).toContain("causes 393 stockouts");
 
   fireEvent.click(screen.getByRole("button", { name: "0%" }));
@@ -291,6 +292,8 @@ it("answers what breaks first at each prepared shock from the backend runs", asy
       "With no shock, nothing new runs out within 90 days.There is nothing to fix.",
     ),
   );
+  expect(verdict().textContent).toContain("2 Critical · 0 Watch · 38 Later");
+  expect(verdict().textContent).not.toMatch(/Stable/);
   expect(screen.queryByRole("group", { name: "Compare" })).toBeNull();
 });
 
@@ -429,7 +432,7 @@ it("filters the facilities by status, sub-county and commodity without changing 
   );
   await vi.waitFor(() =>
     expect(container.querySelector("#verdict")?.textContent).toContain(
-      "10 Critical · 18 Watch · 12 Stable",
+      "10 Critical · 18 Watch · 12 Later",
     ),
   );
   fireEvent.click(screen.getByRole("tab", { name: /Facilities/ }));
@@ -465,11 +468,11 @@ it("filters the facilities by status, sub-county and commodity without changing 
     ),
   ).toBe(true);
   fireEvent.click(critical);
-  fireEvent.click(screen.getByRole("button", { name: "Stable" }));
+  fireEvent.click(screen.getByRole("button", { name: "Later" }));
   fireEvent.click(screen.getByRole("button", { name: "Watch" }));
   expect(rows().length).toBeGreaterThan(0);
   expect(container.querySelector("#verdict")?.textContent).toContain(
-    "10 Critical · 18 Watch · 12 Stable",
+    "10 Critical · 18 Watch · 12 Later",
   );
 });
 

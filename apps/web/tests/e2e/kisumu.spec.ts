@@ -58,7 +58,7 @@ test("Kisumu leads with what breaks first and the cheapest fix, from the backend
     "211 stockouts in total: 209 caused by the shock, 2 already short before it (Acacia Ridge Dispensary from day 1 and Cedar Ridge Dispensary from day 6)",
   );
   await expect(verdict(page)).toContainText(
-    "10 Critical · 18 Watch · 12 Stable",
+    "10 Critical · 18 Watch · 12 Later",
   );
   await expect(page.getByRole("note")).toContainText(
     "Facilities, names, locations and costs are invented. Results are illustrative, not validated.",
@@ -106,22 +106,22 @@ test("the four prepared shocks match the backend runs", async ({ page }) => {
     [
       "20%",
       "The fixes address only 4 of 77 shock-caused stockouts (days 47 to 74).",
-      "2 Critical · 5 Watch · 33 Stable",
+      "2 Critical · 5 Watch · 33 Later",
     ],
     [
       "100%",
       "None of the 4 listed transfers can arrive in time: they arrive from day 39, but their stockouts happen by day 26.",
-      "40 Critical · 0 Watch · 0 Stable",
+      "40 Critical · 0 Watch · 0 Later",
     ],
     [
       "0%",
       "With no shock, nothing new runs out within 90 days.",
-      "2 Critical · 0 Watch · 38 Stable",
+      "2 Critical · 0 Watch · 38 Later",
     ],
     [
       "40%",
       "causes 209 stockouts within 90 days",
-      "10 Critical · 18 Watch · 12 Stable",
+      "10 Critical · 18 Watch · 12 Later",
     ],
   ] as const) {
     await pickShock(page, label);
@@ -331,14 +331,14 @@ test("the facility map clusters by keyboard and opens the chosen facility", asyn
     await page.getByRole("button", { name: "Open facility map" }).click();
   const map = () => page.locator(mobile ? "dialog" : ".desktop-grid").first();
   await expect(map().locator(".risk-summary")).toHaveText(
-    "40% shock · 40 facilities: 10 Critical · 18 Watch · 12 Stable · 2 already short before the shock",
+    "40% shock · 40 facilities: 10 Critical · 18 Watch · 12 Later · 2 already short before the shock",
     { timeout: 30000 },
   );
   await map().locator(".facility-map").scrollIntoViewIfNeeded();
   const cluster = map().locator(".facility-cluster").first();
   await expect(cluster).toHaveAttribute(
     "aria-label",
-    /^(\d+)( · \d+ (Crit|Watch|Stable|Unk))+ · \1 synthetic facilities: .*; worst status (Critical|Watch|Stable|Unknown)\. Press Enter to zoom in\.$/,
+    /^(\d+)( · \d+ (Crit|Watch|Later|Unk))+ · \1 synthetic facilities: .*; worst status (Critical|Watch|Later|Unknown)\. Press Enter to zoom in\.$/,
     { timeout: 30000 },
   );
   await cluster.focus();

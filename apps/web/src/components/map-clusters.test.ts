@@ -54,7 +54,7 @@ describe("clustering and risk counts on real version 5 runs (seed 42)", () => {
       ["critical", "critical", "critical", "critical", "critical", "critical"],
     ],
   ] as const)(
-    "at %s%% counts Critical/Watch/Stable and shows each cluster's worst status",
+    "at %s%% counts Critical/Watch/Later and shows each cluster's worst status",
     (magnitude, [critical, watch, stable], worst) => {
       const { risks, preShock, groups } = view(magnitude);
       const summary = riskSummary(
@@ -90,15 +90,13 @@ describe("clustering and risk counts on real version 5 runs (seed 42)", () => {
         const text = clusterText(group.length, counts, {
           critical: "Crit",
           watch: "Watch",
-          stable: "Stable",
+          stable: "Later",
           unknown: "Unk",
         });
         const [size, ...parts] = text.split(" · ");
         expect(Number(size)).toBe(group.length);
         expect(
-          parts.every((part) =>
-            /^[1-9]\d* (Crit|Watch|Stable|Unk)$/.test(part),
-          ),
+          parts.every((part) => /^[1-9]\d* (Crit|Watch|Later|Unk)$/.test(part)),
         ).toBe(true);
         expect(
           parts.reduce((sum, part) => sum + Number(part.split(" ")[0]), 0),
@@ -157,7 +155,7 @@ describe("cluster helpers", () => {
     }
   });
 
-  it("orders worst status Critical, Watch, Unknown, Stable", () => {
+  it("orders worst status Critical, Watch, Unknown, Later", () => {
     expect(worstStatus(["stable", "watch", "critical"])).toBe("critical");
     expect(worstStatus(["stable", "unknown"])).toBe("unknown");
     expect(worstStatus(["stable", "watch"])).toBe("watch");
@@ -174,11 +172,11 @@ it("formats the status mix worst first and skips empty statuses", () => {
       {
         critical: "Crit",
         watch: "Watch",
-        stable: "Stable",
+        stable: "Later",
         unknown: "Unk",
       },
     ),
-  ).toBe("6 · 2 Crit · 3 Watch · 1 Stable");
+  ).toBe("6 · 2 Crit · 3 Watch · 1 Later");
   expect(
     clusterText(
       5,
@@ -186,9 +184,9 @@ it("formats the status mix worst first and skips empty statuses", () => {
       {
         critical: "Crit",
         watch: "Watch",
-        stable: "Stable",
+        stable: "Later",
         unknown: "Unk",
       },
     ),
-  ).toBe("5 · 4 Stable · 1 Unk");
+  ).toBe("5 · 4 Later · 1 Unk");
 });
