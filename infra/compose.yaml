@@ -52,6 +52,9 @@ services:
       retries: 10
     ports:
       - "5432:5432"
+    # Named volume: local data survives container recreation. `down -v` deletes it on purpose.
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
   neo4j:
     image: neo4j:5@sha256:249a1ec6e3c52d82101a5ed33d6ed2b5ed5b0017b21a28c0bfebc335e87fb177
     environment:
@@ -59,3 +62,6 @@ services:
     ports:
       - "7474:7474"
       - "7687:7687"
+
+volumes:
+  postgres-data:

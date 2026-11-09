@@ -90,7 +90,16 @@ bash scripts/demo-down.sh
 docker compose -f infra/compose.yaml down
 ```
 
-The Compose file declares no volumes, so `docker compose down` deletes the local database; run the two seeding commands again after the next `up`.
+Postgres keeps its data in the named volume `postgres-data`, so it survives `docker compose down`, image updates and container recreation. To reset the local data on purpose, delete the volume and seed again:
+
+```sh
+docker compose -f infra/compose.yaml down -v   # deletes the postgres-data volume
+docker compose -f infra/compose.yaml up -d
+docker compose -f infra/compose.yaml exec -T api python -m dawa_api.ingestion.persist --country KE --seed 42
+docker compose -f infra/compose.yaml exec -T api python -m dawa_api.ingestion.seed_counties --seed 42
+```
+
+If your stack was created before the volume existed, the first `up` after updating starts with an empty volume: run the two seeding commands once. The old unnamed volume is left in place; `docker volume ls --filter dangling=true` lists it if you want to remove it yourself.
 
 `scripts/demo-up.sh` refuses to run outside a local environment. It generates a throwaway signing secret, recreates only the API container with demo role switching on, mints a synthetic admin token valid for 4 hours, builds the web app and serves it in production mode on port 3300. The token lives only in the web server's process environment and is never printed or written to disk; `scripts/demo-down.sh` removes it and restores the API's default settings. API docs are at `http://localhost:8000/docs` while the stack runs. The Compose database credentials are disposable local defaults.
 
