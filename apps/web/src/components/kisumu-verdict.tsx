@@ -157,11 +157,14 @@ export function KisumuVerdict({
           {counts && <li>{tf("factsStatus", counts)}</li>}
         </ul>
       )}
-      {/* Terms defined at their first use, which is the sentence above. */}
-      <p className="terms">
-        <dfn>{t("termStockout")}</dfn>: {t("termStockoutDef")}.{" "}
-        <dfn>{t("termTracer")}</dfn>: {t("termTracerDef")}.
-      </p>
+      {/* Terms defined at their first use, which is the sentence above; shown with the
+          facts once the run has arrived, never in the dimmed loading state. */}
+      {events && (
+        <p className="terms">
+          <dfn>{t("termStockout")}</dfn>: {t("termStockoutDef")}.{" "}
+          <dfn>{t("termTracer")}</dfn>: {t("termTracerDef")}.
+        </p>
+      )}
     </section>
   );
 }

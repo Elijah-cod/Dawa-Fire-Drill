@@ -590,8 +590,8 @@ it("says when a facility has no stockout in the run", async () => {
   );
 });
 
-it("defines stockout and tracer where they are first used", () => {
-  const { container } = render(
+it("defines stockout and tracer where they are first used, once the run arrives", async () => {
+  const pending = render(
     <KisumuOverview
       panel={fixture.pilot}
       scenario={{
@@ -599,6 +599,15 @@ it("defines stockout and tracer where they are first used", () => {
         read: vi.fn(),
       }}
     />,
+  );
+  // Not in the dimmed loading state.
+  expect(pending.container.querySelector("#verdict .terms")).toBeNull();
+  pending.unmount();
+  const { container } = render(
+    <KisumuOverview panel={fixture.pilot} scenario={fixtureScenario()} />,
+  );
+  await vi.waitFor(() =>
+    expect(container.querySelector("#verdict .terms")).not.toBeNull(),
   );
   expect(container.querySelector("#verdict .terms")?.textContent).toBe(
     "Stockout: one facility running out of one medicine. Tracer: a medicine tracked in this demo.",
