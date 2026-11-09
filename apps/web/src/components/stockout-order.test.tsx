@@ -1,5 +1,11 @@
 // @vitest-environment jsdom
-import { cleanup, render, screen, within } from "@testing-library/react";
+import {
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+  within,
+} from "@testing-library/react";
 import { afterEach, expect, it } from "vitest";
 import fixture from "../fixtures/kisumu.json";
 import { withDisplayNames } from "../kisumu/names";
@@ -47,7 +53,8 @@ it("lists already-short facilities apart from the backend's shock-caused stockou
     "Tamarind Crossing Sub-County Hospital (Kisumu West) · family planning tracer 04 · day 41",
   );
   // The rest sit behind "Show all", numbered on from the preview.
-  expect(screen.getByText("Show all 209")).toBeTruthy();
+  expect(screen.getByText("Show all 209 (adds 11–209)")).toBeTruthy();
+  expect(screen.getByText("Showing 1–10 of 209")).toBeTruthy();
   expect(lists[2].getAttribute("start")).toBe(String(ORDER_PREVIEW + 1));
   expect(lists[1].children.length + lists[2].children.length).toBe(209);
 });
@@ -66,4 +73,43 @@ it("says plainly when nothing runs out because of the shock", () => {
   expect(
     screen.getByText("Nothing runs out because of the shock in this run."),
   ).toBeTruthy();
+});
+
+it("filters the order by area and medicine, with counts", () => {
+  render(
+    <StockoutOrder
+      panel={panel}
+      magnitude={40}
+      total={events.all.length}
+      shock={events.shock}
+      alreadyShort={events.alreadyShort}
+    />,
+  );
+  fireEvent.change(screen.getByLabelText("Sub-county"), {
+    target: { value: "SYN-042-S03" },
+  });
+  fireEvent.change(screen.getByLabelText("Commodity"), {
+    target: { value: "SYN-C04" },
+  });
+  const items = [...document.querySelectorAll("ol.order li")].map(
+    (li) => li.textContent,
+  );
+  expect(items.length).toBeGreaterThan(0);
+  expect(
+    items.every((text) =>
+      /Kisumu West.*family planning tracer 04/.test(text ?? ""),
+    ),
+  ).toBe(true);
+  expect(document.querySelector(".filter-count")?.textContent).toBe(
+    `Showing ${items.length} of 211 stockouts.`,
+  );
+  fireEvent.change(screen.getByLabelText("Commodity"), {
+    target: { value: "SYN-C09" },
+  });
+  fireEvent.change(screen.getByLabelText("Sub-county"), {
+    target: { value: "SYN-042-S07" },
+  });
+  expect(document.body.textContent).toMatch(
+    /No stockouts match these filters\.|Showing \d+ of 211/,
+  );
 });

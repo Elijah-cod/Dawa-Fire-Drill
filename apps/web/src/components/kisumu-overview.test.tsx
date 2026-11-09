@@ -448,20 +448,29 @@ it("filters the facilities by status, sub-county and commodity without changing 
   expect(rows().every((row) => /Critical/.test(row.textContent ?? ""))).toBe(
     true,
   );
-  fireEvent.change(screen.getByLabelText("Sub-county"), {
-    target: { value: "SYN-042-S03" },
-  });
+  fireEvent.change(
+    screen.getByLabelText("Sub-county", { selector: "#subcounty-filter" }),
+    {
+      target: { value: "SYN-042-S03" },
+    },
+  );
   expect(rows().length).toBeLessThan(10);
   expect(rows().every((row) => /Kisumu West/.test(row.textContent ?? ""))).toBe(
     true,
   );
-  fireEvent.change(screen.getByLabelText("Sub-county"), {
-    target: { value: "all" },
-  });
+  fireEvent.change(
+    screen.getByLabelText("Sub-county", { selector: "#subcounty-filter" }),
+    {
+      target: { value: "all" },
+    },
+  );
   // One commodity: status and first stockout come from that commodity alone.
-  fireEvent.change(screen.getByLabelText("Commodity"), {
-    target: { value: "SYN-C04" },
-  });
+  fireEvent.change(
+    screen.getByLabelText("Commodity", { selector: "#commodity-filter" }),
+    {
+      target: { value: "SYN-C04" },
+    },
+  );
   expect(count()).toMatch(/^Showing \d+ of 40 facilities\.$/);
   expect(
     rows().every((row) =>
@@ -647,4 +656,36 @@ it("says who the page is for and offers a next action under the verdict", async 
   expect(container.querySelector(".verdict-facts")?.textContent).toBe(
     "211 stockouts = 209 caused by the shock + 2 already short before it10 Critical · 18 Watch · 12 Later",
   );
+});
+
+it("searches facility names and shows the active sort", async () => {
+  render(<KisumuOverview panel={fixture.pilot} scenario={fixtureScenario()} />);
+  fireEvent.click(screen.getByRole("tab", { name: /Facilities/ }));
+  const table = screen.getByRole("region", { name: "Facilities table" });
+  await vi.waitFor(() =>
+    expect(within(table).getAllByRole("row")[1].textContent).toMatch(
+      /Critical/,
+    ),
+  );
+  fireEvent.change(screen.getByLabelText("Search facility names"), {
+    target: { value: "tamarind" },
+  });
+  const rows = within(table).getAllByRole("row").slice(1);
+  expect(rows.length).toBeGreaterThan(0);
+  expect(rows.every((row) => /^Tamarind /.test(row.textContent ?? ""))).toBe(
+    true,
+  );
+  expect(document.querySelector(".filter-count")?.textContent).toBe(
+    `Showing ${rows.length} of 40 facilities.`,
+  );
+  const status = within(table).getByRole("columnheader", { name: /Status/ });
+  expect(status.getAttribute("aria-sort")).toBe("descending");
+  expect(status.textContent).toContain("descending");
+  fireEvent.click(within(table).getByRole("button", { name: /^Facility/ }));
+  const facilityHeader = within(table).getByRole("columnheader", {
+    name: /^Facility/,
+  });
+  expect(facilityHeader.getAttribute("aria-sort")).toBe("ascending");
+  expect(facilityHeader.textContent).toContain("ascending");
+  expect(status.hasAttribute("aria-sort")).toBe(false);
 });

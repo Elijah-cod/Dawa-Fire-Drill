@@ -103,26 +103,40 @@ export function FacilityTable({
       (sort.up ? order : -order) || a.facility.id.localeCompare(b.facility.id)
     );
   });
-  const header = (key: Sort, label: string) => (
-    <th
-      scope="col"
-      aria-sort={
-        sort.key === key ? (sort.up ? "ascending" : "descending") : undefined
-      }
-    >
-      <button
-        type="button"
-        onClick={() =>
-          setSort({ key, up: sort.key === key ? !sort.up : key !== "status" })
-        }
+  const header = (key: Sort, label: string) => {
+    const active = sort.key === key;
+    return (
+      <th
+        scope="col"
+        aria-sort={active ? (sort.up ? "ascending" : "descending") : undefined}
+        data-active={active || undefined}
       >
-        {label}
-        <svg className="icon icon--sm" viewBox="0 0 24 24" aria-hidden="true">
-          <path d="M8 9l4-4 4 4M8 15l4 4 4-4" />
-        </svg>
-      </button>
-    </th>
-  );
+        <button
+          type="button"
+          onClick={() =>
+            setSort({ key, up: active ? !sort.up : key !== "status" })
+          }
+        >
+          {label}
+          {/* The active column shows its direction; the others show they can be sorted. */}
+          <svg className="icon icon--sm" viewBox="0 0 24 24" aria-hidden="true">
+            {!active ? (
+              <path d="M8 9l4-4 4 4M8 15l4 4 4-4" />
+            ) : sort.up ? (
+              <path d="M6 15l6-6 6 6" />
+            ) : (
+              <path d="M6 9l6 6 6-6" />
+            )}
+          </svg>
+          {active && (
+            <span className="sort-direction">
+              {t(sort.up ? "sortAscending" : "sortDescending")}
+            </span>
+          )}
+        </button>
+      </th>
+    );
+  };
   return (
     <>
       <p className="sub" id="table-cutoffs">

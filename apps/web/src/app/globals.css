@@ -1368,6 +1368,18 @@ input {
 .facilities-view tr[aria-selected="true"] {
   background: var(--primary-soft);
 }
+.facilities-view th[data-active] button {
+  color: var(--primary-strong);
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+}
+.sort-direction {
+  font-size: var(--text-xs);
+  font-weight: 600;
+}
+.filters input[type="search"] {
+  min-width: min(100%, 14rem);
+}
 .row-select {
   min-height: 44px;
   padding: 0;

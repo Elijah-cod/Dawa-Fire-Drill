@@ -166,16 +166,17 @@ export function KisumuOverview({
           ),
     [risks, commodity, panel, run],
   );
-  const facilities = useMemo(
-    () =>
-      panel.facilities.filter(
-        (item) =>
-          (subcounty === "all" || item.subcounty_id === subcounty) &&
-          (!statuses.size ||
-            statuses.has(viewRisks[item.id]?.status ?? "unknown")),
-      ),
-    [panel, subcounty, statuses, viewRisks],
-  );
+  const [nameQuery, setNameQuery] = useState("");
+  const facilities = useMemo(() => {
+    const needle = nameQuery.trim().toLocaleLowerCase();
+    return panel.facilities.filter(
+      (item) =>
+        (subcounty === "all" || item.subcounty_id === subcounty) &&
+        (!statuses.size ||
+          statuses.has(viewRisks[item.id]?.status ?? "unknown")) &&
+        (!needle || item.name.toLocaleLowerCase().includes(needle)),
+    );
+  }, [panel, subcounty, statuses, viewRisks, nameQuery]);
   const facility = panel.facilities.find((item) => item.id === selected);
   const risk = selected ? risks[selected] : undefined;
   const pending = !run || previous;
@@ -654,6 +655,18 @@ export function KisumuOverview({
                         </option>
                       ))}
                     </select>
+                  </div>
+                  <div>
+                    <label className="field-label" htmlFor="facility-search">
+                      {t("facilitySearch")}
+                    </label>
+                    <input
+                      id="facility-search"
+                      type="search"
+                      value={nameQuery}
+                      autoComplete="off"
+                      onChange={(event) => setNameQuery(event.target.value)}
+                    />
                   </div>
                   <div>
                     <label className="field-label" htmlFor="commodity-filter">
